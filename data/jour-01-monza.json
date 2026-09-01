@@ -1,0 +1,274 @@
+{
+  "event": {
+    "day": 1,
+    "date": "2026-09-01",
+    "track": "Monza",
+    "game": "Assetto Corsa Competizione",
+    "carGroup": "GT3",
+    "conditions": "Sec",
+    "sessionType": "Course officielle",
+    "status": "Résultats officiels"
+  },
+  "summary": {
+    "collectedFiles": 37,
+    "races": 6,
+    "uniqueDrivers": 51,
+    "circuits": 1,
+    "bestLap": "1:47.637",
+    "bestLapDriver": "K Arjun | ATX"
+  },
+  "pointsStandings": [
+    {
+      "position": 1,
+      "driver": "K Arjun | ATX",
+      "races": 4,
+      "wins": 3,
+      "bestLap": "1:47.637",
+      "points": 375
+    },
+    {
+      "position": 2,
+      "driver": "Dave Pitt | ATX",
+      "races": 4,
+      "wins": 2,
+      "bestLap": "1:48.162",
+      "points": 250
+    },
+    {
+      "position": 3,
+      "driver": "J ATXRACING",
+      "races": 5,
+      "wins": 1,
+      "bestLap": "1:49.005",
+      "points": 175
+    },
+    {
+      "position": 4,
+      "driver": "Tim Ito | ATX",
+      "races": 3,
+      "wins": 0,
+      "bestLap": "1:47.677",
+      "points": 95
+    },
+    {
+      "position": 5,
+      "driver": "Just Chris",
+      "races": 1,
+      "wins": 0,
+      "bestLap": "1:48.912",
+      "points": 75
+    },
+    {
+      "position": 6,
+      "driver": "Marc Sanna",
+      "races": 1,
+      "wins": 0,
+      "bestLap": "1:50.615",
+      "points": 75
+    },
+    {
+      "position": 7,
+      "driver": "Arnaldo Flores",
+      "races": 2,
+      "wins": 0,
+      "bestLap": "1:48.820",
+      "points": 50
+    },
+    {
+      "position": 8,
+      "driver": "Anvar Makhmudov",
+      "races": 3,
+      "wins": 0,
+      "bestLap": "1:49.222",
+      "points": 50
+    },
+    {
+      "position": 9,
+      "driver": "JESUS DUMETT",
+      "races": 1,
+      "wins": 0,
+      "bestLap": "1:49.707",
+      "points": 50
+    },
+    {
+      "position": 10,
+      "driver": "Gin Liu",
+      "races": 2,
+      "wins": 0,
+      "bestLap": "1:47.835",
+      "points": 25
+    }
+  ],
+  "chronoStandings": [
+    {
+      "position": 1,
+      "driver": "K Arjun | ATX",
+      "manufacturer": "Audi",
+      "car": "R8 LMS GT3 Evo II",
+      "bestLap": "1:47.637",
+      "gap": "—",
+      "reference": "1:47.637",
+      "index": "100.00%",
+      "category": "Alien",
+      "safe": {
+        "level": "Gold",
+        "score": "77.3%",
+        "invalidLaps": 15,
+        "penalties": 0
+      }
+    },
+    {
+      "position": 2,
+      "driver": "Tim Ito | ATX",
+      "manufacturer": "BMW",
+      "car": "M4 GT3",
+      "bestLap": "1:47.677",
+      "gap": "+0.040",
+      "reference": "1:47.637",
+      "index": "100.04%",
+      "category": "Alien",
+      "safe": {
+        "level": "Silver",
+        "score": "68.6%",
+        "invalidLaps": 7,
+        "penalties": 0
+      }
+    },
+    {
+      "position": 3,
+      "driver": "Gin Liu",
+      "manufacturer": "Lexus",
+      "car": "RC F GT3",
+      "bestLap": "1:47.835",
+      "gap": "+0.198",
+      "reference": "1:47.637",
+      "index": "100.18%",
+      "category": "Alien",
+      "safe": {
+        "level": "Gold",
+        "score": "76.9%",
+        "invalidLaps": 3,
+        "penalties": 0
+      }
+    },
+    {
+      "position": 4,
+      "driver": "6 Pojken_",
+      "manufacturer": "Ford",
+      "car": "Mustang GT3",
+      "bestLap": "1:47.870",
+      "gap": "+0.233",
+      "reference": "1:47.637",
+      "index": "100.22%",
+      "category": "Alien",
+      "safe": {
+        "level": "Silver",
+        "score": "58.8%",
+        "invalidLaps": 7,
+        "penalties": 0
+      }
+    },
+    {
+      "position": 5,
+      "driver": "Fer ALMD",
+      "manufacturer": "Ferrari",
+      "car": "296 GT3",
+      "bestLap": "1:48.015",
+      "gap": "+0.378",
+      "reference": "1:47.637",
+      "index": "100.35%",
+      "category": "Alien",
+      "safe": {
+        "level": "Bronze",
+        "score": "25.0%",
+        "invalidLaps": 3,
+        "penalties": 0
+      }
+    },
+    {
+      "position": 6,
+      "driver": "Dave Pitt | ATX",
+      "manufacturer": "BMW",
+      "car": "M4 GT3",
+      "bestLap": "1:48.162",
+      "gap": "+0.525",
+      "reference": "1:47.637",
+      "index": "100.49%",
+      "category": "Alien",
+      "safe": {
+        "level": "Silver",
+        "score": "69.0%",
+        "invalidLaps": 13,
+        "penalties": 0
+      }
+    },
+    {
+      "position": 7,
+      "driver": "John Zimmermann",
+      "manufacturer": "Inconnue",
+      "car": "Modèle ACC 25",
+      "bestLap": "1:48.512",
+      "gap": "+0.875",
+      "reference": "1:47.637",
+      "index": "100.81%",
+      "category": "Alien",
+      "safe": {
+        "level": "Silver",
+        "score": "69.2%",
+        "invalidLaps": 4,
+        "penalties": 1
+      }
+    },
+    {
+      "position": 8,
+      "driver": "Mason Reed",
+      "manufacturer": "McLaren",
+      "car": "720S GT3 Evo",
+      "bestLap": "1:48.682",
+      "gap": "+1.045",
+      "reference": "1:47.637",
+      "index": "100.97%",
+      "category": "Alien",
+      "safe": {
+        "level": "Silver",
+        "score": "50.0%",
+        "invalidLaps": 6,
+        "penalties": 0
+      }
+    },
+    {
+      "position": 9,
+      "driver": "Arnaldo Flores",
+      "manufacturer": "Porsche",
+      "car": "911 GT3 R (2018)",
+      "bestLap": "1:48.820",
+      "gap": "+1.183",
+      "reference": "1:47.637",
+      "index": "101.10%",
+      "category": "Alien",
+      "safe": {
+        "level": "Gold",
+        "score": "94.1%",
+        "invalidLaps": 1,
+        "penalties": 0
+      }
+    },
+    {
+      "position": 10,
+      "driver": "Just Chris",
+      "manufacturer": "Ferrari",
+      "car": "296 GT3",
+      "bestLap": "1:48.912",
+      "gap": "+1.275",
+      "reference": "1:47.637",
+      "index": "101.18%",
+      "category": "Alien",
+      "safe": {
+        "level": "Gold",
+        "score": "88.2%",
+        "invalidLaps": 2,
+        "penalties": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#050608"/>
+      <stop offset=".58" stop-color="#090b0f"/>
+      <stop offset="1" stop-color="#170608"/>
+    </linearGradient>
+    <radialGradient id="flare" cx="80%" cy="8%" r="75%">
+      <stop offset="0" stop-color="#ff2929" stop-opacity=".24"/>
+      <stop offset=".45" stop-color="#ff2929" stop-opacity=".05"/>
+      <stop offset="1" stop-color="#ff2929" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M56 0H0V56" fill="none" stroke="#ffffff" stroke-opacity=".035" stroke-width="1"/>
+    </pattern>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <style>
+      .cond{font-family:"Nimbus Sans Narrow","Arial Narrow",Arial,sans-serif}
+      .regular{font-family:"Nimbus Sans",Arial,sans-serif}
+      .white{fill:#f4f6f8}.muted{fill:#75808e}.red{fill:#ff2929}
+      .panel{fill:#080b0f;fill-opacity:.92;stroke:#292f38;stroke-width:1}
+      .row{fill:#0b0e12;fill-opacity:.72;stroke:#1e242c;stroke-width:1}
+      .head{font-size:16px;font-weight:700;letter-spacing:1.8px}
+      .name{font-size:23px;font-weight:700}.sub{font-size:13px}.num{font-size:24px;font-weight:800}
+      .rank{font-size:24px;font-weight:900;text-anchor:middle;dominant-baseline:middle}
+    </style>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#flare)"/>
+  <rect width="1920" height="1080" fill="url(#grid)"/>
+  <path d="M1780-40 1350 1080M1910 40 1480 1080" stroke="#ff2929" stroke-opacity=".075" stroke-width="110"/>
+
+  <g transform="translate(70 54)">
+    <text class="cond white" font-size="35" font-weight="900" letter-spacing="1">ATX<tspan class="red">RACING</tspan></text>
+    <rect x="0" y="55" width="42" height="4" fill="#ff2929"/>
+  </g>
+
+  <g transform="translate(70 130)">
+    <text class="cond white" font-size="104" font-style="italic" font-weight="900" letter-spacing="-2">JOUR 01</text>
+    <text x="393" class="cond red" font-size="104" font-style="italic" font-weight="900" letter-spacing="-2">MONZA</text>
+  </g>
+  <text x="1840" y="173" class="cond" fill="none" stroke="#ffffff" stroke-opacity=".12" stroke-width="2" font-size="170" font-style="italic" font-weight="900" text-anchor="end">01</text>
+
+  <g transform="translate(70 205)">
+    <text class="cond muted" font-size="16" font-weight="700" letter-spacing="1.4">01 SEPTEMBRE 2026</text>
+    <circle cx="191" cy="-6" r="3" fill="#ff2929"/><text x="208" class="cond muted" font-size="16" font-weight="700" letter-spacing="1.4">51 PILOTES</text>
+    <circle cx="326" cy="-6" r="3" fill="#ff2929"/><text x="343" class="cond muted" font-size="16" font-weight="700" letter-spacing="1.4">6 COURSES</text>
+    <circle cx="454" cy="-6" r="3" fill="#ff2929"/><text x="471" class="cond muted" font-size="16" font-weight="700" letter-spacing="1.4">37 FICHIERS COLLECTÉS</text>
+    <circle cx="680" cy="-6" r="3" fill="#ff2929"/><text x="697" class="cond muted" font-size="16" font-weight="700" letter-spacing="1.4">GT3 · SEC</text>
+  </g>
+
+  <!-- Panel points -->
+  <g transform="translate(70 248)">
+    <rect class="panel" width="865" height="720"/>
+    <rect width="6" height="68" fill="#ff2929"/>
+    <text x="28" y="31" class="cond red head">POINT 02 · RACE CONTROL</text>
+    <text x="28" y="57" class="cond white" font-size="32" font-weight="900">TOP 10 · CLASSEMENT PAR POINTS</text>
+    <line x1="0" y1="82" x2="865" y2="82" stroke="#292f38"/>
+    <text x="30" y="111" class="cond muted head">POS.</text>
+    <text x="93" y="111" class="cond muted head">PILOTE</text>
+    <text x="486" y="111" class="cond muted head">C / V</text>
+    <text x="605" y="111" class="cond muted head">MEILLEUR TOUR</text>
+    <text x="818" y="111" class="cond muted head" text-anchor="end">PTS</text>
+
+    <g transform="translate(0 127)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#17150a" stroke="#e3be1b"/><text x="39" y="28" class="cond rank" fill="#ffe35b">1</text>
+      <text x="93" y="34" class="cond white name">K Arjun | ATX</text><text x="497" y="34" class="cond muted num">4 / 3</text><text x="605" y="34" class="cond white num">1:47.637</text><text x="818" y="35" class="cond red" font-size="29" font-weight="900" text-anchor="end">375</text>
+    </g>
+    <g transform="translate(0 183)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#aab2bd"/><text x="39" y="28" class="cond white rank">2</text>
+      <text x="93" y="34" class="cond white name">Dave Pitt | ATX</text><text x="497" y="34" class="cond muted num">4 / 2</text><text x="605" y="34" class="cond white num">1:48.162</text><text x="818" y="35" class="cond red" font-size="29" font-weight="900" text-anchor="end">250</text>
+    </g>
+    <g transform="translate(0 239)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#17100b" stroke="#b8642d"/><text x="39" y="28" class="cond rank" fill="#f39552">3</text>
+      <text x="93" y="34" class="cond white name">J ATXRACING</text><text x="497" y="34" class="cond muted num">5 / 1</text><text x="605" y="34" class="cond white num">1:49.005</text><text x="818" y="35" class="cond red" font-size="29" font-weight="900" text-anchor="end">175</text>
+    </g>
+    <g transform="translate(0 295)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">4</text>
+      <text x="93" y="34" class="cond white name">Tim Ito | ATX</text><text x="497" y="34" class="cond muted num">3 / 0</text><text x="605" y="34" class="cond white num">1:47.677</text><text x="818" y="35" class="cond red" font-size="29" font-weight="900" text-anchor="end">95</text>
+    </g>
+    <g transform="translate(0 351)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">5</text>
+      <text x="93" y="34" class="cond white name">Just Chris</text><text x="497" y="34" class="cond muted num">1 / 0</text><text x="605" y="34" class="cond white num">1:48.912</text><text x="818" y="35" class="cond red" font-size="29" font-weight="900" text-anchor="end">75</text>
+    </g>
+    <g transform="translate(0 407)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">6</text>
+      <text x="93" y="34" class="cond white name">Marc Sanna</text><text x="497" y="34" class="cond muted num">1 / 0</text><text x="605" y="34" class="cond white num">1:50.615</text><text x="818" y="35" class="cond red" font-size="29" font-weight="900" text-anchor="end">75</text>
+    </g>
+    <g transform="translate(0 463)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">7</text>
+      <text x="93" y="34" class="cond white name">Arnaldo Flores</text><text x="497" y="34" class="cond muted num">2 / 0</text><text x="605" y="34" class="cond white num">1:48.820</text><text x="818" y="35" class="cond red" font-size="29" font-weight="900" text-anchor="end">50</text>
+    </g>
+    <g transform="translate(0 519)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">8</text>
+      <text x="93" y="34" class="cond white name">Anvar Makhmudov</text><text x="497" y="34" class="cond muted num">3 / 0</text><text x="605" y="34" class="cond white num">1:49.222</text><text x="818" y="35" class="cond red" font-size="29" font-weight="900" text-anchor="end">50</text>
+    </g>
+    <g transform="translate(0 575)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">9</text>
+      <text x="93" y="34" class="cond white name">JESUS DUMETT</text><text x="497" y="34" class="cond muted num">1 / 0</text><text x="605" y="34" class="cond white num">1:49.707</text><text x="818" y="35" class="cond red" font-size="29" font-weight="900" text-anchor="end">50</text>
+    </g>
+    <g transform="translate(0 631)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">10</text>
+      <text x="93" y="34" class="cond white name">Gin Liu</text><text x="497" y="34" class="cond muted num">2 / 0</text><text x="605" y="34" class="cond white num">1:47.835</text><text x="818" y="35" class="cond red" font-size="29" font-weight="900" text-anchor="end">25</text>
+    </g>
+  </g>
+
+  <!-- Panel chronos -->
+  <g transform="translate(985 248)">
+    <rect class="panel" width="865" height="720"/>
+    <rect width="6" height="68" fill="#ff2929"/>
+    <text x="28" y="31" class="cond red head">POINT 03 · COURSE OFFICIELLE</text>
+    <text x="28" y="57" class="cond white" font-size="32" font-weight="900">TOP 10 · CHRONOS, CATÉGORIES &amp; SAFE</text>
+    <line x1="0" y1="82" x2="865" y2="82" stroke="#292f38"/>
+    <text x="30" y="111" class="cond muted head">POS.</text>
+    <text x="93" y="111" class="cond muted head">PILOTE / VOITURE</text>
+    <text x="610" y="111" class="cond muted head">CHRONO</text>
+    <text x="818" y="111" class="cond muted head" text-anchor="end">SAFE</text>
+
+    <g transform="translate(0 127)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#17150a" stroke="#e3be1b"/><text x="39" y="28" class="cond rank" fill="#ffe35b">1</text>
+      <text x="93" y="24" class="cond white name">K Arjun | ATX</text><text x="93" y="43" class="regular muted sub">AUDI · R8 LMS GT3 EVO II<tspan class="red"> · ALIEN</tspan></text><text x="610" y="34" class="cond white num">1:47.637</text><circle cx="749" cy="28" r="13" fill="#ffd53d" filter="url(#glow)"/><text x="818" y="24" class="cond" fill="#ffd53d" font-size="16" font-weight="900" text-anchor="end">GOLD</text><text x="818" y="43" class="cond muted sub" text-anchor="end">77.3%</text>
+    </g>
+    <g transform="translate(0 183)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#aab2bd"/><text x="39" y="28" class="cond white rank">2</text>
+      <text x="93" y="24" class="cond white name">Tim Ito | ATX</text><text x="93" y="43" class="regular muted sub">BMW · M4 GT3<tspan class="red"> · ALIEN</tspan></text><text x="610" y="34" class="cond white num">1:47.677</text><circle cx="749" cy="28" r="13" fill="#cbd2dc"/><text x="818" y="24" class="cond" fill="#cbd2dc" font-size="16" font-weight="900" text-anchor="end">SILVER</text><text x="818" y="43" class="cond muted sub" text-anchor="end">68.6%</text>
+    </g>
+    <g transform="translate(0 239)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#17100b" stroke="#b8642d"/><text x="39" y="28" class="cond rank" fill="#f39552">3</text>
+      <text x="93" y="24" class="cond white name">Gin Liu</text><text x="93" y="43" class="regular muted sub">LEXUS · RC F GT3<tspan class="red"> · ALIEN</tspan></text><text x="610" y="34" class="cond white num">1:47.835</text><circle cx="749" cy="28" r="13" fill="#ffd53d"/><text x="818" y="24" class="cond" fill="#ffd53d" font-size="16" font-weight="900" text-anchor="end">GOLD</text><text x="818" y="43" class="cond muted sub" text-anchor="end">76.9%</text>
+    </g>
+    <g transform="translate(0 295)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">4</text>
+      <text x="93" y="24" class="cond white name">6 Pojken_</text><text x="93" y="43" class="regular muted sub">FORD · MUSTANG GT3<tspan class="red"> · ALIEN</tspan></text><text x="610" y="34" class="cond white num">1:47.870</text><circle cx="749" cy="28" r="13" fill="#cbd2dc"/><text x="818" y="24" class="cond" fill="#cbd2dc" font-size="16" font-weight="900" text-anchor="end">SILVER</text><text x="818" y="43" class="cond muted sub" text-anchor="end">58.8%</text>
+    </g>
+    <g transform="translate(0 351)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">5</text>
+      <text x="93" y="24" class="cond white name">Fer ALMD</text><text x="93" y="43" class="regular muted sub">FERRARI · 296 GT3<tspan class="red"> · ALIEN</tspan></text><text x="610" y="34" class="cond white num">1:48.015</text><circle cx="749" cy="28" r="13" fill="#ca7638"/><text x="818" y="24" class="cond" fill="#ca7638" font-size="16" font-weight="900" text-anchor="end">BRONZE</text><text x="818" y="43" class="cond muted sub" text-anchor="end">25.0%</text>
+    </g>
+    <g transform="translate(0 407)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">6</text>
+      <text x="93" y="24" class="cond white name">Dave Pitt | ATX</text><text x="93" y="43" class="regular muted sub">BMW · M4 GT3<tspan class="red"> · ALIEN</tspan></text><text x="610" y="34" class="cond white num">1:48.162</text><circle cx="749" cy="28" r="13" fill="#cbd2dc"/><text x="818" y="24" class="cond" fill="#cbd2dc" font-size="16" font-weight="900" text-anchor="end">SILVER</text><text x="818" y="43" class="cond muted sub" text-anchor="end">69.0%</text>
+    </g>
+    <g transform="translate(0 463)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">7</text>
+      <text x="93" y="24" class="cond white name">John Zimmermann</text><text x="93" y="43" class="regular muted sub">INCONNUE · MODÈLE ACC 25<tspan class="red"> · ALIEN</tspan></text><text x="610" y="34" class="cond white num">1:48.512</text><circle cx="749" cy="28" r="13" fill="#cbd2dc"/><text x="818" y="24" class="cond" fill="#cbd2dc" font-size="16" font-weight="900" text-anchor="end">SILVER</text><text x="818" y="43" class="cond muted sub" text-anchor="end">69.2%</text>
+    </g>
+    <g transform="translate(0 519)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">8</text>
+      <text x="93" y="24" class="cond white name">Mason Reed</text><text x="93" y="43" class="regular muted sub">McLAREN · 720S GT3 EVO<tspan class="red"> · ALIEN</tspan></text><text x="610" y="34" class="cond white num">1:48.682</text><circle cx="749" cy="28" r="13" fill="#cbd2dc"/><text x="818" y="24" class="cond" fill="#cbd2dc" font-size="16" font-weight="900" text-anchor="end">SILVER</text><text x="818" y="43" class="cond muted sub" text-anchor="end">50.0%</text>
+    </g>
+    <g transform="translate(0 575)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">9</text>
+      <text x="93" y="24" class="cond white name">Arnaldo Flores</text><text x="93" y="43" class="regular muted sub">PORSCHE · 911 GT3 R (2018)<tspan class="red"> · ALIEN</tspan></text><text x="610" y="34" class="cond white num">1:48.820</text><circle cx="749" cy="28" r="13" fill="#ffd53d"/><text x="818" y="24" class="cond" fill="#ffd53d" font-size="16" font-weight="900" text-anchor="end">GOLD</text><text x="818" y="43" class="cond muted sub" text-anchor="end">94.1%</text>
+    </g>
+    <g transform="translate(0 631)">
+      <rect class="row" width="865" height="56"/><rect x="21" y="10" width="36" height="36" fill="#101318" stroke="#505966"/><text x="39" y="28" class="cond white rank">10</text>
+      <text x="93" y="24" class="cond white name">Just Chris</text><text x="93" y="43" class="regular muted sub">FERRARI · 296 GT3<tspan class="red"> · ALIEN</tspan></text><text x="610" y="34" class="cond white num">1:48.912</text><circle cx="749" cy="28" r="13" fill="#ffd53d"/><text x="818" y="24" class="cond" fill="#ffd53d" font-size="16" font-weight="900" text-anchor="end">GOLD</text><text x="818" y="43" class="cond muted sub" text-anchor="end">88.2%</text>
+    </g>
+  </g>
+
+  <g transform="translate(70 1014)">
+    <rect width="1780" height="1" fill="#2a3039"/>
+    <text y="35" class="cond muted" font-size="17" font-weight="700" letter-spacing="1.2">LA PISTE RESTE LA RÉFÉRENCE.</text>
+    <text x="1780" y="35" class="cond white" font-size="17" font-weight="700" letter-spacing=".8" text-anchor="end">athoxmotorsport-lab.github.io/atx-racing</text>
+  </g>
+</svg>
