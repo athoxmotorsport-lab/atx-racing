@@ -45,7 +45,8 @@ type ImportPayload = {
   }>;
 };
 
-const PROCESSOR_VERSION = "acc-v2";
+const PROCESSOR_VERSION = "acc-v3";
+const MAX_VALID_ACC_LAP_TIME_MS = 3_600_000;
 
 type EventRow = {
   id: string;
@@ -127,6 +128,15 @@ const pointsForPosition = (position?: number | null): number => {
 const positiveOrNull = (value?: number | null): number | null => {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 ? Math.round(number) : null;
+};
+
+// ACC can use very large integer sentinel values when no valid lap exists.
+// Such values must never be stored as lap records or used for driver ratings.
+const lapTimeOrNull = (value?: number | null): number | null => {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 && number <= MAX_VALID_ACC_LAP_TIME_MS
+    ? Math.round(number)
+    : null;
 };
 
 const performanceClass = (score: number): "alien" | "elite" | "pro" | "rookie" => {
@@ -231,7 +241,9 @@ const resolveEvent = async (payload: ImportPayload): Promise<EventRow> => {
   const serverName = payload.nomServeur?.trim().slice(0, 160);
   const baseTitle = serverName || `ATX Racing · ${payload.circuit}`;
   const slugSuffix = sourceEventKey ? slugPart(sourceEventKey).slice(-24) : payload.empreinte.slice(0, 8);
-  const slug = `${date}-${slugPart(payload.circuit)}-${slugSuffix}`;
+  // Normalize the complete value because slicing a long suffix can leave a
+  // leading dash and previously produced invalid slugs containing "--".
+  const slug = slugPart(`${date}-${payload.circuit}-${slugSuffix}`);
   const startsAt = payload.debutCourse && !Number.isNaN(Date.parse(payload.debutCourse))
     ? new Date(payload.debutCourse).toISOString()
     : `${date}T20:30:00+02:00`;
@@ -332,7 +344,7 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
         driver_id: driverId,
         position: result.position ?? null,
         laps_completed: result.tours ?? 0,
-        best_lap_ms: positiveOrNull(result.meilleurTourMs),
+        best_lap_ms: lapTimeOrNull(result.meilleurTourMs),
         best_split_1_ms: result.secteurs?.[0] ?? null,
         best_split_2_ms: result.secteurs?.[1] ?? null,
         best_split_3_ms: result.secteurs?.[2] ?? null,
@@ -355,7 +367,7 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
         session_id: session.id,
         driver_id: driverId,
         lap_number: lap.numeroTour,
-        lap_time_ms: lap.tempsMs ?? null,
+        lap_time_ms: lapTimeOrNull(lap.tempsMs),
         is_valid: lap.valide !== false,
         split_1_ms: lap.secteurs?.[0] ?? null,
         split_2_ms: lap.secteurs?.[1] ?? null,
@@ -419,7 +431,7 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
           start_position: qualifyingPositions.get(driverId) ?? null,
           finish_position: result.position ?? null,
           laps_completed: result.tours ?? 0,
-          best_lap_ms: positiveOrNull(result.meilleurTourMs),
+          best_lap_ms: lapTimeOrNull(result.meilleurTourMs),
           total_time_ms: positiveOrNull(result.tempsTotalMs),
           points: classified ? pointsForPosition(result.position) : 0,
           imported_at: new Date().toISOString(),
@@ -451,13 +463,16 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
         if (safetyError) throw safetyError;
       }
 
-      const timedResults = payload.resultats.filter((result) => result.meilleurTourMs && result.pilote?.steamId);
-      const reference = Math.min(...timedResults.map((result) => Number(result.meilleurTourMs)));
+      const timedResults = payload.resultats.flatMap((result) => {
+        const bestLapMs = lapTimeOrNull(result.meilleurTourMs);
+        return bestLapMs && result.pilote?.steamId ? [{ result, bestLapMs }] : [];
+      });
+      const reference = Math.min(...timedResults.map(({ bestLapMs }) => bestLapMs));
       if (Number.isFinite(reference)) {
-        for (const result of timedResults) {
+        for (const { result, bestLapMs } of timedResults) {
           const driverId = driverIds.get(result.pilote.steamId ?? "");
           if (!driverId) continue;
-          const score = Number(((Number(result.meilleurTourMs) / reference) * 100).toFixed(3));
+          const score = Number(((bestLapMs / reference) * 100).toFixed(3));
           const driverLaps = (payload.tours ?? []).filter((lap) => lap.steamId === result.pilote.steamId);
           const valid = driverLaps.filter((lap) => lap.valide !== false).length;
           const safeScore = driverLaps.length ? Number(((valid / driverLaps.length) * 100).toFixed(3)) : 0;
