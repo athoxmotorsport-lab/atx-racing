@@ -149,20 +149,50 @@
     if (!container || !Array.isArray(results) || !results.length) return;
     container.replaceChildren();
     results.forEach(result => {
-      const event = result.event || {};
+      const event = Array.isArray(result.event) ? (result.event[0] || {}) : (result.event || {});
       const row = document.createElement('a');
       row.className = 'profile-result-row';
       row.href = `course.html?event=${encodeURIComponent(event.slug || '')}`;
+      const top = document.createElement('div');
+      top.className = 'profile-result-top';
+      const date = document.createElement('span');
+      const eventDate = event.starts_at ? new Date(event.starts_at) : null;
+      date.dataset.fr = eventDate
+        ? new Intl.DateTimeFormat('fr-BE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(eventDate)
+        : 'Date inconnue';
+      date.dataset.en = eventDate
+        ? new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(eventDate)
+        : 'Unknown date';
+      const circuit = document.createElement('b');
+      circuit.textContent = event.circuit_name || 'ACC';
+      top.append(date, circuit);
       const title = document.createElement('strong');
       title.dataset.fr = event.title_fr || event.title_en || 'Événement ATX Racing';
       title.dataset.en = event.title_en || event.title_fr || 'ATX Racing event';
-      const details = document.createElement('span');
       const position = result.finish_position ? `P${result.finish_position}` : String(result.status || '—').toUpperCase();
       const pointsFr = Number(result.points || 0).toLocaleString('fr-BE');
       const pointsEn = Number(result.points || 0).toLocaleString('en-GB');
-      details.dataset.fr = `${position} · ${pointsFr} pts · ${result.laps_completed || 0} tours · ${formatLap(result.best_lap_ms)}`;
-      details.dataset.en = `${position} · ${pointsEn} pts · ${result.laps_completed || 0} laps · ${formatLap(result.best_lap_ms)}`;
-      row.append(title, details);
+      const metrics = document.createElement('div');
+      metrics.className = 'profile-result-metrics';
+      const addMetric = (fr, en, valueFr, valueEn = valueFr) => {
+        const metric = document.createElement('div');
+        const label = document.createElement('small');
+        label.dataset.fr = fr;
+        label.dataset.en = en;
+        const value = document.createElement('span');
+        value.dataset.fr = valueFr;
+        value.dataset.en = valueEn;
+        metric.append(label, value);
+        metrics.append(metric);
+      };
+      addMetric('Position', 'Position', position);
+      addMetric('Points', 'Points', pointsFr, pointsEn);
+      addMetric('Tours', 'Laps', String(result.laps_completed || 0));
+      addMetric('Meilleur tour', 'Best lap', formatLap(result.best_lap_ms));
+      const action = document.createElement('em');
+      action.dataset.fr = 'Voir le classement complet →';
+      action.dataset.en = 'View full standings →';
+      row.append(top, title, metrics, action);
       container.append(row);
     });
   };
