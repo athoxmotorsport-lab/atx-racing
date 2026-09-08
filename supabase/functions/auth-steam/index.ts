@@ -81,11 +81,51 @@ const verifySteamAssertion = async (url: URL): Promise<string | null> => {
 
 type SteamPlayer = { personaname?: string; profileurl?: string; avatarfull?: string };
 
+const decodeXmlText = (value: string): string => value
+  .replaceAll("&amp;", "&")
+  .replaceAll("&lt;", "<")
+  .replaceAll("&gt;", ">")
+  .replaceAll("&quot;", '"')
+  .replaceAll("&#39;", "'")
+  .trim();
+
+const xmlTag = (xml: string, tag: string): string | undefined => {
+  const cdata = xml.match(new RegExp(`<${tag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`, "i"));
+  if (cdata?.[1]) return cdata[1].trim();
+  const plain = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  return plain?.[1] ? decodeXmlText(plain[1]) : undefined;
+};
+
+const fetchCommunityProfile = async (steamId: string): Promise<SteamPlayer> => {
+  try {
+    const profileUrl = `https://steamcommunity.com/profiles/${steamId}`;
+    const response = await fetch(`${profileUrl}/?xml=1`, {
+      headers: { "Accept": "application/xml", "User-Agent": "ATX-Racing/1.0" },
+    });
+    if (!response.ok) {
+      console.warn(`Steam Community profile returned HTTP ${response.status}`);
+      return {};
+    }
+    const xml = await response.text();
+    return {
+      personaname: xmlTag(xml, "steamID"),
+      profileurl: profileUrl,
+      avatarfull: xmlTag(xml, "avatarFull"),
+    };
+  } catch (error) {
+    console.warn(
+      "Steam Community profile enrichment failed",
+      error instanceof Error ? error.message : "unknown error",
+    );
+    return {};
+  }
+};
+
 const fetchSteamPlayer = async (steamId: string): Promise<SteamPlayer> => {
   const apiKey = Deno.env.get("STEAM_API_KEY");
   if (!apiKey) {
     console.warn("Steam profile enrichment skipped: STEAM_API_KEY is not configured");
-    return {};
+    return await fetchCommunityProfile(steamId);
   }
 
   try {
@@ -97,16 +137,16 @@ const fetchSteamPlayer = async (steamId: string): Promise<SteamPlayer> => {
     });
     if (!response.ok) {
       console.warn(`Steam profile enrichment returned HTTP ${response.status}`);
-      return {};
+      return await fetchCommunityProfile(steamId);
     }
     const body = await response.json();
-    return body?.response?.players?.[0] ?? {};
+    return body?.response?.players?.[0] ?? await fetchCommunityProfile(steamId);
   } catch (error) {
     console.warn(
       "Steam profile enrichment failed",
       error instanceof Error ? error.message : "unknown error",
     );
-    return {};
+    return await fetchCommunityProfile(steamId);
   }
 };
 
