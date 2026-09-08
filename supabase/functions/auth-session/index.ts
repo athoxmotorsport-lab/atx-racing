@@ -29,7 +29,7 @@ const publicDriver = async (driverId: string) => {
     points: summary.points + Number(result.points ?? 0),
   }), { races: 0, podiums: 0, points: 0 });
 
-  return { ...driver, ratings, results: allResults.slice(0, 10), stats };
+  return { ...driver, ratings, results: allResults, stats };
 };
 
 const exchangeCode = async (request: Request): Promise<Response> => {
