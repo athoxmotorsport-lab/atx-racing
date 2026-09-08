@@ -125,8 +125,10 @@ const finishLogin = async (url: URL): Promise<Response> => {
   if (exchangeError) throw exchangeError;
 
   const destination = new URL("profil-pilote.html", siteUrl());
-  destination.searchParams.set("steam", "success");
-  destination.searchParams.set("steam_code", exchangeCode);
+  destination.hash = new URLSearchParams({
+    steam: "success",
+    steam_code: exchangeCode,
+  }).toString();
   return redirect(destination.toString());
 };
 
