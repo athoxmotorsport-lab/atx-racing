@@ -13,7 +13,23 @@ const publicDriver = async (driverId: string) => {
     .select("circuit_key, performance_class, performance_score, safety_class, safety_score, calculated_at")
     .eq("driver_id", driverId).order("calculated_at", { ascending: false });
   if (ratingsError) throw ratingsError;
-  return { ...driver, ratings };
+
+  const { data: results, error: resultsError } = await supabase.from("results")
+    .select("status, finish_position, points, created_at, event:events(slug, title_fr, title_en, circuit_name, starts_at)")
+    .eq("driver_id", driverId)
+    .order("created_at", { ascending: false });
+  if (resultsError) throw resultsError;
+
+  const allResults = results ?? [];
+  const stats = allResults.reduce((summary, result) => ({
+    races: summary.races + 1,
+    podiums: summary.podiums + (
+      result.finish_position && result.finish_position <= 3 && result.status === "classified" ? 1 : 0
+    ),
+    points: summary.points + Number(result.points ?? 0),
+  }), { races: 0, podiums: 0, points: 0 });
+
+  return { ...driver, ratings, results: allResults.slice(0, 10), stats };
 };
 
 const exchangeCode = async (request: Request): Promise<Response> => {
