@@ -29,7 +29,13 @@ const publicDriver = async (driverId: string) => {
     points: summary.points + Number(result.points ?? 0),
   }), { races: 0, podiums: 0, points: 0 });
 
-  return { ...driver, ratings, results: allResults, stats };
+  const sortedResults = [...allResults].sort((first, second) => {
+    const firstEvent = Array.isArray(first.event) ? first.event[0] : first.event;
+    const secondEvent = Array.isArray(second.event) ? second.event[0] : second.event;
+    return Date.parse(secondEvent?.starts_at ?? "") - Date.parse(firstEvent?.starts_at ?? "");
+  });
+
+  return { ...driver, ratings, results: sortedResults, stats };
 };
 
 const exchangeCode = async (request: Request): Promise<Response> => {
