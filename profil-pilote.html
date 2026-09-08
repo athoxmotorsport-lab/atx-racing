@@ -1,22 +1,93 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Profil pilote et connexion Steam | ATX Racing</title>
-  <meta name="description" content="Découvrez le futur profil pilote ATX Racing : résultats, classements, catégorie de performance et niveau SAFE liés au Steam ID.">
-  <meta name="robots" content="index,follow"><meta name="theme-color" content="#050608">
-  <link rel="canonical" href="https://athoxmotorsport-lab.github.io/atx-racing/profil-pilote.html"><link rel="stylesheet" href="style.css">
+  <meta name="description" content="Connectez votre Steam ID à votre profil pilote ATX Racing pour retrouver vos résultats, votre catégorie de performance et votre niveau SAFE.">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#050608">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; connect-src https://twjpjzalyvbsdpbzhqln.supabase.co; img-src 'self' data: https://community.fastly.steamstatic.com https://avatars.fastly.steamstatic.com https://avatars.cloudflare.steamstatic.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self' https://steamcommunity.com; upgrade-insecure-requests">
+  <link rel="canonical" href="https://athoxmotorsport-lab.github.io/atx-racing/profil-pilote.html">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <aside class="side-nav" aria-label="Navigation principale"><div class="side-brand"><a class="brand" href="index.html">ATX <span>Racing</span></a><small>Event Division</small></div><nav class="side-links"><a href="index.html"><b>01</b><span data-fr="Accueil" data-en="Home">Accueil</span></a><a href="index.html#events"><b>02</b><span data-fr="Courses" data-en="Races">Courses</span></a><a href="index.html#formats"><b>03</b><span>Formats</span></a><a class="active" href="profil-pilote.html"><b>04</b><span data-fr="Profils" data-en="Profiles">Profils</span></a><a href="index.html#archives"><b>05</b><span data-fr="Archives" data-en="Archive">Archives</span></a></nav><div class="side-actions"><a class="steam-button" href="#steam-setup" aria-label="Sign in through Steam"><img src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam"></a><div class="side-tools"><small data-fr="Changer de langue" data-en="Change language">Changer de langue</small><button class="lang-switch" type="button" data-lang-switch><img src="assets/ui/flag-en.svg" alt="English"></button></div></div></aside>
+  <aside class="side-nav" aria-label="Navigation principale">
+    <div class="side-brand"><a class="brand" href="index.html">ATX <span>Racing</span></a><small>Event Division</small></div>
+    <nav class="side-links">
+      <a href="index.html"><b>01</b><span data-fr="Accueil" data-en="Home">Accueil</span></a>
+      <a href="index.html#events"><b>02</b><span data-fr="Courses" data-en="Races">Courses</span></a>
+      <a href="index.html#formats"><b>03</b><span>Formats</span></a>
+      <a class="active" href="profil-pilote.html"><b>04</b><span data-fr="Profils" data-en="Profiles">Profils</span></a>
+      <a href="index.html#archives"><b>05</b><span data-fr="Archives" data-en="Archive">Archives</span></a>
+    </nav>
+    <div class="side-actions">
+      <a class="steam-button" data-steam-login href="https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/auth-steam" aria-label="Sign in through Steam"><img src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam"></a>
+      <div class="side-tools"><small data-fr="Changer de langue" data-en="Change language">Changer de langue</small><button class="lang-switch" type="button" data-lang-switch><img src="assets/ui/flag-en.svg" alt="English"></button></div>
+    </div>
+  </aside>
+
   <main>
-    <section><div class="wrap profile-page-grid">
-      <div id="steam-setup"><div class="section-label" data-fr="Identité ATX Racing" data-en="ATX Racing identity">Identité ATX Racing</div><h1><span data-fr="Profil pilote" data-en="Driver profile">Profil pilote</span></h1><p class="hero-copy" data-fr="Un profil permanent lié à votre Steam ID pour rassembler vos engagements, résultats et statistiques sur les événements ATX Racing." data-en="A permanent profile linked to your Steam ID, bringing together your entries, results and statistics from ATX Racing events.">Un profil permanent lié à votre Steam ID pour rassembler vos engagements, résultats et statistiques sur les événements ATX Racing.</p><div class="actions"><span class="btn primary disabled" aria-disabled="true" data-fr="Connexion Steam · bientôt disponible" data-en="Steam sign-in · coming soon">Connexion Steam · bientôt disponible</span></div><div class="notice" data-fr="La page publique est prête, mais l'authentification ne sera activée qu'après la mise en place de l'API sécurisée. ATX Racing ne vous demandera jamais votre mot de passe Steam." data-en="The public page is ready, but authentication will only be enabled once the secure API is deployed. ATX Racing will never ask for your Steam password.">La page publique est prête, mais l'authentification ne sera activée qu'après la mise en place de l'API sécurisée. ATX Racing ne vous demandera jamais votre mot de passe Steam.</div></div>
-      <div class="profile-preview"><div class="profile-top"><div class="avatar">ATX</div><div><h3 data-fr="Votre profil" data-en="Your profile">Votre profil</h3><span>Steam ID · ATX Driver ID</span></div><div class="profile-rank">—</div></div><div class="profile-stats"><div><small data-fr="Courses" data-en="Races">Courses</small><strong>0</strong></div><div><small data-fr="Podiums" data-en="Podiums">Podiums</small><strong>0</strong></div><div><small data-fr="Points" data-en="Points">Points</small><strong>0</strong></div></div><div class="rank-badges"><span class="alien" data-fr="Performance · non classé" data-en="Performance · unranked">Performance · non classé</span><span class="gold" data-fr="SAFE · non classé" data-en="SAFE · unranked">SAFE · non classé</span></div></div>
-    </div></section>
-    <section><div class="wrap"><div class="section-label" data-fr="Fonctionnement" data-en="How it works">Fonctionnement</div><h2 data-fr="Une identité, tous vos résultats." data-en="One identity, all your results.">Une identité, tous vos résultats.</h2><div class="steps"><div class="step"><i>01</i><div><strong data-fr="Connexion Steam" data-en="Steam sign-in">Connexion Steam</strong><span data-fr="Steam confirme votre identité sans transmettre votre mot de passe à ATX Racing." data-en="Steam confirms your identity without sharing your password with ATX Racing.">Steam confirme votre identité sans transmettre votre mot de passe à ATX Racing.</span></div></div><div class="step"><i>02</i><div><strong data-fr="Association des résultats" data-en="Result matching">Association des résultats</strong><span data-fr="Votre Steam ID permet de rattacher automatiquement les résultats validés par la direction de course." data-en="Your Steam ID automatically links results validated by race control.">Votre Steam ID permet de rattacher automatiquement les résultats validés par la direction de course.</span></div></div><div class="step"><i>03</i><div><strong data-fr="Progression pilote" data-en="Driver progression">Progression pilote</strong><span data-fr="Le profil présentera vos classements, statistiques, meilleurs résultats et historique d'événements." data-en="Your profile will show standings, statistics, best results and event history.">Le profil présentera vos classements, statistiques, meilleurs résultats et historique d'événements.</span></div></div></div></div></section>
-    <section><div class="wrap"><div class="section-label" data-fr="Évaluation" data-en="Ratings">Évaluation</div><h2 data-fr="Performance et conduite propre." data-en="Performance and clean driving.">Performance et conduite propre.</h2><p class="intro" data-fr="La catégorie de performance évoluera entre Rookie, Pro, Élite et Alien. Le niveau SAFE — Bronze, Silver ou Gold — tiendra compte des données disponibles : tours invalidés, sorties de piste, cuts et pénalités validées par la direction de course, y compris les Drive Through et Stop &amp; Go." data-en="The performance category will progress through Rookie, Pro, Elite and Alien. The SAFE level — Bronze, Silver or Gold — will use the available data: invalid laps, off-track incidents, cuts and penalties validated by race control, including Drive Through and Stop &amp; Go penalties.">La catégorie de performance évoluera entre Rookie, Pro, Élite et Alien. Le niveau SAFE — Bronze, Silver ou Gold — tiendra compte des données disponibles : tours invalidés, sorties de piste, cuts et pénalités validées par la direction de course, y compris les Drive Through et Stop &amp; Go.</p></div></section>
+    <section>
+      <div class="wrap profile-page-grid">
+        <div id="steam-setup">
+          <div class="section-label" data-fr="Identité ATX Racing" data-en="ATX Racing identity">Identité ATX Racing</div>
+          <h1><span data-fr="Profil pilote" data-en="Driver profile">Profil pilote</span></h1>
+          <p class="hero-copy" data-fr="Un profil permanent lié à votre Steam ID pour rassembler vos engagements, résultats et statistiques sur les événements ATX Racing." data-en="A permanent profile linked to your Steam ID, bringing together your entries, results and statistics from ATX Racing events.">Un profil permanent lié à votre Steam ID pour rassembler vos engagements, résultats et statistiques sur les événements ATX Racing.</p>
+          <div class="profile-auth" data-auth-panel>
+            <p class="profile-auth-status" data-auth-status role="status" aria-live="polite" data-fr="Connectez-vous avec Steam pour afficher votre profil." data-en="Sign in with Steam to display your profile.">Connectez-vous avec Steam pour afficher votre profil.</p>
+            <div class="actions" data-login-actions>
+              <a class="steam-button profile-steam-button" data-steam-login href="https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/auth-steam" aria-label="Sign in through Steam"><img src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam"></a>
+            </div>
+            <div class="actions" data-session-actions hidden>
+              <button class="btn" type="button" data-logout data-fr="Se déconnecter" data-en="Sign out">Se déconnecter</button>
+            </div>
+          </div>
+          <div class="notice" data-fr="Votre mot de passe reste chez Steam : ATX Racing ne le voit jamais et ne vous le demandera jamais." data-en="Your password stays with Steam: ATX Racing never sees it and will never ask for it.">Votre mot de passe reste chez Steam : ATX Racing ne le voit jamais et ne vous le demandera jamais.</div>
+        </div>
+
+        <div class="profile-preview" data-driver-profile aria-busy="false">
+          <div class="profile-top">
+            <div class="avatar" data-profile-avatar>ATX</div>
+            <div><h3 data-profile-name data-fr="Votre profil" data-en="Your profile">Votre profil</h3><span data-profile-id>Steam ID · ATX Driver ID</span></div>
+            <div class="profile-rank" data-profile-rank>—</div>
+          </div>
+          <div class="profile-stats">
+            <div><small data-fr="Courses" data-en="Races">Courses</small><strong data-profile-races>0</strong></div>
+            <div><small data-fr="Podiums" data-en="Podiums">Podiums</small><strong data-profile-podiums>0</strong></div>
+            <div><small data-fr="Points" data-en="Points">Points</small><strong data-profile-points>0</strong></div>
+          </div>
+          <div class="rank-badges">
+            <span class="performance-badge" data-performance-badge data-tier="unranked" data-fr="Performance · non classé" data-en="Performance · unranked">Performance · non classé</span>
+            <span class="safe-badge" data-safe-badge data-tier="unranked" data-fr="SAFE · non classé" data-en="SAFE · unranked">SAFE · non classé</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="section-label" data-fr="Résultats personnels" data-en="Personal results">Résultats personnels</div>
+        <h2 data-fr="Votre historique ATX Racing." data-en="Your ATX Racing history.">Votre historique ATX Racing.</h2>
+        <div class="profile-results" data-profile-results>
+          <p class="empty-state" data-fr="Aucun résultat officiel n’est encore associé à ce profil." data-en="No official result is associated with this profile yet.">Aucun résultat officiel n’est encore associé à ce profil.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="section-label" data-fr="Fonctionnement" data-en="How it works">Fonctionnement</div>
+        <h2 data-fr="Une identité, tous vos résultats." data-en="One identity, all your results.">Une identité, tous vos résultats.</h2>
+        <div class="steps">
+          <div class="step"><i>01</i><div><strong data-fr="Connexion Steam" data-en="Steam sign-in">Connexion Steam</strong><span data-fr="Steam confirme votre identité sans transmettre votre mot de passe à ATX Racing." data-en="Steam confirms your identity without sharing your password with ATX Racing.">Steam confirme votre identité sans transmettre votre mot de passe à ATX Racing.</span></div></div>
+          <div class="step"><i>02</i><div><strong data-fr="Association des résultats" data-en="Result matching">Association des résultats</strong><span data-fr="Votre Steam ID permet de rattacher automatiquement les résultats validés par la direction de course." data-en="Your Steam ID automatically links results validated by race control.">Votre Steam ID permet de rattacher automatiquement les résultats validés par la direction de course.</span></div></div>
+          <div class="step"><i>03</i><div><strong data-fr="Progression pilote" data-en="Driver progression">Progression pilote</strong><span data-fr="Le profil présente vos classements, statistiques, meilleurs résultats et historique d’événements." data-en="Your profile shows your standings, statistics, best results and event history.">Le profil présente vos classements, statistiques, meilleurs résultats et historique d’événements.</span></div></div>
+        </div>
+      </div>
+    </section>
   </main>
+
   <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="https://www.twitch.tv/a_t_h_o_x" target="_blank" rel="noopener">Twitch</a><a href="https://www.youtube.com/@AthoxMotorsport" target="_blank" rel="noopener">YouTube</a><a href="https://www.tiktok.com/@athoxmotorsport" target="_blank" rel="noopener">TikTok</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
   <script src="main.js"></script>
 </body>
