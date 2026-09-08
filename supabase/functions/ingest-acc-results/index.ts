@@ -141,8 +141,8 @@ const lapTimeOrNull = (value?: number | null): number | null => {
 
 const performanceClass = (score: number): "alien" | "elite" | "pro" | "rookie" => {
   if (score <= 101.99) return "alien";
-  if (score <= 103.99) return "elite";
-  if (score <= 105.99) return "pro";
+  if (score <= 105.99) return "elite";
+  if (score <= 108.99) return "pro";
   return "rookie";
 };
 

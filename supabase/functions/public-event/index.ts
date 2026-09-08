@@ -16,6 +16,15 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);
   const slug = new URL(request.url).searchParams.get("slug") ?? "";
+  if (!slug) {
+    const supabase = adminClient();
+    const { data: events, error } = await supabase.from("events")
+      .select("slug, event_type, status, title_fr, title_en, circuit_name, starts_at, duration_minutes, max_drivers, simgrid_url, image_url")
+      .eq("is_public", true).not("image_url", "is", null).not("simgrid_url", "is", null)
+      .order("starts_at", { ascending: false }).limit(24);
+    if (error) return json({ error: "server_error" }, 500);
+    return json({ events: events ?? [] });
+  }
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return json({ error: "invalid_slug" }, 400);
 
   const supabase = adminClient();

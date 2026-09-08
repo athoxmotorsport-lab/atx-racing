@@ -15,7 +15,7 @@ const publicDriver = async (driverId: string) => {
   if (ratingsError) throw ratingsError;
 
   const { data: results, error: resultsError } = await supabase.from("results")
-    .select("status, finish_position, points, laps_completed, best_lap_ms, car_model_name, created_at, event:events(slug, title_fr, title_en, circuit_name, starts_at)")
+    .select("status, finish_position, points, laps_completed, best_lap_ms, car_model_name, created_at, event:events(slug, title_fr, title_en, circuit_name, circuit_key, starts_at)")
     .eq("driver_id", driverId)
     .order("created_at", { ascending: false });
   if (resultsError) throw resultsError;
@@ -35,7 +35,52 @@ const publicDriver = async (driverId: string) => {
     return Date.parse(secondEvent?.starts_at ?? "") - Date.parse(firstEvent?.starts_at ?? "");
   });
 
-  return { ...driver, ratings, results: sortedResults, stats };
+  const { data: roleRows, error: rolesError } = await supabase.from("driver_roles")
+    .select("role").eq("driver_id", driverId);
+  if (rolesError) throw rolesError;
+
+  const { data: lapRows, error: lapsError } = await supabase.from("results")
+    .select("driver_id, best_lap_ms, event:events(circuit_key, circuit_name)")
+    .not("best_lap_ms", "is", null).gt("best_lap_ms", 0);
+  if (lapsError) throw lapsError;
+
+  const references = new Map<string, { circuit_key: string; circuit_name: string; alien_best_lap_ms: number }>();
+  for (const row of lapRows ?? []) {
+    const event = Array.isArray(row.event) ? row.event[0] : row.event;
+    const lap = Number(row.best_lap_ms);
+    if (!event?.circuit_key || !Number.isFinite(lap) || lap <= 0) continue;
+    const current = references.get(event.circuit_key);
+    if (!current || lap < current.alien_best_lap_ms) {
+      references.set(event.circuit_key, {
+        circuit_key: event.circuit_key,
+        circuit_name: event.circuit_name,
+        alien_best_lap_ms: lap,
+      });
+    }
+  }
+
+  const personal = new Map<string, number>();
+  for (const result of allResults) {
+    const event = Array.isArray(result.event) ? result.event[0] : result.event;
+    const lap = Number(result.best_lap_ms);
+    if (!event?.circuit_key || !Number.isFinite(lap) || lap <= 0) continue;
+    const current = personal.get(event.circuit_key);
+    if (!current || lap < current) personal.set(event.circuit_key, lap);
+  }
+  const ratingByCircuit = new Map((ratings ?? []).map((rating) => [rating.circuit_key, rating]));
+  const circuits = [...references.values()].map((reference) => {
+    const personalBest = personal.get(reference.circuit_key) ?? null;
+    const rating = ratingByCircuit.get(reference.circuit_key);
+    return {
+      ...reference,
+      personal_best_lap_ms: personalBest,
+      pace_percent: personalBest ? personalBest / reference.alien_best_lap_ms * 100 : null,
+      performance_class: rating?.performance_class ?? null,
+      safety_class: rating?.safety_class ?? null,
+    };
+  });
+
+  return { ...driver, roles: (roleRows ?? []).map((row) => row.role), ratings, circuits, results: sortedResults, stats };
 };
 
 const exchangeCode = async (request: Request): Promise<Response> => {

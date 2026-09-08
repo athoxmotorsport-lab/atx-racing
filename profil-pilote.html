@@ -77,6 +77,15 @@
 
     <section>
       <div class="wrap">
+        <div class="section-label" data-fr="Références circuits" data-en="Circuit references">Références circuits</div>
+        <h2 data-fr="Les 25 circuits ACC." data-en="The 25 ACC circuits.">Les 25 circuits ACC.</h2>
+        <p class="intro" data-fr="Sélectionnez un circuit pour comparer votre meilleur tour à la référence Alien et consulter vos niveaux Performance et SAFE." data-en="Select a circuit to compare your personal best with the Alien reference and view your Performance and SAFE levels.">Sélectionnez un circuit pour comparer votre meilleur tour à la référence Alien et consulter vos niveaux Performance et SAFE.</p>
+        <div class="circuits-grid" data-circuit-grid></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
         <div class="section-label" data-fr="Fonctionnement" data-en="How it works">Fonctionnement</div>
         <h2 data-fr="Une identité, tous vos résultats." data-en="One identity, all your results.">Une identité, tous vos résultats.</h2>
         <div class="steps">
@@ -87,6 +96,19 @@
       </div>
     </section>
   </main>
+
+  <dialog class="circuit-dialog" data-circuit-dialog>
+    <div class="circuit-dialog-inner">
+      <header><div><div class="section-label" data-fr="Comparatif pilote" data-en="Driver comparison">Comparatif pilote</div><h3 data-dialog-circuit>—</h3></div><button class="dialog-close" type="button" data-dialog-close aria-label="Fermer">×</button></header>
+      <div class="circuit-metrics">
+        <div><small data-fr="Référence Alien" data-en="Alien reference">Référence Alien</small><strong data-dialog-reference>—</strong></div>
+        <div><small data-fr="Votre meilleur tour" data-en="Your personal best">Votre meilleur tour</small><strong data-dialog-personal>—</strong></div>
+        <div><small data-fr="Indice de rythme" data-en="Pace index">Indice de rythme</small><strong data-dialog-pace>—</strong></div>
+        <div><small>Performance</small><strong data-dialog-performance>—</strong></div>
+        <div><small>SAFE</small><strong data-dialog-safe>—</strong></div>
+      </div>
+    </div>
+  </dialog>
 
   <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="https://www.twitch.tv/a_t_h_o_x" target="_blank" rel="noopener">Twitch</a><a href="https://www.youtube.com/@AthoxMotorsport" target="_blank" rel="noopener">YouTube</a><a href="https://www.tiktok.com/@athoxmotorsport" target="_blank" rel="noopener">TikTok</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
   <script src="main.js"></script>

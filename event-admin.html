@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Publier un événement | ATX Racing</title>
+  <meta name="description" content="Administration des événements ATX Racing.">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#07101a">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; connect-src https://twjpjzalyvbsdpbzhqln.supabase.co; img-src 'self' data: https://community.fastly.steamstatic.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self' https://steamcommunity.com; upgrade-insecure-requests">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="side-nav" aria-label="Navigation principale">
+    <div class="side-brand"><a class="brand" href="index.html">ATX <span>Racing</span></a><small>Event Division</small></div>
+    <nav class="side-links">
+      <a href="index.html"><b>01</b><span data-fr="Accueil" data-en="Home">Accueil</span></a>
+      <a class="active" href="index.html#events"><b>02</b><span data-fr="Calendrier" data-en="Calendar">Calendrier</span></a>
+      <a href="index.html#formats"><b>03</b><span>Formats</span></a>
+      <a href="profil-pilote.html"><b>04</b><span data-fr="Profils" data-en="Profiles">Profils</span></a>
+      <a href="index.html#archives"><b>05</b><span data-fr="Archives" data-en="Archive">Archives</span></a>
+    </nav>
+    <div class="side-actions"><a class="steam-button" data-steam-login href="https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/auth-steam" aria-label="Sign in through Steam"><img src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam"></a><div class="side-tools"></div></div>
+  </aside>
+
+  <main>
+    <section>
+      <div class="wrap admin-shell">
+        <div class="section-label" data-fr="Administration" data-en="Administration">Administration</div>
+        <h1><span data-fr="Nouvel événement" data-en="New event">Nouvel événement</span></h1>
+        <p class="hero-copy" data-fr="Ajoutez l’affiche, le titre et le lien SimGrid. La course sera enregistrée dans Supabase et pourra apparaître automatiquement dans le calendrier." data-en="Add the poster, title and SimGrid link. The race will be stored in Supabase and can appear automatically in the calendar.">Ajoutez l’affiche, le titre et le lien SimGrid. La course sera enregistrée dans Supabase et pourra apparaître automatiquement dans le calendrier.</p>
+        <p class="form-status" data-form-status role="status" aria-live="polite" data-fr="Vérification de votre session…" data-en="Checking your session…">Vérification de votre session…</p>
+        <form class="admin-form" data-event-form hidden>
+          <div class="form-field"><label for="title-fr">Titre français</label><input id="title-fr" name="titleFr" maxlength="96" required></div>
+          <div class="form-field"><label for="title-en">English title</label><input id="title-en" name="titleEn" maxlength="96" required></div>
+          <div class="form-field"><label for="circuit" data-fr="Circuit" data-en="Circuit">Circuit</label><input id="circuit" name="circuit" maxlength="64" required></div>
+          <div class="form-field"><label for="starts-at" data-fr="Date et heure" data-en="Date and time">Date et heure</label><input id="starts-at" name="startsAt" type="datetime-local" required></div>
+          <div class="form-field"><label for="event-type" data-fr="Format" data-en="Format">Format</label><select id="event-type" name="eventType"><option value="daily_race">Daily Race</option><option value="sprint">Sprint</option><option value="endurance">Endurance</option><option value="championship">Championship</option><option value="special_event">Special Event</option></select></div>
+          <div class="form-field"><label for="duration" data-fr="Durée de course (minutes)" data-en="Race duration (minutes)">Durée de course (minutes)</label><input id="duration" name="durationMinutes" type="number" min="1" max="1440" value="60" required></div>
+          <div class="form-field"><label for="max-drivers" data-fr="Pilotes maximum" data-en="Maximum drivers">Pilotes maximum</label><input id="max-drivers" name="maxDrivers" type="number" min="1" max="100" value="22" required></div>
+          <div class="form-field"><label for="simgrid">Lien SimGrid</label><input id="simgrid" name="simgridUrl" type="url" maxlength="300" placeholder="https://www.thesimgrid.com/..." required></div>
+          <div class="form-field full"><label for="image" data-fr="Affiche de l’événement (JPG, PNG ou WebP, 5 Mo max.)" data-en="Event poster (JPG, PNG or WebP, 5 MB max.)">Affiche de l’événement (JPG, PNG ou WebP, 5 Mo max.)</label><input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp" required></div>
+          <div class="form-field full"><button class="btn primary" type="submit" data-fr="Valider et publier" data-en="Validate and publish">Valider et publier</button></div>
+        </form>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
+  <script src="main.js"></script>
+</body>
+</html>
