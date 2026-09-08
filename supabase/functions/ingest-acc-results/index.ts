@@ -24,6 +24,8 @@ type ImportPayload = {
   modeTest?: boolean;
   pisteMouillee?: boolean;
   nomServeur?: string | null;
+  cleCourse?: string | null;
+  debutCourse?: string | null;
   resultats: DriverPayload[];
   tours?: Array<{
     steamId?: string | null;
@@ -42,6 +44,8 @@ type ImportPayload = {
     apresCourse?: boolean;
   }>;
 };
+
+const PROCESSOR_VERSION = "acc-v2";
 
 type EventRow = {
   id: string;
@@ -102,6 +106,11 @@ const pointsForPosition = (position?: number | null): number => {
   return position && position >= 1 ? points[position - 1] ?? 0 : 0;
 };
 
+const positiveOrNull = (value?: number | null): number | null => {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? Math.round(number) : null;
+};
+
 const performanceClass = (score: number): "alien" | "elite" | "pro" | "rookie" => {
   if (score <= 101.99) return "alien";
   if (score <= 103.99) return "elite";
@@ -157,25 +166,43 @@ const resolveEvent = async (payload: ImportPayload): Promise<EventRow> => {
     ? payload.dateSession
     : new Date().toISOString().slice(0, 10);
   const key = circuitKey(payload.circuit);
+  const sourceEventKey = payload.cleCourse?.trim() ?? "";
+  if (sourceEventKey && !/^[a-z0-9][a-z0-9_-]{7,119}$/.test(sourceEventKey)) {
+    throw new Error("Invalid ACC race key");
+  }
+  if (sourceEventKey) {
+    const { data: byKey, error: keyError } = await supabase.from("events").select("*")
+      .eq("source_event_key", sourceEventKey).maybeSingle();
+    if (keyError) throw keyError;
+    if (byKey) return byKey as EventRow;
+  }
   const nextDate = new Date(`${date}T00:00:00Z`);
   nextDate.setUTCDate(nextDate.getUTCDate() + 1);
-  const { data: existing, error } = await supabase.from("events").select("*")
+  const { data: sameDay, error } = await supabase.from("events").select("*")
     .eq("circuit_key", key)
     .gte("starts_at", `${date}T00:00:00Z`)
     .lt("starts_at", nextDate.toISOString())
-    .order("starts_at", { ascending: true }).limit(1).maybeSingle();
+    .order("starts_at", { ascending: true });
   if (error) throw error;
+  const existing = sourceEventKey
+    ? (sameDay ?? []).find((event) => !event.source_event_key && event.status !== "completed")
+    : (sameDay ?? [])[0];
   if (existing) {
     const serverName = payload.nomServeur?.trim().slice(0, 160);
-    if (serverName && (
+    const startsAt = payload.debutCourse && !Number.isNaN(Date.parse(payload.debutCourse))
+      ? new Date(payload.debutCourse).toISOString()
+      : existing.starts_at;
+    if ((serverName && (
       existing.server_name !== serverName
       || existing.title_fr !== serverName
       || existing.title_en !== serverName
-    )) {
+    )) || (sourceEventKey && existing.source_event_key !== sourceEventKey)) {
       const { data: updated, error: updateError } = await supabase.from("events").update({
         server_name: serverName,
-        title_fr: serverName,
-        title_en: serverName,
+        title_fr: serverName || existing.title_fr,
+        title_en: serverName || existing.title_en,
+        starts_at: startsAt,
+        source_event_key: sourceEventKey || null,
       }).eq("id", existing.id).select("*").single();
       if (updateError) throw updateError;
       return updated as EventRow;
@@ -183,11 +210,13 @@ const resolveEvent = async (payload: ImportPayload): Promise<EventRow> => {
     return existing as EventRow;
   }
 
-  const serverName = payload.nomServeur?.trim();
-  const baseTitle = serverName && !serverName.toLowerCase().includes(payload.circuit.toLowerCase())
-    ? `${serverName} · ${payload.circuit}`
-    : serverName || `ATX Racing · ${payload.circuit}`;
-  const slug = `${date}-${slugPart(payload.circuit)}-${payload.empreinte.slice(0, 8)}`;
+  const serverName = payload.nomServeur?.trim().slice(0, 160);
+  const baseTitle = serverName || `ATX Racing · ${payload.circuit}`;
+  const slugSuffix = sourceEventKey ? slugPart(sourceEventKey).slice(-24) : payload.empreinte.slice(0, 8);
+  const slug = `${date}-${slugPart(payload.circuit)}-${slugSuffix}`;
+  const startsAt = payload.debutCourse && !Number.isNaN(Date.parse(payload.debutCourse))
+    ? new Date(payload.debutCourse).toISOString()
+    : `${date}T20:30:00+02:00`;
   const { data: created, error: createError } = await supabase.from("events").insert({
     slug,
     event_type: "special_event",
@@ -197,11 +226,12 @@ const resolveEvent = async (payload: ImportPayload): Promise<EventRow> => {
     game: "Assetto Corsa Competizione",
     circuit_name: payload.circuit,
     circuit_key: key,
-    starts_at: `${date}T20:30:00+02:00`,
+    starts_at: startsAt,
     timezone: "Europe/Brussels",
     duration_minutes: 60,
     max_drivers: 22,
     server_name: serverName || null,
+    source_event_key: sourceEventKey || null,
     is_public: true,
     is_official: !payload.modeTest,
     published_at: new Date().toISOString(),
@@ -220,8 +250,10 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
   }
 
   const { data: previous } = await supabase.from("ingestion_batches")
-    .select("id, status").eq("payload_checksum", payload.empreinte).maybeSingle();
-  if (previous?.status === "processed") return { duplicate: true, batch_id: previous.id };
+    .select("id, status, processor_version").eq("payload_checksum", payload.empreinte).maybeSingle();
+  if (previous?.status === "processed" && previous.processor_version === PROCESSOR_VERSION) {
+    return { duplicate: true, batch_id: previous.id };
+  }
 
   let batchId = previous?.id as string | undefined;
   if (!batchId) {
@@ -229,12 +261,17 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
       source: "atx-racing-collector",
       external_reference: payload.nomFichier,
       payload_checksum: payload.empreinte,
+      processor_version: PROCESSOR_VERSION,
       status: "pending",
     }).select("id").single();
     if (error) throw error;
     batchId = batch.id;
   } else {
-    await supabase.from("ingestion_batches").update({ status: "pending", error_summary: null }).eq("id", batchId);
+    await supabase.from("ingestion_batches").update({
+      status: "pending",
+      processor_version: PROCESSOR_VERSION,
+      error_summary: null,
+    }).eq("id", batchId);
   }
 
   try {
@@ -277,11 +314,11 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
         driver_id: driverId,
         position: result.position ?? null,
         laps_completed: result.tours ?? 0,
-        best_lap_ms: result.meilleurTourMs ?? null,
+        best_lap_ms: positiveOrNull(result.meilleurTourMs),
         best_split_1_ms: result.secteurs?.[0] ?? null,
         best_split_2_ms: result.secteurs?.[1] ?? null,
         best_split_3_ms: result.secteurs?.[2] ?? null,
-        total_time_ms: result.tempsTotalMs ?? null,
+        total_time_ms: positiveOrNull(result.tempsTotalMs),
         car_model_id: result.modeleVoiture ?? null,
         car_model_name: result.nomVoiture ?? null,
         race_number: result.numeroVoiture ?? null,
@@ -334,6 +371,11 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
     }
 
     if (payload.typeSession === "R") {
+      const { error: clearResultsError } = await supabase.from("results").delete().eq("event_id", event.id);
+      if (clearResultsError) throw clearResultsError;
+      const { error: clearSafetyError } = await supabase.from("safety_stats").delete().eq("event_id", event.id);
+      if (clearSafetyError) throw clearSafetyError;
+
       const { data: qualifyingSession } = await supabase.from("acc_sessions").select("id")
         .eq("event_id", event.id).eq("session_type", "Q")
         .order("created_at", { ascending: false }).limit(1).maybeSingle();
@@ -359,8 +401,8 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
           start_position: qualifyingPositions.get(driverId) ?? null,
           finish_position: result.position ?? null,
           laps_completed: result.tours ?? 0,
-          best_lap_ms: result.meilleurTourMs ?? null,
-          total_time_ms: result.tempsTotalMs ?? null,
+          best_lap_ms: positiveOrNull(result.meilleurTourMs),
+          total_time_ms: positiveOrNull(result.tempsTotalMs),
           points: classified ? pointsForPosition(result.position) : 0,
           imported_at: new Date().toISOString(),
           car_model_id: result.modeleVoiture ?? null,
@@ -471,6 +513,9 @@ Deno.serve(async (request) => {
     return json(await ingest(body.importation, body.rawJson));
   } catch (error) {
     console.error("ACC ingestion failed", error instanceof Error ? error.message : "unknown error");
-    return json({ error: "ingestion_failed" }, 500);
+    return json({
+      error: "ingestion_failed",
+      detail: error instanceof Error ? error.message.slice(0, 500) : "Unknown import error",
+    }, 500);
   }
 });
