@@ -36,10 +36,77 @@
     observedSections.forEach(section => observer.observe(section));
   }
 
+  const apiBase = 'https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1';
+  const formatLap = value => {
+    const milliseconds = Number(value);
+    if (!Number.isFinite(milliseconds) || milliseconds <= 0) return '—';
+    const minutes = Math.floor(milliseconds / 60000);
+    const seconds = Math.floor((milliseconds % 60000) / 1000);
+    const remainder = Math.floor(milliseconds % 1000);
+    return `${minutes}:${String(seconds).padStart(2, '0')}.${String(remainder).padStart(3, '0')}`;
+  };
+
+  const eventView = document.querySelector('[data-public-event]');
+  if (eventView) {
+    const eventStatus = eventView.querySelector('[data-event-status]');
+    const renderPublicEvent = payload => {
+      const event = payload.event || {};
+      const title = eventView.querySelector('[data-event-title]');
+      title.dataset.fr = event.title_fr || event.title_en || 'Résultat ATX Racing';
+      title.dataset.en = event.title_en || event.title_fr || 'ATX Racing result';
+      eventView.querySelector('[data-event-circuit]').textContent = event.circuit_name || '—';
+      const date = eventView.querySelector('[data-event-date]');
+      if (event.starts_at) {
+        date.dataset.fr = new Intl.DateTimeFormat('fr-BE', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(new Date(event.starts_at));
+        date.dataset.en = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(new Date(event.starts_at));
+      } else {
+        date.dataset.fr = '—';
+        date.dataset.en = '—';
+      }
+      const body = eventView.querySelector('[data-event-results]');
+      body.replaceChildren();
+      (payload.results || []).forEach(result => {
+        const row = document.createElement('tr');
+        const driver = Array.isArray(result.driver) ? result.driver[0] : result.driver;
+        const values = [
+          result.finish_position ? `P${result.finish_position}` : String(result.status || '—').toUpperCase(),
+          driver?.display_name || 'ACC Driver',
+          result.car_model_name || '—',
+          String(result.laps_completed ?? 0),
+          formatLap(result.best_lap_ms),
+          Number(result.points || 0).toLocaleString(language === 'fr' ? 'fr-BE' : 'en-GB'),
+        ];
+        values.forEach((value, index) => {
+          const cell = document.createElement(index === 1 ? 'th' : 'td');
+          if (index === 1) cell.scope = 'row';
+          cell.textContent = value;
+          row.append(cell);
+        });
+        body.append(row);
+      });
+      eventStatus.hidden = true;
+      applyLanguage(language);
+    };
+    const slug = new URLSearchParams(location.search).get('event') || eventView.dataset.publicEvent;
+    if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug || '')) {
+      fetch(`${apiBase}/public-event?slug=${encodeURIComponent(slug)}`)
+        .then(response => response.ok ? response.json() : Promise.reject(new Error('event_load_failed')))
+        .then(renderPublicEvent)
+        .catch(() => {
+          eventStatus.dataset.fr = 'Le classement officiel n’est pas encore disponible.';
+          eventStatus.dataset.en = 'The official standings are not available yet.';
+          applyLanguage(language);
+        });
+    } else {
+      eventStatus.dataset.fr = 'Événement introuvable.';
+      eventStatus.dataset.en = 'Event not found.';
+      applyLanguage(language);
+    }
+  }
+
   const profile = document.querySelector('[data-driver-profile]');
   if (!profile) return;
 
-  const apiBase = 'https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1';
   const sessionKey = 'atx-racing-session';
   const status = document.querySelector('[data-auth-status]');
   const loginActions = document.querySelector('[data-login-actions]');
@@ -64,6 +131,7 @@
     profile.querySelector('[data-profile-races]').textContent = '0';
     profile.querySelector('[data-profile-podiums]').textContent = '0';
     profile.querySelector('[data-profile-points]').textContent = '0';
+    profile.dataset.tier = 'unranked';
     const avatar = profile.querySelector('[data-profile-avatar]');
     avatar.replaceChildren(document.createTextNode('ATX'));
     for (const badge of profile.querySelectorAll('[data-tier]')) badge.dataset.tier = 'unranked';
@@ -82,15 +150,18 @@
     container.replaceChildren();
     results.forEach(result => {
       const event = result.event || {};
-      const row = document.createElement('article');
+      const row = document.createElement('a');
       row.className = 'profile-result-row';
+      row.href = `course.html?event=${encodeURIComponent(event.slug || '')}`;
       const title = document.createElement('strong');
-      title.textContent = language === 'fr'
-        ? (event.title_fr || event.title_en || 'Événement ATX Racing')
-        : (event.title_en || event.title_fr || 'ATX Racing event');
+      title.dataset.fr = event.title_fr || event.title_en || 'Événement ATX Racing';
+      title.dataset.en = event.title_en || event.title_fr || 'ATX Racing event';
       const details = document.createElement('span');
       const position = result.finish_position ? `P${result.finish_position}` : String(result.status || '—').toUpperCase();
-      details.textContent = `${position} · ${Number(result.points || 0).toLocaleString(language === 'fr' ? 'fr-BE' : 'en-GB')} pts`;
+      const pointsFr = Number(result.points || 0).toLocaleString('fr-BE');
+      const pointsEn = Number(result.points || 0).toLocaleString('en-GB');
+      details.dataset.fr = `${position} · ${pointsFr} pts · ${result.laps_completed || 0} tours · ${formatLap(result.best_lap_ms)}`;
+      details.dataset.en = `${position} · ${pointsEn} pts · ${result.laps_completed || 0} laps · ${formatLap(result.best_lap_ms)}`;
       row.append(title, details);
       container.append(row);
     });
@@ -125,6 +196,7 @@
 
     const performance = profile.querySelector('[data-performance-badge]');
     const performanceTier = rating?.performance_class || 'unranked';
+    profile.dataset.tier = performanceTier;
     performance.dataset.tier = performanceTier;
     performance.dataset.fr = rating ? `Performance · ${performanceTier}` : 'Performance · non classé';
     performance.dataset.en = rating ? `Performance · ${performanceTier}` : 'Performance · unranked';
