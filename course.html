@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Classement de course | ATX Racing</title>
+  <meta name="description" content="Classement officiel complet d’un événement ATX Racing sur Assetto Corsa Competizione.">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#050608">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; connect-src https://twjpjzalyvbsdpbzhqln.supabase.co; img-src 'self' data: https://community.fastly.steamstatic.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self' https://steamcommunity.com; upgrade-insecure-requests">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="side-nav" aria-label="Navigation principale">
+    <div class="side-brand"><a class="brand" href="index.html">ATX <span>Racing</span></a><small>Event Division</small></div>
+    <nav class="side-links">
+      <a href="index.html"><b>01</b><span data-fr="Accueil" data-en="Home">Accueil</span></a>
+      <a class="active" href="index.html#events"><b>02</b><span data-fr="Courses" data-en="Races">Courses</span></a>
+      <a href="index.html#formats"><b>03</b><span>Formats</span></a>
+      <a href="profil-pilote.html"><b>04</b><span data-fr="Profils" data-en="Profiles">Profils</span></a>
+      <a href="index.html#archives"><b>05</b><span data-fr="Archives" data-en="Archive">Archives</span></a>
+    </nav>
+    <div class="side-actions">
+      <a class="steam-button" href="https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/auth-steam" aria-label="Sign in through Steam"><img src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam"></a>
+      <div class="side-tools"><small data-fr="Changer de langue" data-en="Change language">Changer de langue</small><button class="lang-switch" type="button" data-lang-switch><img src="assets/ui/flag-en.svg" alt="English"></button></div>
+    </div>
+  </aside>
+  <main data-public-event>
+    <section>
+      <div class="wrap">
+        <div class="section-label" data-fr="Classement officiel" data-en="Official standings">Classement officiel</div>
+        <h1 data-event-title data-fr="Résultat ATX Racing" data-en="ATX Racing result">Résultat ATX Racing</h1>
+        <div class="event-result-meta"><span data-event-circuit>—</span><span data-event-date>—</span></div>
+        <p class="empty-state" data-event-status data-fr="Chargement du classement…" data-en="Loading standings…">Chargement du classement…</p>
+        <div class="results-table-wrap">
+          <table class="results-table">
+            <thead><tr><th data-fr="Place" data-en="Pos.">Place</th><th data-fr="Pilote" data-en="Driver">Pilote</th><th data-fr="Voiture" data-en="Car">Voiture</th><th data-fr="Tours" data-en="Laps">Tours</th><th data-fr="Meilleur tour" data-en="Best lap">Meilleur tour</th><th>Points</th></tr></thead>
+            <tbody data-event-results></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
+  <script src="main.js"></script>
+</body>
+</html>
