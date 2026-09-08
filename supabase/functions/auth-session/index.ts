@@ -15,7 +15,7 @@ const publicDriver = async (driverId: string) => {
   if (ratingsError) throw ratingsError;
 
   const { data: results, error: resultsError } = await supabase.from("results")
-    .select("status, finish_position, points, created_at, event:events(slug, title_fr, title_en, circuit_name, starts_at)")
+    .select("status, finish_position, points, laps_completed, best_lap_ms, car_model_name, created_at, event:events(slug, title_fr, title_en, circuit_name, starts_at)")
     .eq("driver_id", driverId)
     .order("created_at", { ascending: false });
   if (resultsError) throw resultsError;
