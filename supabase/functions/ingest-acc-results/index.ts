@@ -64,6 +64,24 @@ const json = (body: unknown, status = 200): Response => new Response(JSON.string
   },
 });
 
+const errorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    const parts = [record.message, record.details, record.hint, record.code]
+      .filter((value) => typeof value === "string" && value.trim())
+      .map((value) => String(value).trim());
+    if (parts.length) return [...new Set(parts)].join(" · ");
+    try {
+      const serialized = JSON.stringify(record);
+      if (serialized && serialized !== "{}") return serialized;
+    } catch {
+      // Fall through to the generic message.
+    }
+  }
+  return String(error || "Unknown import error");
+};
+
 const sha256 = async (value: string): Promise<string> => {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -490,7 +508,7 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
   } catch (error) {
     await supabase.from("ingestion_batches").update({
       status: "failed",
-      error_summary: error instanceof Error ? error.message.slice(0, 500) : "Unknown import error",
+      error_summary: errorMessage(error).slice(0, 500),
       processed_at: new Date().toISOString(),
     }).eq("id", batchId);
     throw error;
@@ -512,10 +530,11 @@ Deno.serve(async (request) => {
     }
     return json(await ingest(body.importation, body.rawJson));
   } catch (error) {
-    console.error("ACC ingestion failed", error instanceof Error ? error.message : "unknown error");
+    const detail = errorMessage(error).slice(0, 500);
+    console.error("ACC ingestion failed", detail);
     return json({
       error: "ingestion_failed",
-      detail: error instanceof Error ? error.message.slice(0, 500) : "Unknown import error",
+      detail,
     }, 500);
   }
 });
