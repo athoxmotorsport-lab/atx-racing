@@ -434,3 +434,9 @@ verify_jwt = false
 
 [functions.public-leaderboard]
 verify_jwt = false
+
+[functions.manage-profile]
+verify_jwt = false
+
+[functions.public-driver]
+verify_jwt = false

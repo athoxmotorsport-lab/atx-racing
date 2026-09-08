@@ -72,12 +72,39 @@
     return isAdmin;
   };
 
+  const revealHeaderProfile = driver => {
+    const actions = document.querySelector('.utility-actions');
+    if (!actions || !driver?.id) return;
+    let link = actions.querySelector('[data-header-profile]');
+    if (!link) {
+      link = document.createElement('a');
+      link.className = 'header-profile';
+      link.dataset.headerProfile = '';
+      link.href = `${assetPrefix}profil-pilote.html`;
+      const tools = actions.querySelector('.side-tools');
+      actions.insertBefore(link, tools || null);
+    }
+    link.replaceChildren();
+    const avatar = document.createElement('span');
+    if (driver.avatar_url) {
+      const image = document.createElement('img');
+      image.src = driver.avatar_url;
+      image.alt = '';
+      image.referrerPolicy = 'no-referrer';
+      avatar.append(image);
+    } else avatar.textContent = String(driver.display_name || 'AT').slice(0, 2).toUpperCase();
+    const name = document.createElement('strong');
+    name.textContent = driver.display_name || 'ATX Driver';
+    link.append(avatar, name);
+  };
+
   const checkAdminSession = async () => {
     const token = sessionStorage.getItem(sessionKey);
     if (!token) return null;
     try {
       const payload = await requestSession({ headers: { Authorization: `Bearer ${token}` } });
       revealAdminTools(payload.driver);
+      revealHeaderProfile(payload.driver);
       return payload;
     } catch {
       sessionStorage.removeItem(sessionKey);
@@ -92,6 +119,19 @@
     const remainder = Math.floor(milliseconds % 1000);
     return `${minutes}:${String(seconds).padStart(2, '0')}.${String(remainder).padStart(3, '0')}`;
   };
+  const tierProgress = (tier, score) => {
+    if (!Number.isFinite(score)) return 0;
+    if (tier === 'alien') return 100;
+    if (tier === 'elite') return Math.max(0, Math.min(100, (106 - score) / 4.01 * 100));
+    if (tier === 'pro') return Math.max(0, Math.min(100, (109 - score) / 3.01 * 100));
+    return Math.max(0, Math.min(100, (115 - Math.min(score, 115)) / 6.01 * 100));
+  };
+  const nextTier = tier => ({
+    rookie: ['Pro · 108.99%', 'Pro · 108.99%'],
+    pro: ['Elite · 105.99%', 'Elite · 105.99%'],
+    elite: ['Alien · 101.99%', 'Alien · 101.99%'],
+    alien: ['Niveau maximal', 'Top level'],
+  }[tier] || ['Premiers chronos requis', 'First lap times required']);
 
   const eventView = document.querySelector('[data-public-event]');
   if (eventView) {
@@ -225,19 +265,6 @@
   if (leaderboard) {
     const leaderboardStatus = document.querySelector('[data-leaderboard-status]');
     const leaderboardBody = document.querySelector('[data-leaderboard-body]');
-    const tierProgress = (tier, score) => {
-      if (!Number.isFinite(score)) return 0;
-      if (tier === 'alien') return 100;
-      if (tier === 'elite') return Math.max(0, Math.min(100, (106 - score) / 4.01 * 100));
-      if (tier === 'pro') return Math.max(0, Math.min(100, (109 - score) / 3.01 * 100));
-      return Math.max(0, Math.min(100, (115 - Math.min(score, 115)) / 6.01 * 100));
-    };
-    const nextTier = tier => ({
-      rookie: ['Pro · 108.99%', 'Pro · 108.99%'],
-      pro: ['Elite · 105.99%', 'Elite · 105.99%'],
-      elite: ['Alien · 101.99%', 'Alien · 101.99%'],
-      alien: ['Niveau maximal', 'Top level'],
-    }[tier] || ['Premiers chronos requis', 'First lap times required']);
     fetch(`${apiBase}/public-leaderboard`)
       .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed')))
       .then(payload => {
@@ -260,8 +287,12 @@
             image.referrerPolicy = 'no-referrer';
             avatar.append(image);
           } else avatar.textContent = String(driver.display_name || 'AT').slice(0, 2).toUpperCase();
-          const driverName = document.createElement('strong');
+          const driverName = document.createElement(driver.profile_id ? 'a' : 'strong');
           driverName.textContent = driver.display_name || 'ACC Driver';
+          if (driver.profile_id) {
+            driverName.href = `profil-pilote.html?driver=${encodeURIComponent(driver.profile_id)}`;
+            driverName.className = 'driver-profile-link';
+          }
           identityBox.append(avatar, driverName);
           identity.append(identityBox);
           const numericCell = value => {
@@ -313,6 +344,82 @@
         });
         leaderboard.hidden = false;
         leaderboardStatus.hidden = true;
+        const circuitGrid = document.querySelector('[data-ranking-circuits]');
+        const circuitBody = document.querySelector('[data-circuit-ranking-body]');
+        const circuitTitle = document.querySelector('[data-circuit-ranking-title]');
+        const circuitReference = document.querySelector('[data-circuit-reference]');
+        const driverSelect = document.querySelector('[data-driver-ranking-select]');
+        const driverGrid = document.querySelector('[data-driver-circuit-grid]');
+        const profileLink = item => item.profile_id ? `profil-pilote.html?driver=${encodeURIComponent(item.profile_id)}` : '';
+        const renderCircuit = circuit => {
+          if (!circuit || !circuitBody) return;
+          circuitTitle.textContent = circuit.circuit_name;
+          circuitReference.textContent = circuit.reference_lap_ms
+            ? `${formatLap(circuit.reference_lap_ms)} · ${circuit.reference_driver || '—'}` : '—';
+          circuitBody.replaceChildren();
+          (circuit.drivers || []).forEach((driver, index) => {
+            const row = document.createElement('tr');
+            row.classList.toggle('no-time', !driver.best_lap_ms);
+            const cells = [driver.best_lap_ms ? String(index + 1) : '—', driver.display_name, formatLap(driver.best_lap_ms),
+              driver.pace_percent ? `${Number(driver.pace_percent).toFixed(2)}%` : '—', String(driver.performance_class || 'unranked').toUpperCase()];
+            cells.forEach((value, cellIndex) => {
+              const cell = document.createElement(cellIndex === 1 ? 'th' : 'td');
+              if (cellIndex === 1) {
+                cell.scope = 'row';
+                const href = profileLink(driver);
+                if (href) { const a = document.createElement('a'); a.href = href; a.textContent = value; a.className = 'driver-profile-link'; cell.append(a); }
+                else cell.textContent = value;
+              } else cell.textContent = value;
+              row.append(cell);
+            });
+            circuitBody.append(row);
+          });
+        };
+        if (circuitGrid) {
+          circuitGrid.replaceChildren();
+          (payload.circuits || []).forEach((circuit, index) => {
+            const button = document.createElement('button');
+            button.type = 'button'; button.className = 'circuit-card ranking-circuit-card';
+            const mark = circuit.circuit_name.split(/\s+/).map(part => part[0]).join('').slice(0, 3).toUpperCase();
+            button.innerHTML = `<span class="circuit-mark">${mark}</span><strong></strong><small></small>`;
+            button.querySelector('strong').textContent = circuit.circuit_name;
+            button.querySelector('small').textContent = circuit.reference_lap_ms ? `${formatLap(circuit.reference_lap_ms)} · ${circuit.reference_driver || '—'}` : (language === 'fr' ? 'Aucun chrono' : 'No lap time');
+            button.addEventListener('click', () => {
+              circuitGrid.querySelectorAll('button').forEach(item => item.classList.toggle('active', item === button));
+              renderCircuit(circuit);
+              document.querySelector('[data-circuit-detail]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+            circuitGrid.append(button);
+            if (index === 0) { button.classList.add('active'); renderCircuit(circuit); }
+          });
+        }
+        const renderDriverCircuits = driverId => {
+          const selected = (payload.drivers || []).find(item => item.driver_id === driverId);
+          if (!driverGrid || !selected) return;
+          driverGrid.replaceChildren();
+          (payload.circuits || []).forEach(circuit => {
+            const result = (circuit.drivers || []).find(item => item.driver_id === driverId) || {};
+            const card = document.createElement('article');
+            card.className = `driver-circuit-card${result.best_lap_ms ? ' has-time' : ' no-time'}`;
+            const label = document.createElement('strong'); label.textContent = circuit.circuit_name;
+            const lap = document.createElement('b'); lap.textContent = result.best_lap_ms ? formatLap(result.best_lap_ms) : (language === 'fr' ? 'Aucun chrono' : 'No lap time');
+            const detail = document.createElement('small');
+            detail.textContent = result.pace_percent ? `${Number(result.pace_percent).toFixed(2)}% · ${String(result.performance_class).toUpperCase()}` : (language === 'fr' ? 'Circuit à compléter' : 'Circuit to complete');
+            card.append(label, lap, detail); driverGrid.append(card);
+          });
+        };
+        if (driverSelect) {
+          driverSelect.replaceChildren();
+          (payload.drivers || []).forEach(driver => {
+            const option = document.createElement('option'); option.value = driver.driver_id; option.textContent = driver.display_name; driverSelect.append(option);
+          });
+          driverSelect.addEventListener('change', () => renderDriverCircuits(driverSelect.value));
+          if (driverSelect.value) renderDriverCircuits(driverSelect.value);
+        }
+        document.querySelectorAll('[data-ranking-tab]').forEach(button => button.addEventListener('click', () => {
+          document.querySelectorAll('[data-ranking-tab]').forEach(item => item.classList.toggle('active', item === button));
+          document.querySelectorAll('[data-ranking-panel]').forEach(panel => { panel.hidden = panel.dataset.rankingPanel !== button.dataset.rankingTab; });
+        }));
         applyLanguage(language);
       })
       .catch(() => {
@@ -485,44 +592,22 @@
     });
   };
 
-  const circuits = [
-    ['barcelona','Barcelona'],['brands_hatch','Brands Hatch'],['cota','Circuit of the Americas'],['donington','Donington Park'],['hungaroring','Hungaroring'],
-    ['imola','Imola'],['indianapolis','Indianapolis'],['kyalami','Kyalami'],['laguna_seca','Laguna Seca'],['misano','Misano'],
-    ['monza','Monza'],['mount_panorama','Mount Panorama'],['nurburgring','Nürburgring GP'],['nurburgring_24h','Nürburgring 24h'],['oulton_park','Oulton Park'],
-    ['paul_ricard','Paul Ricard'],['red_bull_ring','Red Bull Ring'],['silverstone','Silverstone'],['snetterton','Snetterton'],['spa','Spa-Francorchamps'],
-    ['suzuka','Suzuka'],['valencia','Valencia'],['watkins_glen','Watkins Glen'],['zandvoort','Zandvoort'],['zolder','Zolder'],
-  ];
-
-  const renderCircuits = data => {
-    const grid = document.querySelector('[data-circuit-grid]');
-    const dialog = document.querySelector('[data-circuit-dialog]');
-    if (!grid || !dialog) return;
-    const byKey = new Map((Array.isArray(data) ? data : []).map(item => [item.circuit_key, item]));
-    grid.replaceChildren();
-    circuits.forEach(([key, name]) => {
-      const item = byKey.get(key) || {};
-      const button = document.createElement('button');
-      button.className = 'circuit-card';
-      button.type = 'button';
-      const mark = name.split(/\s+/).map(part => part[0]).join('').slice(0, 3).toUpperCase();
-      button.innerHTML = `<span class="circuit-mark">${mark}</span><strong>${name}</strong><small>${item.personal_best_lap_ms ? formatLap(item.personal_best_lap_ms) : '—'}</small>`;
-      button.addEventListener('click', () => {
-        dialog.querySelector('[data-dialog-circuit]').textContent = name;
-        dialog.querySelector('[data-dialog-reference]').textContent = formatLap(item.alien_best_lap_ms);
-        dialog.querySelector('[data-dialog-personal]').textContent = formatLap(item.personal_best_lap_ms);
-        dialog.querySelector('[data-dialog-pace]').textContent = item.pace_percent ? `${Number(item.pace_percent).toFixed(2)}%` : '—';
-        dialog.querySelector('[data-dialog-performance]').textContent = String(item.performance_class || '—').toUpperCase();
-        dialog.querySelector('[data-dialog-safe]').textContent = String(item.safety_class || '—').toUpperCase();
-        dialog.showModal();
+  const renderProfileInfo = driver => {
+    const team = document.querySelector('[data-profile-team]');
+    const bio = document.querySelector('[data-profile-bio]');
+    const socials = document.querySelector('[data-profile-socials]');
+    if (team) { team.dataset.fr = driver.team_name || 'Non renseignée'; team.dataset.en = driver.team_name || 'Not provided'; }
+    if (bio) { bio.dataset.fr = driver.bio_fr || 'Aucune présentation pour le moment.'; bio.dataset.en = driver.bio_en || driver.bio_fr || 'No introduction yet.'; }
+    if (socials) {
+      socials.replaceChildren();
+      [['Twitch', driver.twitch_url], ['TikTok', driver.tiktok_url], ['YouTube', driver.youtube_url], ['Website', driver.website_url]].forEach(([label, url]) => {
+        if (!url) return;
+        const link = document.createElement('a'); link.href = url; link.target = '_blank'; link.rel = 'noopener'; link.textContent = label; socials.append(link);
       });
-      grid.append(button);
-    });
+    }
   };
 
-  document.querySelector('[data-dialog-close]')?.addEventListener('click', () => document.querySelector('[data-circuit-dialog]')?.close());
-  renderCircuits([]);
-
-  const renderProfile = payload => {
+  const renderProfile = (payload, isOwner = true) => {
     const driver = payload.driver;
     const ratings = Array.isArray(driver.ratings) ? driver.ratings : [];
     const rating = ratings.find(item => item.circuit_key === 'overall') || ratings[0] || null;
@@ -560,25 +645,63 @@
     safe.dataset.tier = safeTier;
     safe.dataset.fr = rating ? `SAFE · ${safeTier}` : 'SAFE · non classé';
     safe.dataset.en = rating ? `SAFE · ${safeTier}` : 'SAFE · unranked';
-    loginActions.hidden = true;
-    sessionActions.hidden = false;
+    const scoreValue = Number(rating?.performance_score);
+    const score = profile.querySelector('[data-profile-score]');
+    const fill = profile.querySelector('[data-profile-progress-fill]');
+    const target = profile.querySelector('[data-profile-target]');
+    if (score) score.textContent = Number.isFinite(scoreValue) ? `${scoreValue.toFixed(2)}%` : '—';
+    if (fill) fill.style.width = `${tierProgress(performanceTier, scoreValue)}%`;
+    if (target) { const next = nextTier(performanceTier); target.dataset.fr = `Prochain objectif : ${next[0]}`; target.dataset.en = `Next target: ${next[1]}`; }
+    if (loginActions) loginActions.hidden = isOwner;
+    if (sessionActions) sessionActions.hidden = !isOwner;
     profile.setAttribute('aria-busy', 'false');
     renderResults(driver.results);
-    renderCircuits(driver.circuits);
-    revealAdminTools(driver);
+    renderProfileInfo(driver);
+    const form = document.querySelector('[data-profile-form]');
+    if (form) {
+      form.hidden = !isOwner;
+      if (isOwner) {
+        form.elements.teamName.value = driver.team_name || '';
+        form.elements.bioFr.value = driver.bio_fr || '';
+        form.elements.bioEn.value = driver.bio_en || '';
+        form.elements.twitchUrl.value = driver.twitch_url || '';
+        form.elements.tiktokUrl.value = driver.tiktok_url || '';
+        form.elements.youtubeUrl.value = driver.youtube_url || '';
+        form.elements.websiteUrl.value = driver.website_url || '';
+      }
+    }
+    if (isOwner) { revealAdminTools(driver); revealHeaderProfile(driver); }
     applyLanguage(language);
   };
 
   const loadProfile = async token => {
     profile.setAttribute('aria-busy', 'true');
     const payload = await requestSession({ headers: { Authorization: `Bearer ${token}` } });
-    renderProfile(payload);
+    renderProfile(payload, true);
   };
 
   const initialiseProfile = async () => {
     const fragment = new URLSearchParams(location.hash.slice(1));
     const exchangeCode = fragment.get('steam_code');
     const query = new URLSearchParams(location.search);
+
+    const publicDriver = query.get('driver');
+    if (!exchangeCode && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(publicDriver || '')) {
+      if (document.querySelector('[data-auth-panel]')) document.querySelector('[data-auth-panel]').hidden = true;
+      setStatus('Chargement du profil public…', 'Loading public profile…', 'loading');
+      profile.setAttribute('aria-busy', 'true');
+      try {
+        const response = await fetch(`${apiBase}/public-driver?driver=${encodeURIComponent(publicDriver)}`);
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || 'profile_load_failed');
+        renderProfile(payload, false);
+      } catch {
+        resetProfile();
+        const results = document.querySelector('[data-profile-results]');
+        if (results) results.innerHTML = `<p class="empty-state">${language === 'fr' ? 'Ce profil public est indisponible.' : 'This public profile is unavailable.'}</p>`;
+      }
+      return;
+    }
 
     if (exchangeCode) {
       history.replaceState(null, '', `${location.pathname}${location.search}`);
@@ -622,6 +745,31 @@
       setStatus('Votre session a expiré. Reconnectez-vous avec Steam.', 'Your session has expired. Sign in with Steam again.', 'error');
     }
   };
+
+  const profileForm = document.querySelector('[data-profile-form]');
+  profileForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const token = sessionStorage.getItem(sessionKey);
+    const formStatus = profileForm.querySelector('[data-profile-form-status]');
+    const submit = profileForm.querySelector('[type="submit"]');
+    if (!token) return;
+    submit.disabled = true;
+    formStatus.textContent = language === 'fr' ? 'Enregistrement…' : 'Saving…';
+    try {
+      const data = new FormData(profileForm);
+      const response = await fetch(`${apiBase}/manage-profile`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(data.entries())),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || 'save_failed');
+      renderProfileInfo(payload.driver);
+      formStatus.textContent = language === 'fr' ? 'Profil enregistré.' : 'Profile saved.';
+      applyLanguage(language);
+    } catch {
+      formStatus.textContent = language === 'fr' ? 'Impossible d’enregistrer. Vérifiez les liens saisis.' : 'Unable to save. Check the links you entered.';
+    } finally { submit.disabled = false; }
+  });
 
   logoutButton?.addEventListener('click', async () => {
     const token = sessionStorage.getItem(sessionKey);

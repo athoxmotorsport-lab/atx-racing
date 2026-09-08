@@ -10,6 +10,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; connect-src https://twjpjzalyvbsdpbzhqln.supabase.co; img-src 'self' data: https://community.fastly.steamstatic.com https://avatars.fastly.steamstatic.com https://avatars.cloudflare.steamstatic.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self' https://steamcommunity.com; upgrade-insecure-requests">
   <link rel="canonical" href="https://athoxmotorsport-lab.github.io/atx-racing/classement.html">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="enhancements.css">
 </head>
 <body>
   <aside class="side-nav" aria-label="Navigation principale">
@@ -17,10 +18,9 @@
     <nav class="side-links">
       <a href="index.html"><b>01</b><span data-fr="Accueil" data-en="Home">Accueil</span></a>
       <a href="index.html#events"><b>02</b><span data-fr="Calendrier" data-en="Calendar">Calendrier</span></a>
-      <a href="index.html#formats"><b>03</b><span>Formats</span></a>
-      <a href="profil-pilote.html"><b>04</b><span data-fr="Profils" data-en="Profiles">Profils</span></a>
-      <a class="active" href="classement.html"><b>05</b><span data-fr="Classement" data-en="Ranking">Classement</span></a>
-      <a href="index.html#archives"><b>06</b><span data-fr="Archives" data-en="Archive">Archives</span></a>
+      <a href="index.html#courses"><b>03</b><span data-fr="Courses" data-en="Races">Courses</span></a>
+      <a class="active" href="classement.html"><b>04</b><span data-fr="Classement" data-en="Ranking">Classement</span></a>
+      <a href="index.html#archives"><b>05</b><span data-fr="Archives" data-en="Archive">Archives</span></a>
     </nav>
     <div class="side-actions"><a class="steam-button" data-steam-login href="https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/auth-steam" aria-label="Sign in through Steam"><img src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam"></a><div class="side-tools"></div></div>
   </aside>
@@ -34,12 +34,15 @@
         <div class="leaderboard-legend">
           <span data-tier="rookie">Rookie · 109%+</span><span data-tier="pro">Pro · 106–108.99%</span><span data-tier="elite">Elite · 102–105.99%</span><span data-tier="alien">Alien · 100–101.99%</span>
         </div>
+        <div class="ranking-tabs" role="tablist"><button class="active" type="button" data-ranking-tab="general" data-fr="Général" data-en="Overall">Général</button><button type="button" data-ranking-tab="circuit" data-fr="Par circuit" data-en="By circuit">Par circuit</button><button type="button" data-ranking-tab="driver" data-fr="Par pilote" data-en="By driver">Par pilote</button></div>
         <p class="empty-state" data-leaderboard-status data-fr="Chargement du classement…" data-en="Loading ranking…">Chargement du classement…</p>
-        <div class="leaderboard-wrap" data-alltime-leaderboard hidden>
-          <table class="leaderboard-table">
+        <div data-alltime-leaderboard hidden>
+          <div data-ranking-panel="general"><div class="leaderboard-wrap"><table class="leaderboard-table">
             <thead><tr><th>#</th><th data-fr="Pilote" data-en="Driver">Pilote</th><th>Points</th><th data-fr="Courses" data-en="Races">Courses</th><th data-fr="Victoires" data-en="Wins">Victoires</th><th>Podiums</th><th data-fr="Rythme et progression" data-en="Pace and progression">Rythme et progression</th><th>SAFE</th></tr></thead>
             <tbody data-leaderboard-body></tbody>
-          </table>
+          </table></div></div>
+          <div data-ranking-panel="circuit" hidden><div class="ranking-panel-head"><div><h2 data-fr="Classement par circuit" data-en="Ranking by circuit">Classement par circuit</h2><p data-fr="Choisissez un circuit pour afficher tous les pilotes et leur meilleur chrono." data-en="Choose a circuit to display every driver and their best lap.">Choisissez un circuit pour afficher tous les pilotes et leur meilleur chrono.</p></div></div><div class="circuits-grid" data-ranking-circuits></div><div class="circuit-ranking-detail" data-circuit-detail><header><div><small data-fr="Circuit sélectionné" data-en="Selected circuit">Circuit sélectionné</small><h3 data-circuit-ranking-title>—</h3></div><div><small data-fr="Référence et pilote" data-en="Reference and driver">Référence et pilote</small><strong data-circuit-reference>—</strong></div></header><div class="leaderboard-wrap"><table class="leaderboard-table circuit-ranking-table"><thead><tr><th>#</th><th data-fr="Pilote" data-en="Driver">Pilote</th><th data-fr="Meilleur tour" data-en="Best lap">Meilleur tour</th><th data-fr="Indice" data-en="Pace">Indice</th><th>Performance</th></tr></thead><tbody data-circuit-ranking-body></tbody></table></div></div></div>
+          <div data-ranking-panel="driver" hidden><div class="ranking-panel-head"><div><h2 data-fr="Parcours par pilote" data-en="Driver circuit coverage">Parcours par pilote</h2><p data-fr="Sélectionnez un pilote pour voir ses chronos et les circuits qu’il lui reste à compléter." data-en="Select a driver to see their lap times and the circuits still to complete.">Sélectionnez un pilote pour voir ses chronos et les circuits qu’il lui reste à compléter.</p></div><label><span data-fr="Pilote" data-en="Driver">Pilote</span><select data-driver-ranking-select></select></label></div><div class="driver-circuit-grid" data-driver-circuit-grid></div></div>
         </div>
         <p class="leaderboard-note" data-fr="La tendance compare les trois dernières courses chronométrées aux trois précédentes. Une flèche vers le haut signifie que l’indice de rythme s’améliore." data-en="The trend compares the latest three timed races with the previous three. An upward arrow means the pace index is improving.">La tendance compare les trois dernières courses chronométrées aux trois précédentes. Une flèche vers le haut signifie que l’indice de rythme s’améliore.</p>
       </div>

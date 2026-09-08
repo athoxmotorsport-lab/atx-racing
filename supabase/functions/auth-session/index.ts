@@ -6,7 +6,7 @@ import {
 const publicDriver = async (driverId: string) => {
   const supabase = adminClient();
   const { data: driver, error } = await supabase.from("drivers")
-    .select("id, profile_slug, display_name, avatar_url, country_code, bio_fr, bio_en, created_at, updated_at")
+    .select("id, profile_slug, display_name, avatar_url, country_code, team_name, bio_fr, bio_en, twitch_url, tiktok_url, youtube_url, website_url, created_at, updated_at")
     .eq("id", driverId).single();
   if (error) throw error;
   const { data: ratings, error: ratingsError } = await supabase.from("driver_ratings")

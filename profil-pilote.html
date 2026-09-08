@@ -10,6 +10,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; connect-src https://twjpjzalyvbsdpbzhqln.supabase.co; img-src 'self' data: https://community.fastly.steamstatic.com https://avatars.fastly.steamstatic.com https://avatars.cloudflare.steamstatic.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self' https://steamcommunity.com; upgrade-insecure-requests">
   <link rel="canonical" href="https://athoxmotorsport-lab.github.io/atx-racing/profil-pilote.html">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="enhancements.css">
 </head>
 <body>
   <aside class="side-nav" aria-label="Navigation principale">
@@ -17,10 +18,9 @@
     <nav class="side-links">
       <a href="index.html"><b>01</b><span data-fr="Accueil" data-en="Home">Accueil</span></a>
       <a href="index.html#events"><b>02</b><span data-fr="Courses" data-en="Races">Courses</span></a>
-      <a href="index.html#formats"><b>03</b><span>Formats</span></a>
-      <a class="active" href="profil-pilote.html"><b>04</b><span data-fr="Profils" data-en="Profiles">Profils</span></a>
-      <a href="classement.html"><b>05</b><span data-fr="Classement" data-en="Ranking">Classement</span></a>
-      <a href="index.html#archives"><b>06</b><span data-fr="Archives" data-en="Archive">Archives</span></a>
+      <a href="index.html#courses"><b>03</b><span data-fr="Courses" data-en="Races">Courses</span></a>
+      <a href="classement.html"><b>04</b><span data-fr="Classement" data-en="Ranking">Classement</span></a>
+      <a href="index.html#archives"><b>05</b><span data-fr="Archives" data-en="Archive">Archives</span></a>
     </nav>
     <div class="side-actions">
       <a class="steam-button" data-steam-login href="https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/auth-steam" aria-label="Sign in through Steam"><img src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam"></a>
@@ -62,7 +62,25 @@
             <span class="performance-badge" data-performance-badge data-tier="unranked" data-fr="Performance · non classé" data-en="Performance · unranked">Performance · non classé</span>
             <span class="safe-badge" data-safe-badge data-tier="unranked" data-fr="SAFE · non classé" data-en="SAFE · unranked">SAFE · non classé</span>
           </div>
+          <div class="profile-progress"><div><span data-fr="Progression du niveau" data-en="Tier progression">Progression du niveau</span><strong data-profile-score>—</strong></div><div class="profile-progress-rail"><i data-profile-progress-fill></i></div><small data-profile-target data-fr="Premiers chronos requis" data-en="First lap times required">Premiers chronos requis</small></div>
         </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap profile-details-grid">
+        <div><div class="section-label" data-fr="Informations pilote" data-en="Driver information">Informations pilote</div><h2 data-fr="Équipe et réseaux." data-en="Team and social links.">Équipe et réseaux.</h2><div class="driver-public-info"><p><small data-fr="Équipe" data-en="Team">Équipe</small><strong data-profile-team data-fr="Non renseignée" data-en="Not provided">Non renseignée</strong></p><p data-profile-bio data-fr="Aucune présentation pour le moment." data-en="No introduction yet.">Aucune présentation pour le moment.</p><div class="profile-socials" data-profile-socials></div></div></div>
+        <form class="profile-edit-form" data-profile-form hidden>
+          <h3 data-fr="Modifier mon profil public" data-en="Edit my public profile">Modifier mon profil public</h3>
+          <label><span data-fr="Équipe" data-en="Team">Équipe</span><input name="teamName" maxlength="64"></label>
+          <label><span>Bio FR</span><textarea name="bioFr" maxlength="500" rows="4"></textarea></label>
+          <label><span>Bio EN</span><textarea name="bioEn" maxlength="500" rows="4"></textarea></label>
+          <label><span>Twitch</span><input name="twitchUrl" type="url" placeholder="https://www.twitch.tv/..."></label>
+          <label><span>TikTok</span><input name="tiktokUrl" type="url" placeholder="https://www.tiktok.com/@..."></label>
+          <label><span>YouTube</span><input name="youtubeUrl" type="url" placeholder="https://www.youtube.com/@..."></label>
+          <label><span data-fr="Site internet" data-en="Website">Site internet</span><input name="websiteUrl" type="url" placeholder="https://..."></label>
+          <p class="form-status" data-profile-form-status></p><button class="btn primary" type="submit" data-fr="Enregistrer" data-en="Save">Enregistrer</button>
+        </form>
       </div>
     </section>
 
@@ -78,15 +96,6 @@
 
     <section>
       <div class="wrap">
-        <div class="section-label" data-fr="Références circuits" data-en="Circuit references">Références circuits</div>
-        <h2 data-fr="Les 25 circuits ACC." data-en="The 25 ACC circuits.">Les 25 circuits ACC.</h2>
-        <p class="intro" data-fr="Sélectionnez un circuit pour comparer votre meilleur tour à la référence Alien et consulter vos niveaux Performance et SAFE." data-en="Select a circuit to compare your personal best with the Alien reference and view your Performance and SAFE levels.">Sélectionnez un circuit pour comparer votre meilleur tour à la référence Alien et consulter vos niveaux Performance et SAFE.</p>
-        <div class="circuits-grid" data-circuit-grid></div>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap">
         <div class="section-label" data-fr="Fonctionnement" data-en="How it works">Fonctionnement</div>
         <h2 data-fr="Une identité, tous vos résultats." data-en="One identity, all your results.">Une identité, tous vos résultats.</h2>
         <div class="steps">
@@ -97,19 +106,6 @@
       </div>
     </section>
   </main>
-
-  <dialog class="circuit-dialog" data-circuit-dialog>
-    <div class="circuit-dialog-inner">
-      <header><div><div class="section-label" data-fr="Comparatif pilote" data-en="Driver comparison">Comparatif pilote</div><h3 data-dialog-circuit>—</h3></div><button class="dialog-close" type="button" data-dialog-close aria-label="Fermer">×</button></header>
-      <div class="circuit-metrics">
-        <div><small data-fr="Référence Alien" data-en="Alien reference">Référence Alien</small><strong data-dialog-reference>—</strong></div>
-        <div><small data-fr="Votre meilleur tour" data-en="Your personal best">Votre meilleur tour</small><strong data-dialog-personal>—</strong></div>
-        <div><small data-fr="Indice de rythme" data-en="Pace index">Indice de rythme</small><strong data-dialog-pace>—</strong></div>
-        <div><small>Performance</small><strong data-dialog-performance>—</strong></div>
-        <div><small>SAFE</small><strong data-dialog-safe>—</strong></div>
-      </div>
-    </div>
-  </dialog>
 
   <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="https://www.twitch.tv/a_t_h_o_x" target="_blank" rel="noopener">Twitch</a><a href="https://www.youtube.com/@AthoxMotorsport" target="_blank" rel="noopener">YouTube</a><a href="https://www.tiktok.com/@athoxmotorsport" target="_blank" rel="noopener">TikTok</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
   <script src="main.js"></script>
