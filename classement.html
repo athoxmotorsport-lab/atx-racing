@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Classement général tous les temps | ATX Racing</title>
+  <meta name="description" content="Classement général ATX Racing, points cumulés, niveau de performance et progression des pilotes.">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#07101a">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; connect-src https://twjpjzalyvbsdpbzhqln.supabase.co; img-src 'self' data: https://community.fastly.steamstatic.com https://avatars.fastly.steamstatic.com https://avatars.cloudflare.steamstatic.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self' https://steamcommunity.com; upgrade-insecure-requests">
+  <link rel="canonical" href="https://athoxmotorsport-lab.github.io/atx-racing/classement.html">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="side-nav" aria-label="Navigation principale">
+    <div class="side-brand"><a class="brand" href="index.html">ATX <span>Racing</span></a><small>Event Division</small></div>
+    <nav class="side-links">
+      <a href="index.html"><b>01</b><span data-fr="Accueil" data-en="Home">Accueil</span></a>
+      <a href="index.html#events"><b>02</b><span data-fr="Calendrier" data-en="Calendar">Calendrier</span></a>
+      <a href="index.html#formats"><b>03</b><span>Formats</span></a>
+      <a href="profil-pilote.html"><b>04</b><span data-fr="Profils" data-en="Profiles">Profils</span></a>
+      <a class="active" href="classement.html"><b>05</b><span data-fr="Classement" data-en="Ranking">Classement</span></a>
+      <a href="index.html#archives"><b>06</b><span data-fr="Archives" data-en="Archive">Archives</span></a>
+    </nav>
+    <div class="side-actions"><a class="steam-button" data-steam-login href="https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/auth-steam" aria-label="Sign in through Steam"><img src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam"></a><div class="side-tools"></div></div>
+  </aside>
+
+  <main>
+    <section>
+      <div class="wrap">
+        <div class="section-label" data-fr="Classement général" data-en="All-time ranking">Classement général</div>
+        <h1><span data-fr="Tous les temps" data-en="All time">Tous les temps</span></h1>
+        <p class="hero-copy" data-fr="Le classement est ordonné par les points cumulés sur toutes les courses publiées. L’indice de rythme compare les meilleurs résultats du pilote sur chaque circuit à la référence la plus rapide." data-en="The ranking is ordered by total points from every published race. The pace index compares each driver's best result per circuit with the fastest reference.">Le classement est ordonné par les points cumulés sur toutes les courses publiées. L’indice de rythme compare les meilleurs résultats du pilote sur chaque circuit à la référence la plus rapide.</p>
+        <div class="leaderboard-legend">
+          <span data-tier="rookie">Rookie · 109%+</span><span data-tier="pro">Pro · 106–108.99%</span><span data-tier="elite">Elite · 102–105.99%</span><span data-tier="alien">Alien · 100–101.99%</span>
+        </div>
+        <p class="empty-state" data-leaderboard-status data-fr="Chargement du classement…" data-en="Loading ranking…">Chargement du classement…</p>
+        <div class="leaderboard-wrap" data-alltime-leaderboard hidden>
+          <table class="leaderboard-table">
+            <thead><tr><th>#</th><th data-fr="Pilote" data-en="Driver">Pilote</th><th>Points</th><th data-fr="Courses" data-en="Races">Courses</th><th data-fr="Victoires" data-en="Wins">Victoires</th><th>Podiums</th><th data-fr="Rythme et progression" data-en="Pace and progression">Rythme et progression</th><th>SAFE</th></tr></thead>
+            <tbody data-leaderboard-body></tbody>
+          </table>
+        </div>
+        <p class="leaderboard-note" data-fr="La tendance compare les trois dernières courses chronométrées aux trois précédentes. Une flèche vers le haut signifie que l’indice de rythme s’améliore." data-en="The trend compares the latest three timed races with the previous three. An upward arrow means the pace index is improving.">La tendance compare les trois dernières courses chronométrées aux trois précédentes. Une flèche vers le haut signifie que l’indice de rythme s’améliore.</p>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
+  <script src="main.js"></script>
+</body>
+</html>

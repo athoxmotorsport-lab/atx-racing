@@ -431,3 +431,6 @@ verify_jwt = false
 
 [functions.manage-events]
 verify_jwt = false
+
+[functions.public-leaderboard]
+verify_jwt = false

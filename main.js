@@ -153,22 +153,35 @@
 
   const eventList = document.querySelector('[data-event-list]');
   if (eventList) {
+    const eventKey = (startsAt, circuit) => {
+      const instant = new Date(startsAt);
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Europe/Brussels',
+      }).formatToParts(instant);
+      const date = ['year', 'month', 'day'].map(type => parts.find(part => part.type === type)?.value || '').join('-');
+      const track = String(circuit || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      return `${date}|${track}`;
+    };
     fetch(`${apiBase}/public-event`)
       .then(response => response.ok ? response.json() : Promise.reject(new Error('calendar_load_failed')))
       .then(payload => {
-        const existingLinks = new Set([...eventList.querySelectorAll('.event-image')].map(link => link.href));
+        const existingKeys = new Set([...eventList.querySelectorAll('[data-event-key]')].map(card => card.dataset.eventKey));
         (payload.events || []).slice().sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).forEach(item => {
-          if (!item.simgrid_url || !item.image_url || existingLinks.has(item.simgrid_url)) return;
+          const key = eventKey(item.starts_at, item.circuit_name);
+          if (!item.simgrid_url || !item.image_url || existingKeys.has(key)) return;
+          existingKeys.add(key);
           const eventDate = new Date(item.starts_at);
           const card = document.createElement('article');
           card.className = 'event-card';
+          card.dataset.eventKey = key;
           const imageLink = document.createElement('a');
           imageLink.className = 'event-image';
           imageLink.href = item.simgrid_url;
           imageLink.target = '_blank';
           imageLink.rel = 'noopener';
           const image = document.createElement('img');
-          image.src = item.image_url;
+          image.src = item.image_url.startsWith('/') ? item.image_url.slice(1) : item.image_url;
           image.alt = item.title_fr || item.title_en || 'ATX Racing event';
           const badge = document.createElement('span');
           badge.className = 'badge';
@@ -205,6 +218,107 @@
         applyLanguage(language);
       })
       .catch(() => { /* Static event cards remain available as a safe fallback. */ });
+  }
+
+  const leaderboard = document.querySelector('[data-alltime-leaderboard]');
+  if (leaderboard) {
+    const leaderboardStatus = document.querySelector('[data-leaderboard-status]');
+    const leaderboardBody = document.querySelector('[data-leaderboard-body]');
+    const tierProgress = (tier, score) => {
+      if (!Number.isFinite(score)) return 0;
+      if (tier === 'alien') return 100;
+      if (tier === 'elite') return Math.max(0, Math.min(100, (106 - score) / 4.01 * 100));
+      if (tier === 'pro') return Math.max(0, Math.min(100, (109 - score) / 3.01 * 100));
+      return Math.max(0, Math.min(100, (115 - Math.min(score, 115)) / 6.01 * 100));
+    };
+    const nextTier = tier => ({
+      rookie: ['Pro · 108.99%', 'Pro · 108.99%'],
+      pro: ['Elite · 105.99%', 'Elite · 105.99%'],
+      elite: ['Alien · 101.99%', 'Alien · 101.99%'],
+      alien: ['Niveau maximal', 'Top level'],
+    }[tier] || ['Premiers chronos requis', 'First lap times required']);
+    fetch(`${apiBase}/public-leaderboard`)
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed')))
+      .then(payload => {
+        leaderboardBody.replaceChildren();
+        (payload.drivers || []).forEach(driver => {
+          const row = document.createElement('tr');
+          const rank = document.createElement('td');
+          rank.className = 'leaderboard-rank';
+          rank.textContent = String(driver.rank);
+          const identity = document.createElement('th');
+          identity.scope = 'row';
+          const identityBox = document.createElement('div');
+          identityBox.className = 'leaderboard-driver';
+          const avatar = document.createElement('span');
+          avatar.className = 'leaderboard-avatar';
+          if (driver.avatar_url) {
+            const image = document.createElement('img');
+            image.src = driver.avatar_url;
+            image.alt = '';
+            image.referrerPolicy = 'no-referrer';
+            avatar.append(image);
+          } else avatar.textContent = String(driver.display_name || 'AT').slice(0, 2).toUpperCase();
+          const driverName = document.createElement('strong');
+          driverName.textContent = driver.display_name || 'ACC Driver';
+          identityBox.append(avatar, driverName);
+          identity.append(identityBox);
+          const numericCell = value => {
+            const cell = document.createElement('td');
+            cell.textContent = Number(value || 0).toLocaleString(language === 'fr' ? 'fr-BE' : 'en-GB', { maximumFractionDigits: 1 });
+            return cell;
+          };
+          const pace = document.createElement('td');
+          const tier = String(driver.performance_class || 'unranked');
+          const tierLine = document.createElement('div');
+          tierLine.className = 'pace-heading';
+          const tierBadge = document.createElement('span');
+          tierBadge.className = 'tier-pill';
+          tierBadge.dataset.tier = tier;
+          tierBadge.textContent = tier.toUpperCase();
+          const score = document.createElement('strong');
+          score.textContent = Number.isFinite(driver.performance_score) ? `${Number(driver.performance_score).toFixed(2)}%` : '—';
+          const trend = document.createElement('span');
+          trend.className = 'pace-trend';
+          const trendValue = Number(driver.progression);
+          if (Number.isFinite(trendValue) && Math.abs(trendValue) >= 0.005) {
+            trend.dataset.direction = trendValue > 0 ? 'up' : 'down';
+            trend.textContent = `${trendValue > 0 ? '↑' : '↓'} ${Math.abs(trendValue).toFixed(2)}%`;
+          } else trend.textContent = '—';
+          tierLine.append(tierBadge, score, trend);
+          const rail = document.createElement('div');
+          rail.className = 'pace-progress';
+          rail.setAttribute('role', 'progressbar');
+          const progress = tierProgress(tier, Number(driver.performance_score));
+          rail.setAttribute('aria-valuenow', String(Math.round(progress)));
+          rail.setAttribute('aria-valuemin', '0');
+          rail.setAttribute('aria-valuemax', '100');
+          const fill = document.createElement('i');
+          fill.style.width = `${progress}%`;
+          rail.append(fill);
+          const target = document.createElement('small');
+          const targetText = nextTier(tier);
+          target.dataset.fr = `Prochain objectif : ${targetText[0]}`;
+          target.dataset.en = `Next target: ${targetText[1]}`;
+          pace.append(tierLine, rail, target);
+          const safe = document.createElement('td');
+          const safeBadge = document.createElement('span');
+          safeBadge.className = 'tier-pill';
+          safeBadge.dataset.tier = driver.safety_class || 'unranked';
+          safeBadge.textContent = String(driver.safety_class || '—').toUpperCase();
+          safe.append(safeBadge);
+          row.append(rank, identity, numericCell(driver.points), numericCell(driver.races), numericCell(driver.wins), numericCell(driver.podiums), pace, safe);
+          leaderboardBody.append(row);
+        });
+        leaderboard.hidden = false;
+        leaderboardStatus.hidden = true;
+        applyLanguage(language);
+      })
+      .catch(() => {
+        leaderboardStatus.dataset.fr = 'Le classement est momentanément indisponible.';
+        leaderboardStatus.dataset.en = 'The ranking is temporarily unavailable.';
+        applyLanguage(language);
+      });
   }
 
   const profile = document.querySelector('[data-driver-profile]');
