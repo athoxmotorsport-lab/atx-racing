@@ -422,3 +422,9 @@ verify_jwt = false
 
 [functions.auth-logout]
 verify_jwt = false
+
+[functions.ingest-acc-results]
+verify_jwt = false
+
+[functions.public-event]
+verify_jwt = false
