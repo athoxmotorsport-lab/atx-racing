@@ -99,8 +99,9 @@
     const renderPublicEvent = payload => {
       const event = payload.event || {};
       const title = eventView.querySelector('[data-event-title]');
-      title.dataset.fr = event.title_fr || event.title_en || 'Résultat ATX Racing';
-      title.dataset.en = event.title_en || event.title_fr || 'ATX Racing result';
+      const publicTitle = `Daily Race · ${event.circuit_name || 'ACC'}`;
+      title.dataset.fr = publicTitle;
+      title.dataset.en = publicTitle;
       eventView.querySelector('[data-event-circuit]').textContent = event.circuit_name || '—';
       const date = eventView.querySelector('[data-event-date]');
       if (event.starts_at) {

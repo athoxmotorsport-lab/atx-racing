@@ -121,7 +121,7 @@ const statusFromAcc = (value?: string): "classified" | "dnf" | "dns" | "dsq" => 
 };
 
 const pointsForPosition = (position?: number | null): number => {
-  const points = [100, 75, 50, 25, 20, 15, 10, 5];
+  const points = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
   return position && position >= 1 ? points[position - 1] ?? 0 : 0;
 };
 
@@ -401,6 +401,16 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
     }
 
     if (payload.typeSession === "R") {
+      const timedResults = payload.resultats.flatMap((result) => {
+        const bestLapMs = lapTimeOrNull(result.meilleurTourMs);
+        return bestLapMs && result.pilote?.steamId ? [{ result, bestLapMs }] : [];
+      });
+      const fastestResult = [...timedResults].sort((first, second) =>
+        first.bestLapMs - second.bestLapMs ||
+        Number(first.result.position ?? Number.MAX_SAFE_INTEGER) - Number(second.result.position ?? Number.MAX_SAFE_INTEGER)
+      )[0];
+      const fastestSteamId = fastestResult?.result.pilote.steamId ?? null;
+
       const { error: clearResultsError } = await supabase.from("results").delete().eq("event_id", event.id);
       if (clearResultsError) throw clearResultsError;
       const { error: clearSafetyError } = await supabase.from("safety_stats").delete().eq("event_id", event.id);
@@ -433,7 +443,7 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
           laps_completed: result.tours ?? 0,
           best_lap_ms: lapTimeOrNull(result.meilleurTourMs),
           total_time_ms: positiveOrNull(result.tempsTotalMs),
-          points: classified ? pointsForPosition(result.position) : 0,
+          points: (classified ? pointsForPosition(result.position) : 0) + (steamId === fastestSteamId ? 2 : 0),
           imported_at: new Date().toISOString(),
           car_model_id: result.modeleVoiture ?? null,
           car_model_name: result.nomVoiture ?? null,
@@ -463,10 +473,6 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
         if (safetyError) throw safetyError;
       }
 
-      const timedResults = payload.resultats.flatMap((result) => {
-        const bestLapMs = lapTimeOrNull(result.meilleurTourMs);
-        return bestLapMs && result.pilote?.steamId ? [{ result, bestLapMs }] : [];
-      });
       const reference = Math.min(...timedResults.map(({ bestLapMs }) => bestLapMs));
       if (Number.isFinite(reference)) {
         for (const { result, bestLapMs } of timedResults) {
