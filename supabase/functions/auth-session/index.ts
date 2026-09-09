@@ -23,11 +23,14 @@ const publicDriver = async (driverId: string) => {
   const allResults = results ?? [];
   const stats = allResults.reduce((summary, result) => ({
     races: summary.races + 1,
+    wins: summary.wins + (
+      result.finish_position === 1 && result.status === "classified" ? 1 : 0
+    ),
     podiums: summary.podiums + (
       result.finish_position && result.finish_position <= 3 && result.status === "classified" ? 1 : 0
     ),
     points: summary.points + Number(result.points ?? 0),
-  }), { races: 0, podiums: 0, points: 0 });
+  }), { races: 0, wins: 0, podiums: 0, points: 0 });
 
   const sortedResults = [...allResults].sort((first, second) => {
     const firstEvent = Array.isArray(first.event) ? first.event[0] : first.event;
@@ -80,7 +83,12 @@ const publicDriver = async (driverId: string) => {
     };
   });
 
-  return { ...driver, roles: (roleRows ?? []).map((row) => row.role), ratings, circuits, results: sortedResults, stats };
+  const { data: honours, error: honoursError } = await supabase.from("event_honours")
+    .select("award_type, best_lap_ms, penalty_count, clean_laps, event_slug, circuit_name, starts_at")
+    .eq("driver_id", driverId).order("starts_at", { ascending: false });
+  if (honoursError) throw honoursError;
+
+  return { ...driver, roles: (roleRows ?? []).map((row) => row.role), ratings, circuits, results: sortedResults, awards: honours ?? [], stats };
 };
 
 const exchangeCode = async (request: Request): Promise<Response> => {

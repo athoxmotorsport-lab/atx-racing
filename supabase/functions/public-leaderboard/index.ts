@@ -38,7 +38,7 @@ Deno.serve(async (request) => {
   try {
     const supabase = adminClient();
     const { data: drivers, error: driversError } = await supabase.from("drivers")
-      .select("id, display_name, avatar_url").eq("is_profile_public", true);
+      .select("id, display_name, avatar_url, team_name").eq("is_profile_public", true);
     if (driversError) throw driversError;
     const { data: claimedRows, error: claimedError } = await supabase.from("driver_identities")
       .select("driver_id").not("last_login_at", "is", null);
@@ -99,6 +99,7 @@ Deno.serve(async (request) => {
         profile_id: claimed.has(driver.id) ? driver.id : null,
         display_name: driver.display_name,
         avatar_url: driver.avatar_url,
+        team_name: driver.team_name,
         races: driverResults.length,
         wins: driverResults.filter((result) => result.status === "classified" && result.finish_position === 1).length,
         podiums: driverResults.filter((result) => result.status === "classified" && Number(result.finish_position) <= 3).length,
@@ -153,7 +154,38 @@ Deno.serve(async (request) => {
       };
     });
 
-    return json({ generated_at: new Date().toISOString(), drivers: rows, circuits: circuitRankings });
+    const teamGroups = new Map<string, {
+      team_name: string; points: number; races: number; wins: number; podiums: number;
+      member_ids: Set<string>; pace_scores: number[];
+    }>();
+    for (const driver of rows) {
+      const teamName = String(driver.team_name ?? "").trim();
+      if (!teamName) continue;
+      const key = teamName.toLocaleLowerCase("fr");
+      const team = teamGroups.get(key) ?? {
+        team_name: teamName, points: 0, races: 0, wins: 0, podiums: 0,
+        member_ids: new Set<string>(), pace_scores: [],
+      };
+      team.points += Number(driver.points ?? 0);
+      team.races += Number(driver.races ?? 0);
+      team.wins += Number(driver.wins ?? 0);
+      team.podiums += Number(driver.podiums ?? 0);
+      team.member_ids.add(driver.driver_id);
+      if (driver.performance_score !== null) team.pace_scores.push(Number(driver.performance_score));
+      teamGroups.set(key, team);
+    }
+    const teams = [...teamGroups.values()].map((team) => ({
+      team_name: team.team_name,
+      points: team.points,
+      races: team.races,
+      wins: team.wins,
+      podiums: team.podiums,
+      drivers: team.member_ids.size,
+      performance_score: average(team.pace_scores),
+    })).sort((first, second) => second.points - first.points || second.wins - first.wins)
+      .map((team, index) => ({ rank: index + 1, ...team }));
+
+    return json({ generated_at: new Date().toISOString(), drivers: rows, circuits: circuitRankings, teams });
   } catch (error) {
     console.error("Leaderboard failed", error instanceof Error ? error.message : "unknown error");
     return json({ error: "server_error" }, 500);

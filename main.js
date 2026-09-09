@@ -172,6 +172,23 @@
         });
         body.append(row);
       });
+      const honours = eventView.querySelector('[data-event-honours]');
+      if (honours) {
+        const fast = (payload.honours || []).find(item => item.award_type === 'fast_driver');
+        const gentleman = (payload.honours || []).find(item => item.award_type === 'gentleman_driver');
+        const awardDriver = award => Array.isArray(award?.driver) ? award.driver[0] : award?.driver;
+        if (fast) {
+          eventView.querySelector('[data-fast-driver]').textContent = awardDriver(fast)?.display_name || 'ACC Driver';
+          eventView.querySelector('[data-fast-detail]').textContent = formatLap(fast.best_lap_ms);
+        }
+        if (gentleman) {
+          eventView.querySelector('[data-gentleman-driver]').textContent = awardDriver(gentleman)?.display_name || 'ACC Driver';
+          const detail = eventView.querySelector('[data-gentleman-detail]');
+          detail.dataset.fr = `${gentleman.clean_laps || 0} tours propres · ${gentleman.penalty_count || 0} pénalité(s)`;
+          detail.dataset.en = `${gentleman.clean_laps || 0} clean laps · ${gentleman.penalty_count || 0} penalty points`;
+        }
+        honours.hidden = !(fast || gentleman);
+      }
       eventStatus.hidden = true;
       applyLanguage(language);
     };
@@ -256,6 +273,24 @@
           card.append(imageLink, body);
           eventList.append(card);
         });
+        const archiveList = document.querySelector('[data-archive-list]');
+        if (archiveList && Array.isArray(payload.archives) && payload.archives.length) {
+          archiveList.replaceChildren();
+          payload.archives.forEach(item => {
+            const link = document.createElement('a');
+            link.className = 'archive-race-card';
+            link.href = `course.html?event=${encodeURIComponent(item.slug)}`;
+            const date = document.createElement('span');
+            const eventDate = new Date(item.starts_at);
+            date.dataset.fr = new Intl.DateTimeFormat('fr-BE', { dateStyle: 'long', timeZone: 'Europe/Brussels' }).format(eventDate);
+            date.dataset.en = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/Brussels' }).format(eventDate);
+            const title = document.createElement('strong'); title.textContent = `Daily Race · ${item.circuit_name}`;
+            const meta = document.createElement('small');
+            meta.dataset.fr = `${item.result_count} pilote(s) classé(s) · Voir le classement`;
+            meta.dataset.en = `${item.result_count} classified driver(s) · View standings`;
+            link.append(date, title, meta); archiveList.append(link);
+          });
+        }
         applyLanguage(language);
       })
       .catch(() => { /* Static event cards remain available as a safe fallback. */ });
@@ -416,6 +451,26 @@
           driverSelect.addEventListener('change', () => renderDriverCircuits(driverSelect.value));
           if (driverSelect.value) renderDriverCircuits(driverSelect.value);
         }
+        const teamBody = document.querySelector('[data-team-ranking-body]');
+        if (teamBody) {
+          teamBody.replaceChildren();
+          (payload.teams || []).forEach(team => {
+            const row = document.createElement('tr');
+            [team.rank, team.team_name, team.points, team.drivers, team.races, team.wins, team.podiums,
+              Number.isFinite(team.performance_score) ? `${Number(team.performance_score).toFixed(2)}%` : '—'].forEach((value, index) => {
+              const cell = document.createElement(index === 1 ? 'th' : 'td');
+              if (index === 1) cell.scope = 'row';
+              cell.textContent = String(value ?? '—'); row.append(cell);
+            });
+            teamBody.append(row);
+          });
+          if (!(payload.teams || []).length) {
+            const row = document.createElement('tr'); const cell = document.createElement('td'); cell.colSpan = 8;
+            cell.dataset.fr = 'Aucune équipe n’a encore été renseignée dans les profils.';
+            cell.dataset.en = 'No team has been entered in driver profiles yet.';
+            row.append(cell); teamBody.append(row);
+          }
+        }
         document.querySelectorAll('[data-ranking-tab]').forEach(button => button.addEventListener('click', () => {
           document.querySelectorAll('[data-ranking-tab]').forEach(item => item.classList.toggle('active', item === button));
           document.querySelectorAll('[data-ranking-panel]').forEach(panel => { panel.hidden = panel.dataset.rankingPanel !== button.dataset.rankingTab; });
@@ -512,6 +567,7 @@
     profile.querySelector('[data-profile-id]').textContent = 'Steam ID · ATX Driver ID';
     profile.querySelector('[data-profile-rank]').textContent = '—';
     profile.querySelector('[data-profile-races]').textContent = '0';
+    profile.querySelector('[data-profile-wins]').textContent = '0';
     profile.querySelector('[data-profile-podiums]').textContent = '0';
     profile.querySelector('[data-profile-points]').textContent = '0';
     profile.dataset.tier = 'unranked';
@@ -519,11 +575,14 @@
     avatar.replaceChildren(document.createTextNode('ATX'));
     for (const badge of profile.querySelectorAll('[data-tier]')) badge.dataset.tier = 'unranked';
     const performance = profile.querySelector('[data-performance-badge]');
-    performance.dataset.fr = 'Performance · non classé';
-    performance.dataset.en = 'Performance · unranked';
+    performance.querySelector('.crest-mark').textContent = '–';
+    const performanceLabel = profile.querySelector('[data-performance-label]');
+    performanceLabel.dataset.fr = 'Non classé'; performanceLabel.dataset.en = 'Unranked';
     const safe = profile.querySelector('[data-safe-badge]');
-    safe.dataset.fr = 'SAFE · non classé';
-    safe.dataset.en = 'SAFE · unranked';
+    safe.querySelector('.crest-mark').textContent = '–';
+    const safeLabel = profile.querySelector('[data-safe-label]');
+    safeLabel.dataset.fr = 'Non classé'; safeLabel.dataset.en = 'Unranked';
+    profile.querySelector('[data-profile-awards]')?.replaceChildren();
     applyLanguage(language);
   };
 
@@ -539,7 +598,7 @@
     return stripped.slice(0, 96) || fallback;
   };
 
-  const renderResults = results => {
+  const renderResults = (results, awards = []) => {
     const container = document.querySelector('[data-profile-results]');
     if (!container || !Array.isArray(results) || !results.length) return;
     container.replaceChildren();
@@ -564,6 +623,14 @@
       const title = document.createElement('strong');
       title.dataset.fr = cleanEventTitle(event.title_fr || event.title_en, event, 'Événement ATX Racing');
       title.dataset.en = cleanEventTitle(event.title_en || event.title_fr, event, 'ATX Racing event');
+      const resultAwards = document.createElement('div');
+      resultAwards.className = 'result-awards';
+      awards.filter(award => award.event_slug === event.slug).forEach(award => {
+        const badge = document.createElement('span');
+        badge.className = award.award_type;
+        badge.textContent = award.award_type === 'fast_driver' ? 'Fast Driver' : 'Gentleman Driver';
+        resultAwards.append(badge);
+      });
       const position = result.finish_position ? `P${result.finish_position}` : String(result.status || '—').toUpperCase();
       const pointsFr = Number(result.points || 0).toLocaleString('fr-BE');
       const pointsEn = Number(result.points || 0).toLocaleString('en-GB');
@@ -587,7 +654,9 @@
       const action = document.createElement('em');
       action.dataset.fr = 'Voir le classement complet →';
       action.dataset.en = 'View full standings →';
-      row.append(top, title, metrics, action);
+      row.append(top, title);
+      if (resultAwards.childElementCount) row.append(resultAwards);
+      row.append(metrics, action);
       container.append(row);
     });
   };
@@ -611,7 +680,7 @@
     const driver = payload.driver;
     const ratings = Array.isArray(driver.ratings) ? driver.ratings : [];
     const rating = ratings.find(item => item.circuit_key === 'overall') || ratings[0] || null;
-    const stats = driver.stats || { races: 0, podiums: 0, points: 0 };
+    const stats = driver.stats || { races: 0, wins: 0, podiums: 0, points: 0 };
     const name = profile.querySelector('[data-profile-name]');
     delete name.dataset.fr;
     delete name.dataset.en;
@@ -619,6 +688,7 @@
     profile.querySelector('[data-profile-id]').textContent = `ATX Driver · ${driver.id.slice(0, 8).toUpperCase()}`;
     profile.querySelector('[data-profile-rank]').textContent = rating?.performance_class?.toUpperCase() || '—';
     profile.querySelector('[data-profile-races]').textContent = String(stats.races || 0);
+    profile.querySelector('[data-profile-wins]').textContent = String(stats.wins || 0);
     profile.querySelector('[data-profile-podiums]').textContent = String(stats.podiums || 0);
     profile.querySelector('[data-profile-points]').textContent = Number(stats.points || 0).toLocaleString(language === 'fr' ? 'fr-BE' : 'en-GB');
 
@@ -638,13 +708,29 @@
     const performanceTier = rating?.performance_class || 'unranked';
     profile.dataset.tier = performanceTier;
     performance.dataset.tier = performanceTier;
-    performance.dataset.fr = rating ? `Performance · ${performanceTier}` : 'Performance · non classé';
-    performance.dataset.en = rating ? `Performance · ${performanceTier}` : 'Performance · unranked';
+    performance.querySelector('.crest-mark').textContent = performanceTier === 'unranked' ? '–' : performanceTier.slice(0, 1).toUpperCase();
+    const performanceLabel = profile.querySelector('[data-performance-label]');
+    performanceLabel.dataset.fr = rating ? performanceTier : 'Non classé';
+    performanceLabel.dataset.en = rating ? performanceTier : 'Unranked';
     const safe = profile.querySelector('[data-safe-badge]');
     const safeTier = rating?.safety_class || 'unranked';
     safe.dataset.tier = safeTier;
-    safe.dataset.fr = rating ? `SAFE · ${safeTier}` : 'SAFE · non classé';
-    safe.dataset.en = rating ? `SAFE · ${safeTier}` : 'SAFE · unranked';
+    safe.querySelector('.crest-mark').textContent = safeTier === 'unranked' ? '–' : safeTier.slice(0, 1).toUpperCase();
+    const safeLabel = profile.querySelector('[data-safe-label]');
+    safeLabel.dataset.fr = rating ? safeTier : 'Non classé';
+    safeLabel.dataset.en = rating ? safeTier : 'Unranked';
+    const awards = profile.querySelector('[data-profile-awards]');
+    if (awards) {
+      awards.replaceChildren();
+      const counts = (driver.awards || []).reduce((map, award) => map.set(award.award_type, (map.get(award.award_type) || 0) + 1), new Map());
+      [['fast_driver', 'FD', 'Fast Driver'], ['gentleman_driver', 'GD', 'Gentleman Driver']].forEach(([type, mark, label]) => {
+        const count = counts.get(type) || 0;
+        if (!count) return;
+        const badge = document.createElement('span'); badge.className = `achievement-crest ${type}`;
+        badge.innerHTML = `<i>${mark}</i><span><small>${label}</small><b>× ${count}</b></span>`;
+        awards.append(badge);
+      });
+    }
     const scoreValue = Number(rating?.performance_score);
     const score = profile.querySelector('[data-profile-score]');
     const fill = profile.querySelector('[data-profile-progress-fill]');
@@ -655,7 +741,7 @@
     if (loginActions) loginActions.hidden = isOwner;
     if (sessionActions) sessionActions.hidden = !isOwner;
     profile.setAttribute('aria-busy', 'false');
-    renderResults(driver.results);
+    renderResults(driver.results, driver.awards);
     renderProfileInfo(driver);
     const form = document.querySelector('[data-profile-form]');
     if (form) {

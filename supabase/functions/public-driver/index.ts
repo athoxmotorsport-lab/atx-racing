@@ -39,10 +39,15 @@ Deno.serve(async (request) => {
     const allResults = results ?? [];
     const stats = allResults.reduce((summary, result) => ({
       races: summary.races + 1,
+      wins: summary.wins + (result.status === "classified" && Number(result.finish_position) === 1 ? 1 : 0),
       podiums: summary.podiums + (result.status === "classified" && Number(result.finish_position) <= 3 ? 1 : 0),
       points: summary.points + Number(result.points ?? 0),
-    }), { races: 0, podiums: 0, points: 0 });
-    return json({ driver: { ...driver, ratings: ratings ?? [], results: allResults, stats } });
+    }), { races: 0, wins: 0, podiums: 0, points: 0 });
+    const { data: honours, error: honoursError } = await supabase.from("event_honours")
+      .select("award_type, best_lap_ms, penalty_count, clean_laps, event_slug, circuit_name, starts_at")
+      .eq("driver_id", driverId).order("starts_at", { ascending: false });
+    if (honoursError) throw honoursError;
+    return json({ driver: { ...driver, ratings: ratings ?? [], results: allResults, awards: honours ?? [], stats } });
   } catch (error) {
     console.error("Public driver failed", error instanceof Error ? error.message : "unknown error");
     return json({ error: "server_error" }, 500);
