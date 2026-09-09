@@ -18,10 +18,17 @@ const average = (values: number[]): number | null => values.length
 
 const performanceClass = (score: number | null): "alien" | "elite" | "pro" | "rookie" | "unranked" => {
   if (score === null) return "unranked";
-  if (score <= 101.99) return "alien";
-  if (score <= 105.99) return "elite";
-  if (score <= 108.99) return "pro";
+  if (score < 102) return "alien";
+  if (score < 104) return "elite";
+  if (score < 106) return "pro";
   return "rookie";
+};
+
+const safetyClass = (score: number | null): "gold" | "silver" | "bronze" | null => {
+  if (score === null || score < 39) return null;
+  if (score >= 80) return "gold";
+  if (score >= 60) return "silver";
+  return "bronze";
 };
 
 const circuits = [
@@ -109,7 +116,7 @@ Deno.serve(async (request) => {
         performance_score: paceScore === null ? null : Number(paceScore.toFixed(3)),
         performance_class: performanceClass(paceScore),
         progression: trend === null ? null : Number(trend.toFixed(3)),
-        safety_class: safety?.safety_class ?? null,
+        safety_class: safetyClass(safety?.safety_score == null ? null : Number(safety.safety_score)),
         safety_score: safety?.safety_score ?? null,
       };
     }).filter((row) => row.races > 0)

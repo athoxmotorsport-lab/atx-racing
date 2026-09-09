@@ -122,13 +122,13 @@
   const tierProgress = (tier, score) => {
     if (!Number.isFinite(score)) return 0;
     if (tier === 'alien') return 100;
-    if (tier === 'elite') return Math.max(0, Math.min(100, (106 - score) / 4.01 * 100));
-    if (tier === 'pro') return Math.max(0, Math.min(100, (109 - score) / 3.01 * 100));
-    return Math.max(0, Math.min(100, (115 - Math.min(score, 115)) / 6.01 * 100));
+    if (tier === 'elite') return Math.max(0, Math.min(100, (104 - score) / 2 * 100));
+    if (tier === 'pro') return Math.max(0, Math.min(100, (106 - score) / 2 * 100));
+    return Math.max(0, Math.min(100, (112 - Math.min(score, 112)) / 6 * 100));
   };
   const nextTier = tier => ({
-    rookie: ['Pro · 108.99%', 'Pro · 108.99%'],
-    pro: ['Elite · 105.99%', 'Elite · 105.99%'],
+    rookie: ['Pro · 105.99%', 'Pro · 105.99%'],
+    pro: ['Elite · 103.99%', 'Elite · 103.99%'],
     elite: ['Alien · 101.99%', 'Alien · 101.99%'],
     alien: ['Niveau maximal', 'Top level'],
   }[tier] || ['Premiers chronos requis', 'First lap times required']);
@@ -369,11 +369,13 @@
           target.dataset.en = `Next target: ${targetText[1]}`;
           pace.append(tierLine, rail, target);
           const safe = document.createElement('td');
-          const safeBadge = document.createElement('span');
-          safeBadge.className = 'tier-pill';
-          safeBadge.dataset.tier = driver.safety_class || 'unranked';
-          safeBadge.textContent = String(driver.safety_class || '—').toUpperCase();
-          safe.append(safeBadge);
+          if (driver.safety_class) {
+            const safeBadge = document.createElement('span');
+            safeBadge.className = 'tier-pill';
+            safeBadge.dataset.tier = driver.safety_class;
+            safeBadge.textContent = String(driver.safety_class).toUpperCase();
+            safe.append(safeBadge);
+          } else safe.textContent = '—';
           row.append(rank, identity, numericCell(driver.points), numericCell(driver.races), numericCell(driver.wins), numericCell(driver.podiums), pace, safe);
           leaderboardBody.append(row);
         });
@@ -714,11 +716,12 @@
     performanceLabel.dataset.en = rating ? performanceTier : 'Unranked';
     const safe = profile.querySelector('[data-safe-badge]');
     const safeTier = rating?.safety_class || 'unranked';
+    safe.hidden = !rating?.safety_class;
     safe.dataset.tier = safeTier;
     safe.querySelector('.crest-mark').textContent = safeTier === 'unranked' ? '–' : safeTier.slice(0, 1).toUpperCase();
     const safeLabel = profile.querySelector('[data-safe-label]');
-    safeLabel.dataset.fr = rating ? safeTier : 'Non classé';
-    safeLabel.dataset.en = rating ? safeTier : 'Unranked';
+    safeLabel.dataset.fr = rating?.safety_class ? safeTier : 'Non classé';
+    safeLabel.dataset.en = rating?.safety_class ? safeTier : 'Unranked';
     const awards = profile.querySelector('[data-profile-awards]');
     if (awards) {
       awards.replaceChildren();

@@ -9,6 +9,14 @@
   <meta name="theme-color" content="#07101a">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; connect-src https://twjpjzalyvbsdpbzhqln.supabase.co; img-src 'self' data: https://community.fastly.steamstatic.com https://avatars.fastly.steamstatic.com https://avatars.cloudflare.steamstatic.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self' https://steamcommunity.com; upgrade-insecure-requests">
   <link rel="canonical" href="https://athoxmotorsport-lab.github.io/atx-racing/classement.html">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="fr_BE">
+  <meta property="og:locale:alternate" content="en_GB">
+  <meta property="og:site_name" content="ATX Racing">
+  <meta property="og:title" content="Classements pilotes et équipes | ATX Racing">
+  <meta property="og:description" content="Points, chronos par circuit, progression, niveaux Performance et SAFE des pilotes ATX Racing.">
+  <meta property="og:url" content="https://athoxmotorsport-lab.github.io/atx-racing/classement.html">
+  <meta name="twitter:card" content="summary">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="enhancements.css">
 </head>
@@ -32,7 +40,7 @@
         <h1><span data-fr="Tous les temps" data-en="All time">Tous les temps</span></h1>
         <p class="hero-copy" data-fr="Le classement est ordonné par les points cumulés sur toutes les courses publiées. L’indice de rythme compare les meilleurs résultats du pilote sur chaque circuit à la référence la plus rapide." data-en="The ranking is ordered by total points from every published race. The pace index compares each driver's best result per circuit with the fastest reference.">Le classement est ordonné par les points cumulés sur toutes les courses publiées. L’indice de rythme compare les meilleurs résultats du pilote sur chaque circuit à la référence la plus rapide.</p>
         <div class="leaderboard-legend">
-          <span data-tier="rookie">Rookie · 109%+</span><span data-tier="pro">Pro · 106–108.99%</span><span data-tier="elite">Elite · 102–105.99%</span><span data-tier="alien">Alien · 100–101.99%</span>
+          <span data-tier="rookie">Rookie · 106%+</span><span data-tier="pro">Pro · 104–105.99%</span><span data-tier="elite">Elite · 102–103.99%</span><span data-tier="alien">Alien · 100–101.99%</span>
         </div>
         <div class="ranking-tabs" role="tablist"><button class="active" type="button" data-ranking-tab="general" data-fr="Général" data-en="Overall">Général</button><button type="button" data-ranking-tab="circuit" data-fr="Par circuit" data-en="By circuit">Par circuit</button><button type="button" data-ranking-tab="driver" data-fr="Par pilote" data-en="By driver">Par pilote</button><button type="button" data-ranking-tab="team" data-fr="Par équipe" data-en="By team">Par équipe</button></div>
         <p class="empty-state" data-leaderboard-status data-fr="Chargement du classement…" data-en="Loading ranking…">Chargement du classement…</p>
@@ -46,10 +54,19 @@
           <div data-ranking-panel="team" hidden><div class="ranking-panel-head"><div><h2 data-fr="Classement des équipes" data-en="Team ranking">Classement des équipes</h2><p data-fr="Les points des pilotes déclarant la même équipe sont additionnés." data-en="Points from drivers declaring the same team are combined.">Les points des pilotes déclarant la même équipe sont additionnés.</p></div></div><div class="leaderboard-wrap"><table class="leaderboard-table team-ranking-table"><thead><tr><th>#</th><th data-fr="Équipe" data-en="Team">Équipe</th><th>Points</th><th data-fr="Pilotes" data-en="Drivers">Pilotes</th><th data-fr="Courses" data-en="Races">Courses</th><th data-fr="Victoires" data-en="Wins">Victoires</th><th>Podiums</th><th data-fr="Indice moyen" data-en="Average pace">Indice moyen</th></tr></thead><tbody data-team-ranking-body></tbody></table></div></div>
         </div>
         <p class="leaderboard-note" data-fr="La tendance compare les trois dernières courses chronométrées aux trois précédentes. Une flèche vers le haut signifie que l’indice de rythme s’améliore." data-en="The trend compares the latest three timed races with the previous three. An upward arrow means the pace index is improving.">La tendance compare les trois dernières courses chronométrées aux trois précédentes. Une flèche vers le haut signifie que l’indice de rythme s’améliore.</p>
+        <section class="rating-guide" aria-labelledby="rating-guide-title">
+          <div class="section-label" data-fr="Méthode de calcul" data-en="How ratings work">Méthode de calcul</div>
+          <h2 id="rating-guide-title" data-fr="Comprendre vos blazes." data-en="Understand your badges.">Comprendre vos blazes.</h2>
+          <div class="rating-guide-grid">
+            <article><h3>Performance</h3><p data-fr="L’indice compare votre meilleur tour à la référence la plus rapide du même événement : meilleur tour du pilote ÷ tour de référence × 100. Plus l’indice est proche de 100 %, plus le rythme est rapide." data-en="The pace index compares your best lap with the fastest reference from the same event: driver best lap ÷ reference lap × 100. The closer the index is to 100%, the faster the pace.">L’indice compare votre meilleur tour à la référence la plus rapide du même événement : meilleur tour du pilote ÷ tour de référence × 100. Plus l’indice est proche de 100 %, plus le rythme est rapide.</p><dl class="rating-scale"><div data-tier="alien"><dt>Alien</dt><dd>100–101,99 %</dd></div><div data-tier="elite"><dt>Elite</dt><dd>102–103,99 %</dd></div><div data-tier="pro"><dt>Pro</dt><dd>104–105,99 %</dd></div><div data-tier="rookie"><dt>Rookie</dt><dd>106 % et plus</dd></div></dl></article>
+            <article><h3>SAFE</h3><p data-fr="Le score SAFE correspond au pourcentage de tours valides relevés dans les données ACC importées. Les cuts, hors-piste et pénalités restent visibles dans les résultats et servent au suivi de la conduite propre." data-en="The SAFE score is the percentage of valid laps found in the imported ACC data. Cuts, off-tracks and penalties remain visible in results and support clean-driving review.">Le score SAFE correspond au pourcentage de tours valides relevés dans les données ACC importées. Les cuts, hors-piste et pénalités restent visibles dans les résultats et servent au suivi de la conduite propre.</p><dl class="rating-scale"><div data-tier="gold"><dt>Gold</dt><dd>80–100 %</dd></div><div data-tier="silver"><dt>Silver</dt><dd>60–79,99 %</dd></div><div data-tier="bronze"><dt>Bronze</dt><dd>39–59,99 %</dd></div><div data-tier="unranked"><dt data-fr="Sans blaze" data-en="No badge">Sans blaze</dt><dd data-fr="Moins de 39 %" data-en="Below 39%">Moins de 39 %</dd></div></dl></article>
+          </div>
+          <p class="leaderboard-note" data-fr="Les niveaux évoluent automatiquement lorsque de nouveaux résultats officiels sont publiés. Une correction de résultat entraîne un nouveau calcul." data-en="Levels update automatically when new official results are published. Correcting a result triggers a new calculation.">Les niveaux évoluent automatiquement lorsque de nouveaux résultats officiels sont publiés. Une correction de résultat entraîne un nouveau calcul.</p>
+        </section>
       </div>
     </section>
   </main>
-  <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
+  <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="confidentialite.html" data-fr="Confidentialité" data-en="Privacy">Confidentialité</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
   <script src="main.js"></script>
 </body>
 </html>

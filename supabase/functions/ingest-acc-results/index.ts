@@ -140,16 +140,17 @@ const lapTimeOrNull = (value?: number | null): number | null => {
 };
 
 const performanceClass = (score: number): "alien" | "elite" | "pro" | "rookie" => {
-  if (score <= 101.99) return "alien";
-  if (score <= 105.99) return "elite";
-  if (score <= 108.99) return "pro";
+  if (score < 102) return "alien";
+  if (score < 104) return "elite";
+  if (score < 106) return "pro";
   return "rookie";
 };
 
-const safetyClass = (score: number): "bronze" | "silver" | "gold" => {
-  if (score <= 33) return "bronze";
-  if (score < 70) return "silver";
-  return "gold";
+const safetyClass = (score: number): "bronze" | "silver" | "gold" | null => {
+  if (score >= 80) return "gold";
+  if (score >= 60) return "silver";
+  if (score >= 39) return "bronze";
+  return null;
 };
 
 const cleanStreak = (laps: Array<{ valide?: boolean }>): number => {
@@ -488,7 +489,7 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
             performance_score: score,
             safety_class: safetyClass(safeScore),
             safety_score: safeScore,
-            algorithm_version: "acc-v1",
+            algorithm_version: "acc-v2",
             calculated_at: new Date().toISOString(),
           };
           const { error } = await supabase.from("driver_ratings").upsert({
