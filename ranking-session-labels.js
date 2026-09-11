@@ -34,8 +34,6 @@
       Q: Number(source.Q) > 0 ? Number(source.Q) : null,
       R: Number(source.R) > 0 ? Number(source.R) : null,
     };
-
-    // Backward compatibility with the previous API response.
     if (!laps.FP && !laps.Q && !laps.R && entry?.best_lap_ms && entry?.session_type) {
       const type = String(entry.session_type).toUpperCase();
       if (type === 'FP' || type === 'Q' || type === 'R') laps[type] = Number(entry.best_lap_ms);
@@ -47,14 +45,9 @@
     if (!element || !entry) return;
     const laps = collectSessionLaps(entry);
     const items = [sessionItem('FP', laps.FP), sessionItem('Q', laps.Q), sessionItem('R', laps.R)].filter(Boolean);
-
-    // Never erase a valid time already rendered by main.js when the API does not
-    // yet provide session details.
     if (!items.length) return;
-
     const signature = `${laps.FP || ''}|${laps.Q || ''}|${laps.R || ''}`;
     if (element.dataset.sessionLapSignature === signature) return;
-
     const line = document.createElement('span');
     line.className = 'session-lap-line';
     line.append(...items);
@@ -74,6 +67,16 @@
     if (driver) line.append(document.createTextNode(` · ${driver}`));
     element.replaceChildren(line);
     element.dataset.sessionLapSignature = signature;
+  };
+
+  const timedDriverIds = () => {
+    const ids = new Set();
+    (payload?.circuits || []).forEach(circuit => {
+      (circuit.drivers || []).forEach(driver => {
+        if (Number(driver.best_lap_ms) > 0) ids.add(driver.driver_id);
+      });
+    });
+    return ids;
   };
 
   let payload = null;
@@ -97,8 +100,12 @@
         document.querySelectorAll('[data-circuit-ranking-body] tr').forEach(row => {
           const name = normalise(row.querySelector('th')?.textContent);
           const entry = (circuit.drivers || []).find(driver => normalise(driver.display_name) === name);
+          if (!entry?.best_lap_ms) {
+            row.remove();
+            return;
+          }
           const lapCell = row.children[2];
-          if (entry && lapCell) setSessionLine(lapCell, entry);
+          if (lapCell) setSessionLine(lapCell, entry);
         });
       }
 
@@ -110,12 +117,18 @@
       });
 
       const select = document.querySelector('[data-driver-ranking-select]');
+      if (select) {
+        const validIds = timedDriverIds();
+        [...select.options].forEach(option => {
+          if (!validIds.has(option.value)) option.remove();
+        });
+      }
       const driverId = select?.value;
       document.querySelectorAll('[data-driver-circuit-grid] .driver-circuit-card').forEach((card, index) => {
         const circuitData = payload.circuits?.[index];
         const entry = (circuitData?.drivers || []).find(driver => driver.driver_id === driverId);
         const lap = card.querySelector('b');
-        if (entry && lap) setSessionLine(lap, entry);
+        if (entry?.best_lap_ms && lap) setSessionLine(lap, entry);
       });
     } finally {
       decorating = false;
