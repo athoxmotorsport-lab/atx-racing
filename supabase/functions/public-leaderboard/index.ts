@@ -44,17 +44,17 @@ const circuits = [
   ["suzuka", "Suzuka"], ["valencia", "Valencia"], ["watkins_glen", "Watkins Glen"], ["zandvoort", "Zandvoort"], ["zolder", "Zolder"],
 ] as const;
 
-type BestLap = {
-  lap_ms: number;
-  session_type: "FP" | "Q" | "R" | null;
-  at: string;
-};
+type SessionType = "FP" | "Q" | "R";
+type BestLap = { lap_ms: number; session_type: SessionType; at: string };
+type SessionLaps = { FP: number | null; Q: number | null; R: number | null };
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);
+
   try {
     const supabase = adminClient();
+
     const { data: drivers, error: driversError } = await supabase.from("drivers")
       .select("id, display_name, avatar_url, team_name").eq("is_profile_public", true);
     if (driversError) throw driversError;
@@ -64,7 +64,6 @@ Deno.serve(async (request) => {
     if (claimedError) throw claimedError;
     const claimed = new Set((claimedRows ?? []).map((row) => row.driver_id));
 
-    // Race results remain the source of points, wins, podiums and race count.
     const results: Array<Record<string, unknown>> = [];
     for (let from = 0; from < 10000; from += 1000) {
       const { data, error } = await supabase.from("results")
@@ -75,7 +74,6 @@ Deno.serve(async (request) => {
       if (!data || data.length < 1000) break;
     }
 
-    // Performance pace uses every imported ACC session: FP, qualifying and race.
     const sessionResults: Array<Record<string, unknown>> = [];
     for (let from = 0; from < 10000; from += 1000) {
       const { data, error } = await supabase.from("acc_session_results")
@@ -88,7 +86,7 @@ Deno.serve(async (request) => {
 
     const publicSessionResults = sessionResults.filter((result) => {
       const session = Array.isArray(result.session) ? result.session[0] : result.session as Record<string, unknown> | null;
-      const event = Array.isArray(session?.event) ? session?.event[0] : session?.event as Record<string, unknown> | null;
+      const event = Array.isArray(session?.event) ? session.event[0] : session?.event as Record<string, unknown> | null;
       return event?.is_public === true;
     });
 
@@ -98,20 +96,28 @@ Deno.serve(async (request) => {
     const ratingByDriver = new Map((ratings ?? []).map((rating) => [rating.driver_id, rating]));
 
     const bestByDriverCircuit = new Map<string, BestLap>();
+    const bestByDriverCircuitSession = new Map<string, BestLap>();
     const timelineByDriver = new Map<string, Array<{ at: number; circuit_key: string; lap_ms: number }>>();
+
     for (const result of publicSessionResults) {
       const session = Array.isArray(result.session) ? result.session[0] : result.session as Record<string, unknown> | null;
-      const event = Array.isArray(session?.event) ? session?.event[0] : session?.event as Record<string, unknown> | null;
+      const event = Array.isArray(session?.event) ? session.event[0] : session?.event as Record<string, unknown> | null;
       const circuitKey = String(event?.circuit_key ?? "");
       const lap = Number(result.best_lap_ms);
-      if (!circuitKey || !Number.isFinite(lap) || lap <= 0) continue;
       const sessionType = normaliseSessionType(session?.session_type);
+      if (!circuitKey || !sessionType || !Number.isFinite(lap) || lap <= 0) continue;
+
       const achievedAt = String(session?.published_at ?? session?.created_at ?? result.created_at ?? "");
-      const key = `${result.driver_id}|${circuitKey}`;
-      const current = bestByDriverCircuit.get(key);
-      if (!current || lap < current.lap_ms) {
-        bestByDriverCircuit.set(key, { lap_ms: lap, session_type: sessionType, at: achievedAt });
-      }
+      const baseKey = `${result.driver_id}|${circuitKey}`;
+      const sessionKey = `${baseKey}|${sessionType}`;
+      const best: BestLap = { lap_ms: lap, session_type: sessionType, at: achievedAt };
+
+      const currentOverall = bestByDriverCircuit.get(baseKey);
+      if (!currentOverall || lap < currentOverall.lap_ms) bestByDriverCircuit.set(baseKey, best);
+
+      const currentSession = bestByDriverCircuitSession.get(sessionKey);
+      if (!currentSession || lap < currentSession.lap_ms) bestByDriverCircuitSession.set(sessionKey, best);
+
       const timeline = timelineByDriver.get(String(result.driver_id)) ?? [];
       timeline.push({ at: Date.parse(achievedAt) || 0, circuit_key: circuitKey, lap_ms: lap });
       timelineByDriver.set(String(result.driver_id), timeline);
@@ -123,10 +129,14 @@ Deno.serve(async (request) => {
       const driverId = key.slice(0, separator);
       const circuitKey = key.slice(separator + 1);
       const current = referenceByCircuit.get(circuitKey);
-      if (!current || best.lap_ms < current.lap_ms) {
-        referenceByCircuit.set(circuitKey, { ...best, driver_id: driverId });
-      }
+      if (!current || best.lap_ms < current.lap_ms) referenceByCircuit.set(circuitKey, { ...best, driver_id: driverId });
     }
+
+    const getSessionLaps = (driverId: string, circuitKey: string): SessionLaps => ({
+      FP: bestByDriverCircuitSession.get(`${driverId}|${circuitKey}|FP`)?.lap_ms ?? null,
+      Q: bestByDriverCircuitSession.get(`${driverId}|${circuitKey}|Q`)?.lap_ms ?? null,
+      R: bestByDriverCircuitSession.get(`${driverId}|${circuitKey}|R`)?.lap_ms ?? null,
+    });
 
     const rows = (drivers ?? []).map((driver) => {
       const driverResults = results.filter((result) => result.driver_id === driver.id);
@@ -168,8 +178,7 @@ Deno.serve(async (request) => {
         safety_score: safety?.safety_score ?? null,
       };
     }).filter((row) => row.races > 0 || row.circuits > 0)
-      .sort((first, second) => second.points - first.points || second.wins - first.wins ||
-        (first.performance_score ?? 999) - (second.performance_score ?? 999))
+      .sort((first, second) => second.points - first.points || second.wins - first.wins || (first.performance_score ?? 999) - (second.performance_score ?? 999))
       .map((row, index) => ({ rank: index + 1, ...row }));
 
     const circuitRankings = circuits.map(([circuitKey, circuitName]) => {
@@ -184,6 +193,7 @@ Deno.serve(async (request) => {
           avatar_url: driver.avatar_url,
           best_lap_ms: best?.lap_ms ?? null,
           session_type: best?.session_type ?? null,
+          session_laps: getSessionLaps(driver.id, circuitKey),
           achieved_at: best?.at ?? null,
           pace_percent: best && reference ? Number((best.lap_ms / reference.lap_ms * 100).toFixed(3)) : null,
           performance_class: best && reference ? performanceClass(best.lap_ms / reference.lap_ms * 100) : "unranked",
@@ -200,18 +210,12 @@ Deno.serve(async (request) => {
       };
     });
 
-    const teamGroups = new Map<string, {
-      team_name: string; points: number; races: number; wins: number; podiums: number;
-      member_ids: Set<string>; pace_scores: number[];
-    }>();
+    const teamGroups = new Map<string, { team_name: string; points: number; races: number; wins: number; podiums: number; member_ids: Set<string>; pace_scores: number[] }>();
     for (const driver of rows) {
       const teamName = String(driver.team_name ?? "").trim();
       if (!teamName) continue;
       const key = teamName.toLocaleLowerCase("fr");
-      const team = teamGroups.get(key) ?? {
-        team_name: teamName, points: 0, races: 0, wins: 0, podiums: 0,
-        member_ids: new Set<string>(), pace_scores: [],
-      };
+      const team = teamGroups.get(key) ?? { team_name: teamName, points: 0, races: 0, wins: 0, podiums: 0, member_ids: new Set<string>(), pace_scores: [] };
       team.points += Number(driver.points ?? 0);
       team.races += Number(driver.races ?? 0);
       team.wins += Number(driver.wins ?? 0);
@@ -220,6 +224,7 @@ Deno.serve(async (request) => {
       if (driver.performance_score !== null) team.pace_scores.push(Number(driver.performance_score));
       teamGroups.set(key, team);
     }
+
     const teams = [...teamGroups.values()].map((team) => ({
       team_name: team.team_name,
       points: team.points,
