@@ -1,0 +1,26 @@
+.session-lap-prefix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  padding: .18rem .48rem;
+  margin-right: .16rem;
+  border: 1px solid currentColor;
+  border-radius: .35rem;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: .06em;
+  vertical-align: middle;
+}
+
+[data-circuit-reference] .session-lap-prefix,
+.driver-circuit-card b .session-lap-prefix {
+  font-size: 1.08em;
+}
+
+.ranking-circuit-card small .session-lap-prefix {
+  min-width: 2.15rem;
+  padding: .12rem .35rem;
+  font-size: .82em;
+}
