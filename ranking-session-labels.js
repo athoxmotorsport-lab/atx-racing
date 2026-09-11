@@ -5,7 +5,7 @@
 
   const formatLap = value => {
     const milliseconds = Number(value);
-    if (!Number.isFinite(milliseconds) || milliseconds <= 0) return '—';
+    if (!Number.isFinite(milliseconds) || milliseconds <= 0) return '';
     const minutes = Math.floor(milliseconds / 60000);
     const seconds = Math.floor((milliseconds % 60000) / 1000);
     const remainder = Math.floor(milliseconds % 1000);
@@ -13,20 +13,52 @@
   };
 
   const normalise = value => String(value || '').trim().replace(/\s+/g, ' ');
-  const badge = type => {
-    const strong = document.createElement('strong');
-    strong.className = 'session-lap-prefix';
-    strong.dataset.session = type || '—';
-    strong.textContent = type || '—';
-    return strong;
+
+  const sessionItem = (type, lap) => {
+    const value = formatLap(lap);
+    if (!value) return null;
+    const span = document.createElement('span');
+    span.className = 'session-lap-item';
+    const label = document.createElement('strong');
+    label.className = 'session-lap-prefix';
+    label.dataset.session = type;
+    label.textContent = type;
+    span.append(label, document.createTextNode(` ${value}`));
+    return span;
   };
-  const setLap = (element, type, lap) => {
-    if (!element || !lap) return;
-    const sessionType = type || '—';
-    const signature = `${sessionType}|${lap}`;
+
+  const setSessionLine = (element, laps) => {
+    if (!element) return;
+    const fp = laps?.FP ?? null;
+    const q = laps?.Q ?? null;
+    const r = laps?.R ?? null;
+    const signature = `${fp || ''}|${q || ''}|${r || ''}`;
     if (element.dataset.sessionLapSignature === signature) return;
-    element.replaceChildren(badge(sessionType), document.createTextNode(` : ${formatLap(lap)}`));
+    const items = [sessionItem('FP', fp), sessionItem('Q', q), sessionItem('R', r)].filter(Boolean);
+    element.replaceChildren(...items);
+    element.classList.add('session-lap-line');
     element.dataset.sessionLapSignature = signature;
+  };
+
+  const setReference = (element, type, lap, driver) => {
+    if (!element || !lap) return;
+    const value = formatLap(lap);
+    if (!value) return;
+    const signature = `${type || ''}|${lap}|${driver || ''}`;
+    if (element.dataset.sessionLapSignature === signature) return;
+    const item = sessionItem(type || '', lap);
+    if (!item) {
+      element.textContent = `${value}${driver ? ` · ${driver}` : ''}`;
+    } else {
+      element.replaceChildren(item, document.createTextNode(driver ? ` · ${driver}` : ''));
+    }
+    element.dataset.sessionLapSignature = signature;
+  };
+
+  const getSessionLaps = entry => entry?.session_laps || {
+    FP: entry?.session_type === 'FP' ? entry.best_lap_ms : null,
+    Q: entry?.session_type === 'Q' ? entry.best_lap_ms : null,
+    R: entry?.session_type === 'R' ? entry.best_lap_ms : null,
   };
 
   let payload = null;
@@ -39,22 +71,13 @@
       const circuit = (payload.circuits || []).find(item => normalise(item.circuit_name) === normalise(title?.textContent));
       if (circuit) {
         const reference = document.querySelector('[data-circuit-reference]');
-        if (reference && circuit.reference_lap_ms) {
-          const signature = `${circuit.reference_session_type || '—'}|${circuit.reference_lap_ms}|${circuit.reference_driver || ''}`;
-          if (reference.dataset.sessionLapSignature !== signature) {
-            reference.replaceChildren(
-              badge(circuit.reference_session_type || '—'),
-              document.createTextNode(` : ${formatLap(circuit.reference_lap_ms)} · ${circuit.reference_driver || '—'}`),
-            );
-            reference.dataset.sessionLapSignature = signature;
-          }
-        }
+        setReference(reference, circuit.reference_session_type, circuit.reference_lap_ms, circuit.reference_driver);
 
         document.querySelectorAll('[data-circuit-ranking-body] tr').forEach(row => {
           const name = normalise(row.querySelector('th')?.textContent);
           const entry = (circuit.drivers || []).find(driver => normalise(driver.display_name) === name);
           const lapCell = row.children[2];
-          if (entry?.best_lap_ms && lapCell) setLap(lapCell, entry.session_type, entry.best_lap_ms);
+          if (entry && lapCell) setSessionLine(lapCell, getSessionLaps(entry));
         });
       }
 
@@ -62,13 +85,7 @@
         const circuitData = payload.circuits?.[index];
         const small = card.querySelector('small');
         if (!small || !circuitData?.reference_lap_ms) return;
-        const signature = `${circuitData.reference_session_type || '—'}|${circuitData.reference_lap_ms}|${circuitData.reference_driver || ''}`;
-        if (small.dataset.sessionLapSignature === signature) return;
-        small.replaceChildren(
-          badge(circuitData.reference_session_type || '—'),
-          document.createTextNode(` : ${formatLap(circuitData.reference_lap_ms)} · ${circuitData.reference_driver || '—'}`),
-        );
-        small.dataset.sessionLapSignature = signature;
+        setReference(small, circuitData.reference_session_type, circuitData.reference_lap_ms, circuitData.reference_driver);
       });
 
       const select = document.querySelector('[data-driver-ranking-select]');
@@ -77,7 +94,7 @@
         const circuitData = payload.circuits?.[index];
         const entry = (circuitData?.drivers || []).find(driver => driver.driver_id === driverId);
         const lap = card.querySelector('b');
-        if (entry?.best_lap_ms && lap) setLap(lap, entry.session_type, entry.best_lap_ms);
+        if (entry && lap) setSessionLine(lap, getSessionLaps(entry));
       });
     } finally {
       decorating = false;
