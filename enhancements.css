@@ -56,3 +56,25 @@ h2{font-size:clamp(34px,4.4vw,56px);font-style:normal;line-height:1;letter-spaci
 @media(max-width:700px){.schedule-editor-row{grid-template-columns:1fr 1fr}.schedule-editor-row>strong{grid-column:1/-1;padding-bottom:0}}
 .public-event-overview{display:grid;gap:28px;margin:36px 0 54px;padding:26px;border:1px solid var(--line);background:#0a1925}.public-event-overview h2,.results-heading{margin:0 0 18px;font-size:28px}.public-event-schedule{margin-top:0}.schedule-grid-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.schedule-grid-grid div{padding:16px;border:1px solid var(--line);background:#07121c}.schedule-grid-grid small,.schedule-grid-grid strong{display:block}.schedule-grid-grid small{color:var(--muted);font-size:10px;text-transform:uppercase}.schedule-grid-grid strong{margin-top:6px;font:800 17px "Barlow",Inter,sans-serif;text-transform:uppercase}.results-heading{margin-top:42px}.results-table-wrap[data-event-results-wrap][hidden]{display:none!important}
 @media(max-width:760px){.schedule-grid-grid{grid-template-columns:1fr 1fr}.public-event-overview{padding:20px}}
+
+/* Stable driver history rows: awards never shift metrics or the standings link */
+.profile-result-row{
+  grid-template-columns:minmax(150px,.75fr) minmax(190px,1fr) minmax(340px,1.8fr);
+  grid-template-areas:
+    "meta title awards"
+    "meta action metrics";
+  column-gap:20px;
+  row-gap:12px;
+}
+.profile-result-top{grid-area:meta}
+.profile-result-row>strong{grid-area:title;min-width:0}
+.result-awards{grid-area:awards;justify-self:end;justify-content:flex-end;align-self:center}
+.profile-result-metrics{grid-area:metrics;width:100%;min-width:0}
+.profile-result-row>em{grid-area:action;justify-self:start;align-self:center;margin:0}
+@media(max-width:1180px){
+  .profile-result-row{
+    grid-template-columns:1fr;
+    grid-template-areas:"meta" "title" "awards" "metrics" "action";
+  }
+  .result-awards{justify-self:start;justify-content:flex-start}
+}
