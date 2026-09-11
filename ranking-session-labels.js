@@ -16,7 +16,7 @@
 
   const sessionItem = (type, lap) => {
     const value = formatLap(lap);
-    if (!value) return null;
+    if (!value || !type) return null;
     const span = document.createElement('span');
     span.className = 'session-lap-item';
     const label = document.createElement('strong');
@@ -27,57 +27,78 @@
     return span;
   };
 
-  const setSessionLine = (element, laps) => {
-    if (!element) return;
-    const fp = laps?.FP ?? null;
-    const q = laps?.Q ?? null;
-    const r = laps?.R ?? null;
-    const signature = `${fp || ''}|${q || ''}|${r || ''}`;
+  const collectSessionLaps = entry => {
+    const source = entry?.session_laps || {};
+    const laps = {
+      FP: Number(source.FP) > 0 ? Number(source.FP) : null,
+      Q: Number(source.Q) > 0 ? Number(source.Q) : null,
+      R: Number(source.R) > 0 ? Number(source.R) : null,
+    };
+
+    // Backward compatibility with the previous API response.
+    if (!laps.FP && !laps.Q && !laps.R && entry?.best_lap_ms && entry?.session_type) {
+      const type = String(entry.session_type).toUpperCase();
+      if (type === 'FP' || type === 'Q' || type === 'R') laps[type] = Number(entry.best_lap_ms);
+    }
+    return laps;
+  };
+
+  const setSessionLine = (element, entry) => {
+    if (!element || !entry) return;
+    const laps = collectSessionLaps(entry);
+    const items = [sessionItem('FP', laps.FP), sessionItem('Q', laps.Q), sessionItem('R', laps.R)].filter(Boolean);
+
+    // Never erase a valid time already rendered by main.js when the API does not
+    // yet provide session details.
+    if (!items.length) return;
+
+    const signature = `${laps.FP || ''}|${laps.Q || ''}|${laps.R || ''}`;
     if (element.dataset.sessionLapSignature === signature) return;
-    const items = [sessionItem('FP', fp), sessionItem('Q', q), sessionItem('R', r)].filter(Boolean);
-    element.replaceChildren(...items);
-    element.classList.add('session-lap-line');
+
+    const line = document.createElement('span');
+    line.className = 'session-lap-line';
+    line.append(...items);
+    element.replaceChildren(line);
     element.dataset.sessionLapSignature = signature;
   };
 
   const setReference = (element, type, lap, driver) => {
-    if (!element || !lap) return;
-    const value = formatLap(lap);
-    if (!value) return;
-    const signature = `${type || ''}|${lap}|${driver || ''}`;
+    if (!element || !lap || !type) return;
+    const item = sessionItem(type, lap);
+    if (!item) return;
+    const signature = `${type}|${lap}|${driver || ''}`;
     if (element.dataset.sessionLapSignature === signature) return;
-    const item = sessionItem(type || '', lap);
-    if (!item) {
-      element.textContent = `${value}${driver ? ` · ${driver}` : ''}`;
-    } else {
-      element.replaceChildren(item, document.createTextNode(driver ? ` · ${driver}` : ''));
-    }
+    const line = document.createElement('span');
+    line.className = 'session-lap-line';
+    line.append(item);
+    if (driver) line.append(document.createTextNode(` · ${driver}`));
+    element.replaceChildren(line);
     element.dataset.sessionLapSignature = signature;
-  };
-
-  const getSessionLaps = entry => entry?.session_laps || {
-    FP: entry?.session_type === 'FP' ? entry.best_lap_ms : null,
-    Q: entry?.session_type === 'Q' ? entry.best_lap_ms : null,
-    R: entry?.session_type === 'R' ? entry.best_lap_ms : null,
   };
 
   let payload = null;
   let decorating = false;
+
   const decorate = () => {
     if (!payload || decorating) return;
     decorating = true;
     try {
       const title = document.querySelector('[data-circuit-ranking-title]');
       const circuit = (payload.circuits || []).find(item => normalise(item.circuit_name) === normalise(title?.textContent));
+
       if (circuit) {
-        const reference = document.querySelector('[data-circuit-reference]');
-        setReference(reference, circuit.reference_session_type, circuit.reference_lap_ms, circuit.reference_driver);
+        setReference(
+          document.querySelector('[data-circuit-reference]'),
+          circuit.reference_session_type,
+          circuit.reference_lap_ms,
+          circuit.reference_driver,
+        );
 
         document.querySelectorAll('[data-circuit-ranking-body] tr').forEach(row => {
           const name = normalise(row.querySelector('th')?.textContent);
           const entry = (circuit.drivers || []).find(driver => normalise(driver.display_name) === name);
           const lapCell = row.children[2];
-          if (entry && lapCell) setSessionLine(lapCell, getSessionLaps(entry));
+          if (entry && lapCell) setSessionLine(lapCell, entry);
         });
       }
 
@@ -94,14 +115,14 @@
         const circuitData = payload.circuits?.[index];
         const entry = (circuitData?.drivers || []).find(driver => driver.driver_id === driverId);
         const lap = card.querySelector('b');
-        if (entry && lap) setSessionLine(lap, getSessionLaps(entry));
+        if (entry && lap) setSessionLine(lap, entry);
       });
     } finally {
       decorating = false;
     }
   };
 
-  fetch(`${apiBase}/public-leaderboard`)
+  fetch(`${apiBase}/public-leaderboard`, { cache: 'no-store' })
     .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed')))
     .then(data => {
       payload = data;
