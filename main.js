@@ -140,16 +140,52 @@
       const event = payload.event || {};
       const title = eventView.querySelector('[data-event-title]');
       const publicTitle = `Daily Race · ${event.circuit_name || 'ACC'}`;
-      title.dataset.fr = publicTitle;
-      title.dataset.en = publicTitle;
-      eventView.querySelector('[data-event-circuit]').textContent = event.circuit_name || '—';
+      if (title) {
+        title.dataset.fr = publicTitle;
+        title.dataset.en = publicTitle;
+      }
+      const circuit = eventView.querySelector('[data-event-circuit]');
+      if (circuit) circuit.textContent = event.circuit_name || '—';
       const date = eventView.querySelector('[data-event-date]');
-      if (event.starts_at) {
+      if (date && event.starts_at) {
         date.dataset.fr = new Intl.DateTimeFormat('fr-BE', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(new Date(event.starts_at));
         date.dataset.en = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(new Date(event.starts_at));
-      } else {
+      } else if (date) {
         date.dataset.fr = '—';
         date.dataset.en = '—';
+      }
+      const overview = eventView.querySelector('[data-event-overview]');
+      if (overview) {
+        const scheduleContainer = overview.querySelector('[data-event-schedule]');
+        const settingsContainer = overview.querySelector('[data-event-settings]');
+        const registration = overview.querySelector('[data-event-registration]');
+        scheduleContainer.replaceChildren();
+        (Array.isArray(event.event_schedule) ? event.event_schedule : []).forEach(item => {
+          const block = document.createElement('div');
+          const label = document.createElement('small');
+          label.dataset.fr = item.labelFr || item.label_fr || item.key;
+          label.dataset.en = item.labelEn || item.label_en || item.key;
+          const value = document.createElement('strong');
+          value.textContent = `${String(item.start || '—').replace(':', 'h')} – ${String(item.end || '—').replace(':', 'h')}`;
+          block.append(label, value); scheduleContainer.append(block);
+        });
+        const setting = (fr, en, valueFr, valueEn = valueFr) => {
+          const block = document.createElement('div');
+          const label = document.createElement('small'); label.dataset.fr = fr; label.dataset.en = en;
+          const value = document.createElement('strong'); value.dataset.fr = valueFr; value.dataset.en = valueEn;
+          block.append(label, value); settingsContainer.append(block);
+        };
+        settingsContainer.replaceChildren();
+        setting('Voitures', 'Cars', event.car_class || 'GT3');
+        setting('Pilotes', 'Drivers', `${event.max_drivers || '—'} maximum`, `${event.max_drivers || '—'} maximum`);
+        setting('Arrêt obligatoire', 'Mandatory pit stop', event.mandatory_pit_stop ? 'Oui' : 'Non', event.mandatory_pit_stop ? 'Yes' : 'No');
+        setting('Pneus obligatoires', 'Mandatory tyres', event.mandatory_tyre_change ? 'Oui' : 'Non', event.mandatory_tyre_change ? 'Yes' : 'No');
+        setting('Ravitaillement obligatoire', 'Mandatory refuelling', event.mandatory_refuelling ? 'Oui' : 'Non', event.mandatory_refuelling ? 'Yes' : 'No');
+        setting('Temps accéléré', 'Time multiplier', `x${event.time_multiplier || 1}`);
+        if (event.server_name) setting('Serveur', 'Server', event.server_name);
+        if (registration && event.simgrid_url) registration.href = event.simgrid_url;
+        else if (registration) registration.hidden = true;
+        overview.hidden = false;
       }
       const body = eventView.querySelector('[data-event-results]');
       body.replaceChildren();
@@ -172,6 +208,8 @@
         });
         body.append(row);
       });
+      const resultsWrap = eventView.querySelector('[data-event-results-wrap]');
+      if (resultsWrap) resultsWrap.hidden = !(payload.results || []).length;
       const honours = eventView.querySelector('[data-event-honours]');
       if (honours) {
         const fast = (payload.honours || []).find(item => item.award_type === 'fast_driver');
@@ -189,17 +227,46 @@
         }
         honours.hidden = !(fast || gentleman);
       }
-      eventStatus.hidden = true;
+      if ((payload.results || []).length) {
+        eventStatus.hidden = true;
+      } else {
+        eventStatus.hidden = false;
+        eventStatus.dataset.fr = 'Le résultat officiel n’est pas encore publié.';
+        eventStatus.dataset.en = 'The official result has not been published yet.';
+      }
       applyLanguage(language);
     };
-    const slug = new URLSearchParams(location.search).get('event') || eventView.dataset.publicEvent;
-    if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug || '')) {
+    const loadEvent = slug => {
       fetch(`${apiBase}/public-event?slug=${encodeURIComponent(slug)}`)
         .then(response => response.ok ? response.json() : Promise.reject(new Error('event_load_failed')))
         .then(renderPublicEvent)
         .catch(() => {
           eventStatus.dataset.fr = 'Le classement officiel n’est pas encore disponible.';
           eventStatus.dataset.en = 'The official standings are not available yet.';
+          applyLanguage(language);
+        });
+    };
+    const requestedSlug = new URLSearchParams(location.search).get('event') || eventView.dataset.publicEvent;
+    if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requestedSlug || '')) {
+      loadEvent(requestedSlug);
+    } else if (eventView.dataset.eventDateKey && eventView.dataset.eventCircuitKey) {
+      const normaliseCircuit = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').replace(/-gp$/g, '');
+      fetch(`${apiBase}/public-event`)
+        .then(response => response.ok ? response.json() : Promise.reject(new Error('event_list_failed')))
+        .then(payload => {
+          const matching = [...(payload.archives || []), ...(payload.events || [])].find(item => {
+            const parts = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Europe/Brussels' })
+              .formatToParts(new Date(item.starts_at));
+            const localDate = ['year', 'month', 'day'].map(type => parts.find(part => part.type === type)?.value || '').join('-');
+            return localDate === eventView.dataset.eventDateKey && normaliseCircuit(item.circuit_name) === normaliseCircuit(eventView.dataset.eventCircuitKey);
+          });
+          if (!matching?.slug) throw new Error('event_not_found');
+          loadEvent(matching.slug);
+        })
+        .catch(() => {
+          eventStatus.dataset.fr = 'Le résultat officiel n’est pas encore publié.';
+          eventStatus.dataset.en = 'The official result has not been published yet.';
           applyLanguage(language);
         });
     } else {
@@ -490,12 +557,40 @@
   const adminForm = document.querySelector('[data-event-form]');
   if (adminForm) {
     const formStatus = document.querySelector('[data-form-status]');
+    const discordReminder = document.querySelector('[data-discord-reminder]');
     const setFormStatus = (fr, en, state = '') => {
       formStatus.dataset.fr = fr;
       formStatus.dataset.en = en;
       formStatus.dataset.state = state;
       formStatus.textContent = language === 'fr' ? fr : en;
     };
+    const timeLabel = value => /^\d{2}:\d{2}$/.test(String(value || '')) ? String(value).replace(':', ' h ') : '—';
+    const yesNo = value => String(value) === 'true' ? 'Oui' : 'Non';
+    const scheduleFrom = data => [
+      { key: 'practice_1', labelFr: 'Essais libres', labelEn: 'Free practice', start: data.get('practice1Start'), end: data.get('practice1End') },
+      { key: 'briefing', labelFr: 'Essais libres 2 - Briefing (Discord)', labelEn: 'Free practice 2 - Briefing (Discord)', start: data.get('briefingStart'), end: data.get('briefingEnd') },
+      { key: 'qualifying', labelFr: 'Qualifications', labelEn: 'Qualifying', start: data.get('qualifyingStart'), end: data.get('qualifyingEnd') },
+      { key: 'race', labelFr: 'Course', labelEn: 'Race', start: data.get('raceStart'), end: data.get('raceEnd') },
+    ];
+    const updateDiscordReminder = () => {
+      if (!discordReminder) return;
+      const data = new FormData(adminForm);
+      const schedule = scheduleFrom(data);
+      const fixedRefuel = Number(data.get('fixedRefuellingSeconds'));
+      discordReminder.value = `C'est le JOUR DE LA COURSE ! 🏁\n\nInscription : ${data.get('simgridUrl') || '—'}\n\nCircuit : ${data.get('circuit') || '—'}\nVoitures : ${data.get('carClass') || 'GT3'}\n\nProgramme (${data.get('timezoneLabel') || 'UTC+2'}) :\n${schedule.map(item => `${timeLabel(item.start)} – ${timeLabel(item.end)} — ${item.labelFr}`).join('\n')}\n\n🔹 Arrêt au stand obligatoire : ${yesNo(data.get('mandatoryPitStop'))}\n🔹 Changement de pneus obligatoire : ${yesNo(data.get('mandatoryTyreChange'))}\n🔹 Ravitaillement obligatoire : ${yesNo(data.get('mandatoryRefuelling'))}\n🔹 Durée de ravitaillement fixe : ${fixedRefuel > 0 ? `${fixedRefuel} secondes` : 'Non'}\n🔹 Accélération du temps : x${data.get('timeMultiplier') || '1'}\n\nServeur : ${data.get('serverName') || '—'}\nMot de passe : ${data.get('serverPassword') || '—'}\n\n‼️ Il est strictement interdit de discuter pendant la course et les qualifications.\n‼️ Pendant le tour de formation, maintenez votre position et évitez de dépasser ou de croiser d’autres voitures.\n‼️ Au départ et pendant les premiers tours, conduisez avec autant de prudence et de respect que possible, en veillant à ne pas gâcher la course pour vous-même ou pour les autres.`;
+    };
+    adminForm.addEventListener('input', updateDiscordReminder);
+    document.querySelector('[data-copy-discord]')?.addEventListener('click', async () => {
+      updateDiscordReminder();
+      try {
+        await navigator.clipboard.writeText(discordReminder?.value || '');
+        setFormStatus('Rappel Discord copié.', 'Discord reminder copied.', 'success');
+      } catch {
+        discordReminder?.select();
+        setFormStatus('Sélectionnez le texte puis copiez-le avec Ctrl+C.', 'Select the text, then copy it with Ctrl+C.', 'error');
+      }
+    });
+    updateDiscordReminder();
     checkAdminSession().then(payload => {
       if (!payload || !revealAdminTools(payload.driver)) {
         adminForm.hidden = true;
@@ -528,6 +623,12 @@
           titleFr: data.get('titleFr'), titleEn: data.get('titleEn'), circuit: data.get('circuit'),
           startsAt: data.get('startsAt'), durationMinutes: Number(data.get('durationMinutes')),
           maxDrivers: Number(data.get('maxDrivers')), eventType: data.get('eventType'),
+          carClass: data.get('carClass'), timezoneLabel: data.get('timezoneLabel'), schedule: scheduleFrom(data),
+          mandatoryPitStop: data.get('mandatoryPitStop') === 'true',
+          mandatoryTyreChange: data.get('mandatoryTyreChange') === 'true',
+          mandatoryRefuelling: data.get('mandatoryRefuelling') === 'true',
+          fixedRefuellingSeconds: data.get('fixedRefuellingSeconds') ? Number(data.get('fixedRefuellingSeconds')) : null,
+          timeMultiplier: Number(data.get('timeMultiplier')), serverName: data.get('serverName'),
           simgridUrl: data.get('simgridUrl'), imageData, imageType: image instanceof File ? image.type : null,
         };
         const response = await fetch(`${apiBase}/manage-events`, {
@@ -536,6 +637,7 @@
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload.error || 'publish_failed');
         adminForm.reset();
+        updateDiscordReminder();
         setFormStatus('Événement publié. Il apparaîtra automatiquement dans le calendrier.', 'Event published. It will appear automatically in the calendar.', 'success');
       } catch (error) {
         const tooLarge = error instanceof Error && error.message === 'image_too_large';

@@ -24,11 +24,11 @@
   <aside class="side-nav" aria-label="Navigation principale">
     <div class="side-brand"><a class="brand" href="index.html">ATX <span>Racing</span></a><small>Event Division</small></div>
     <nav class="side-links">
-      <a href="index.html"><b>01</b><span data-fr="Accueil" data-en="Home">Accueil</span></a>
-      <a class="active" href="index.html#events"><b>02</b><span data-fr="Calendrier" data-en="Calendar">Calendrier</span></a>
-      <a href="reglement.html"><b>03</b><span data-fr="Règlement" data-en="Rules">Règlement</span></a>
-      <a href="classement.html"><b>04</b><span data-fr="Classement" data-en="Ranking">Classement</span></a>
-      <a href="index.html#archives"><b>05</b><span data-fr="Archives" data-en="Archive">Archives</span></a>
+      <a href="index.html"><span data-fr="Accueil" data-en="Home">Accueil</span></a>
+      <a class="active" href="index.html#events"><span data-fr="Calendrier" data-en="Calendar">Calendrier</span></a>
+      <a href="reglement.html"><span data-fr="Règlement" data-en="Rules">Règlement</span></a>
+      <a href="classement.html"><span data-fr="Classement" data-en="Ranking">Classement</span></a>
+      <a href="index.html#archives"><span data-fr="Archives" data-en="Archive">Archives</span></a>
     </nav>
     <div class="side-actions">
       <a class="steam-button" href="https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/auth-steam" aria-label="Sign in through Steam"><img src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam"></a>
@@ -41,12 +41,18 @@
         <div class="section-label" data-fr="Classement officiel" data-en="Official standings">Classement officiel</div>
         <h1 data-event-title>Daily Race · ACC</h1>
         <div class="event-result-meta"><span data-event-circuit>—</span><span data-event-date>—</span></div>
+        <div class="public-event-overview" data-event-overview hidden>
+          <div><h2 data-fr="Programme" data-en="Schedule">Programme</h2><div class="schedule public-event-schedule" data-event-schedule></div></div>
+          <div><h2 data-fr="Paramètres de course" data-en="Race settings">Paramètres de course</h2><div class="schedule-grid-grid" data-event-settings></div></div>
+          <div class="actions"><a class="btn primary" data-event-registration target="_blank" rel="noopener" data-fr="S’inscrire" data-en="Register">S’inscrire</a><a class="btn" href="reglement.html" data-fr="Lire le règlement" data-en="Read the rules">Lire le règlement</a></div>
+        </div>
+        <h2 class="results-heading" data-fr="Résultats officiels" data-en="Official results">Résultats officiels</h2>
         <p class="empty-state" data-event-status data-fr="Chargement du classement…" data-en="Loading standings…">Chargement du classement…</p>
         <div class="event-honours" data-event-honours hidden>
           <article class="honour-card fast"><div class="honour-emblem">FD</div><div><small>Fast Driver</small><strong data-fast-driver>—</strong><span data-fast-detail>—</span></div></article>
           <article class="honour-card gentleman"><div class="honour-emblem">GD</div><div><small>Gentleman Driver</small><strong data-gentleman-driver>—</strong><span data-gentleman-detail>—</span></div></article>
         </div>
-        <div class="results-table-wrap">
+        <div class="results-table-wrap" data-event-results-wrap hidden>
           <table class="results-table">
             <thead><tr><th data-fr="Place" data-en="Pos.">Place</th><th data-fr="Pilote" data-en="Driver">Pilote</th><th data-fr="Voiture" data-en="Car">Voiture</th><th data-fr="Tours" data-en="Laps">Tours</th><th data-fr="Meilleur tour" data-en="Best lap">Meilleur tour</th><th>Points</th></tr></thead>
             <tbody data-event-results></tbody>

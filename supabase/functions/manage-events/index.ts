@@ -10,6 +10,20 @@ const allowedImages = new Map([
 const cleanText = (value: unknown, maximum: number): string =>
   typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, maximum) : "";
 
+type ScheduleItem = { key: string; labelFr: string; labelEn: string; start: string; end: string };
+const cleanSchedule = (value: unknown): ScheduleItem[] | null => {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 8) return null;
+  const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+  const allowedKeys = new Set(["practice_1", "practice_2", "briefing", "qualifying", "race"]);
+  const items = value.map((item): ScheduleItem => ({
+    key: cleanText(item?.key, 24), labelFr: cleanText(item?.labelFr, 64), labelEn: cleanText(item?.labelEn, 64),
+    start: cleanText(item?.start, 5), end: cleanText(item?.end, 5),
+  }));
+  if (items.some((item) => !allowedKeys.has(item.key) || !item.labelFr || !item.labelEn ||
+    !timePattern.test(item.start) || !timePattern.test(item.end))) return null;
+  return items;
+};
+
 const slugPart = (value: string): string => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
   .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 58) || "event";
 
@@ -41,16 +55,28 @@ Deno.serve(async (request) => {
     const eventType = cleanText(body.eventType, 32);
     const durationMinutes = Number(body.durationMinutes);
     const maxDrivers = Number(body.maxDrivers);
+    const carClass = cleanText(body.carClass, 32);
+    const timezoneLabel = cleanText(body.timezoneLabel, 32);
+    const schedule = cleanSchedule(body.schedule);
+    const mandatoryPitStop = body.mandatoryPitStop === true;
+    const mandatoryTyreChange = body.mandatoryTyreChange === true;
+    const mandatoryRefuelling = body.mandatoryRefuelling === true;
+    const fixedRefuellingSeconds = body.fixedRefuellingSeconds === null ? null : Number(body.fixedRefuellingSeconds);
+    const timeMultiplier = Number(body.timeMultiplier);
+    const serverName = cleanText(body.serverName, 120);
     const startsAt = new Date(String(body.startsAt ?? ""));
     const simgridUrl = new URL(String(body.simgridUrl ?? ""));
     const imageType = cleanText(body.imageType, 32);
     const extension = allowedImages.get(imageType);
     const imageData = typeof body.imageData === "string" ? body.imageData : "";
-    if (!titleFr || !titleEn || !circuit || !allowedTypes.has(eventType) || !extension || !imageData) {
+    if (!titleFr || !titleEn || !circuit || !carClass || !timezoneLabel || !schedule ||
+      !allowedTypes.has(eventType) || !extension || !imageData) {
       return jsonResponse(request, { error: "invalid_fields" }, 400);
     }
     if (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 1440 ||
-      !Number.isInteger(maxDrivers) || maxDrivers < 1 || maxDrivers > 100 || Number.isNaN(startsAt.getTime())) {
+      !Number.isInteger(maxDrivers) || maxDrivers < 1 || maxDrivers > 100 || Number.isNaN(startsAt.getTime()) ||
+      (fixedRefuellingSeconds !== null && (!Number.isInteger(fixedRefuellingSeconds) || fixedRefuellingSeconds < 0 || fixedRefuellingSeconds > 600)) ||
+      !Number.isFinite(timeMultiplier) || timeMultiplier < 1 || timeMultiplier > 24) {
       return jsonResponse(request, { error: "invalid_fields" }, 400);
     }
     if (!/(^|\.)thesimgrid\.com$/i.test(simgridUrl.hostname) || simgridUrl.protocol !== "https:") {
@@ -75,6 +101,10 @@ Deno.serve(async (request) => {
       slug, event_type: eventType, status: "registration_open", title_fr: titleFr, title_en: titleEn,
       circuit_name: circuit, circuit_key: circuitKey, starts_at: startsAt.toISOString(), timezone: "Europe/Brussels",
       duration_minutes: durationMinutes, max_drivers: maxDrivers, simgrid_url: simgridUrl.toString(),
+      car_class: carClass, schedule_timezone_label: timezoneLabel, event_schedule: schedule,
+      mandatory_pit_stop: mandatoryPitStop, mandatory_tyre_change: mandatoryTyreChange,
+      mandatory_refuelling: mandatoryRefuelling, fixed_refuelling_seconds: fixedRefuellingSeconds,
+      time_multiplier: timeMultiplier, server_name: serverName || null,
       image_url: publicImage.publicUrl, is_public: true, is_official: true,
     }).select("slug, title_fr, starts_at, image_url").single();
     if (eventError) {

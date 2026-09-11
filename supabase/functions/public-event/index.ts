@@ -19,7 +19,7 @@ Deno.serve(async (request) => {
   if (!slug) {
     const supabase = adminClient();
     const { data: events, error } = await supabase.from("events")
-      .select("id, slug, event_type, status, title_fr, title_en, circuit_name, starts_at, duration_minutes, max_drivers, simgrid_url, image_url")
+      .select("id, slug, event_type, status, title_fr, title_en, circuit_name, starts_at, duration_minutes, max_drivers, simgrid_url, image_url, car_class, schedule_timezone_label, event_schedule, mandatory_pit_stop, mandatory_tyre_change, mandatory_refuelling, fixed_refuelling_seconds, time_multiplier, server_name")
       .eq("is_public", true).order("starts_at", { ascending: false }).limit(100);
     if (error) return json({ error: "server_error" }, 500);
     const ids = (events ?? []).map((event) => event.id);
@@ -46,7 +46,7 @@ Deno.serve(async (request) => {
 
   const supabase = adminClient();
   const { data: event, error } = await supabase.from("events")
-    .select("id, slug, title_fr, title_en, circuit_name, starts_at, duration_minutes, server_name, is_official")
+    .select("id, slug, title_fr, title_en, circuit_name, starts_at, duration_minutes, max_drivers, simgrid_url, image_url, server_name, is_official, car_class, schedule_timezone_label, event_schedule, mandatory_pit_stop, mandatory_tyre_change, mandatory_refuelling, fixed_refuelling_seconds, time_multiplier")
     .eq("slug", slug).eq("is_public", true).maybeSingle();
   if (error) return json({ error: "server_error" }, 500);
   if (!event) return json({ error: "event_not_found" }, 404);
