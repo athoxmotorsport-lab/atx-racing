@@ -36,6 +36,20 @@ const normaliseSessionType = (value: unknown): "FP" | "Q" | "R" | null => {
   return type === "FP" || type === "Q" || type === "R" ? type : null;
 };
 
+const canonicalCircuitKey = (value: unknown): string => {
+  const key = String(value ?? "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  const aliases: Record<string, string> = {
+    nurburgring_gp: "nurburgring",
+    nurburgring_2020: "nurburgring",
+    nurburgring_gp_2020: "nurburgring",
+    spa_francorchamps: "spa",
+    circuit_of_the_americas: "cota",
+  };
+  return aliases[key] ?? key;
+};
+
 const circuits = [
   ["barcelona", "Barcelona"], ["brands_hatch", "Brands Hatch"], ["cota", "Circuit of the Americas"], ["donington", "Donington Park"], ["hungaroring", "Hungaroring"],
   ["imola", "Imola"], ["indianapolis", "Indianapolis"], ["kyalami", "Kyalami"], ["laguna_seca", "Laguna Seca"], ["misano", "Misano"],
@@ -102,7 +116,7 @@ Deno.serve(async (request) => {
     for (const result of publicSessionResults) {
       const session = Array.isArray(result.session) ? result.session[0] : result.session as Record<string, unknown> | null;
       const event = Array.isArray(session?.event) ? session.event[0] : session?.event as Record<string, unknown> | null;
-      const circuitKey = String(event?.circuit_key ?? "");
+      const circuitKey = canonicalCircuitKey(event?.circuit_key ?? event?.circuit_name);
       const lap = Number(result.best_lap_ms);
       const sessionType = normaliseSessionType(session?.session_type);
       if (!circuitKey || !sessionType || !Number.isFinite(lap) || lap <= 0) continue;
@@ -177,28 +191,29 @@ Deno.serve(async (request) => {
         safety_class: safetyClass(safety?.safety_score == null ? null : Number(safety.safety_score)),
         safety_score: safety?.safety_score ?? null,
       };
-    }).filter((row) => row.races > 0 || row.circuits > 0)
+    }).filter((row) => row.circuits > 0)
       .sort((first, second) => second.points - first.points || second.wins - first.wins || (first.performance_score ?? 999) - (second.performance_score ?? 999))
       .map((row, index) => ({ rank: index + 1, ...row }));
 
     const circuitRankings = circuits.map(([circuitKey, circuitName]) => {
       const reference = referenceByCircuit.get(circuitKey) ?? null;
       const referenceDriver = reference ? (drivers ?? []).find((driver) => driver.id === reference.driver_id) : null;
-      const entries = (drivers ?? []).map((driver) => {
+      const entries = (drivers ?? []).flatMap((driver) => {
         const best = bestByDriverCircuit.get(`${driver.id}|${circuitKey}`);
-        return {
+        if (!best) return [];
+        return [{
           driver_id: driver.id,
           profile_id: claimed.has(driver.id) ? driver.id : null,
           display_name: driver.display_name,
           avatar_url: driver.avatar_url,
-          best_lap_ms: best?.lap_ms ?? null,
-          session_type: best?.session_type ?? null,
+          best_lap_ms: best.lap_ms,
+          session_type: best.session_type,
           session_laps: getSessionLaps(driver.id, circuitKey),
-          achieved_at: best?.at ?? null,
-          pace_percent: best && reference ? Number((best.lap_ms / reference.lap_ms * 100).toFixed(3)) : null,
-          performance_class: best && reference ? performanceClass(best.lap_ms / reference.lap_ms * 100) : "unranked",
-        };
-      }).sort((first, second) => (first.best_lap_ms ?? Number.MAX_SAFE_INTEGER) - (second.best_lap_ms ?? Number.MAX_SAFE_INTEGER) || first.display_name.localeCompare(second.display_name));
+          achieved_at: best.at,
+          pace_percent: reference ? Number((best.lap_ms / reference.lap_ms * 100).toFixed(3)) : null,
+          performance_class: reference ? performanceClass(best.lap_ms / reference.lap_ms * 100) : "unranked",
+        }];
+      }).sort((first, second) => first.best_lap_ms - second.best_lap_ms || first.display_name.localeCompare(second.display_name));
 
       return {
         circuit_key: circuitKey,
