@@ -1,14 +1,16 @@
 .session-lap-line {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: .45rem .8rem;
+  gap: .35rem .75rem;
+  max-width: 100%;
+  vertical-align: middle;
 }
 
 .session-lap-item {
   display: inline-flex;
   align-items: baseline;
-  gap: .28rem;
+  gap: .24rem;
   white-space: nowrap;
 }
 
@@ -18,10 +20,14 @@
   padding: 0;
   border: 0;
   border-radius: 0;
-  font-size: .92em;
+  font-size: .9em;
   font-weight: 900;
   line-height: 1;
-  letter-spacing: .06em;
+  letter-spacing: .05em;
+}
+
+[data-circuit-ranking-body] td .session-lap-line {
+  justify-content: flex-start;
 }
 
 [data-circuit-reference] .session-lap-prefix,
