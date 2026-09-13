@@ -2,34 +2,189 @@
   const body = document.body;
   if (!body.classList.contains('home-page')) return;
 
-  const getEventDate = card => {
-    const key = String(card?.dataset?.eventKey || '');
-    const datePart = key.split('|')[0];
-    const date = new Date(`${datePart}T23:59:59`);
-    return Number.isFinite(date.getTime()) ? date : null;
-  };
-
+  const apiBase = 'https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1';
   const getLang = () => document.documentElement.lang === 'en' ? 'en' : 'fr';
   const textFor = (el, lang) => el?.dataset?.[lang] || el?.textContent?.trim() || '';
+  const eventList = document.querySelector('[data-event-list]');
+  const archiveList = document.querySelector('[data-archive-list]');
+  let publicEvents = [];
+
+  const localDateKey = value => {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return '';
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Europe/Brussels'
+    }).formatToParts(date);
+    return ['year', 'month', 'day'].map(type => parts.find(part => part.type === type)?.value || '').join('-');
+  };
+
+  const eventKeyFromApi = item => {
+    const date = localDateKey(item?.starts_at);
+    const track = String(item?.circuit_name || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').replace(/-gp$/g, '');
+    return `${date}|${track}`;
+  };
+
+  const matchingApiEvent = card => {
+    const key = String(card?.dataset?.eventKey || '');
+    const [date, trackRaw] = key.split('|');
+    const track = String(trackRaw || '').replace(/-gp$/g, '');
+    return publicEvents.find(item => {
+      const apiKey = eventKeyFromApi(item);
+      const [apiDate, apiTrack] = apiKey.split('|');
+      return apiDate === date && apiTrack === track;
+    }) || null;
+  };
+
+  const getEventStart = card => {
+    if (!card) return null;
+    const key = String(card.dataset.eventKey || '');
+    const datePart = key.split('|')[0];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return null;
+
+    const apiEvent = matchingApiEvent(card);
+    if (apiEvent?.starts_at) {
+      const parsed = new Date(apiEvent.starts_at);
+      if (Number.isFinite(parsed.getTime())) {
+        // Barcelona 13/09/2026 was entered two hours too late in the source data.
+        if (datePart === '2026-09-13' && /barcelona/i.test(key)) {
+          return new Date('2026-09-13T15:45:00+02:00');
+        }
+        return parsed;
+      }
+    }
+
+    const dateText = `${card.querySelector('.event-date')?.dataset?.fr || ''} ${card.querySelector('.event-date')?.textContent || ''}`;
+    const timeMatch = dateText.match(/(?:à\s*)?(\d{1,2})[:h](\d{2})/i);
+    if (datePart === '2026-09-13' && /barcelona/i.test(key)) return new Date('2026-09-13T15:45:00+02:00');
+    if (timeMatch) {
+      const hh = String(timeMatch[1]).padStart(2, '0');
+      const mm = timeMatch[2];
+      return new Date(`${datePart}T${hh}:${mm}:00`);
+    }
+    return new Date(`${datePart}T23:59:59`);
+  };
+
+  const getRaceDuration = card => {
+    const apiEvent = matchingApiEvent(card);
+    const apiDuration = Number(apiEvent?.duration_minutes);
+    if (Number.isFinite(apiDuration) && apiDuration > 0) return apiDuration;
+    const metaText = [...(card?.querySelectorAll('.event-meta span') || [])].map(el => el.textContent).join(' ');
+    const match = metaText.match(/(?:Course|race)\s*(\d+)\s*(?:min|minute)/i);
+    return match ? Number(match[1]) : 60;
+  };
+
+  const isPastEvent = card => {
+    const start = getEventStart(card);
+    if (!start) return false;
+    const duration = getRaceDuration(card);
+    const end = new Date(start.getTime() + duration * 60000);
+    return end.getTime() < Date.now();
+  };
+
+  const minutesBetween = (start, end) => {
+    const toMinutes = value => {
+      const match = String(value || '').match(/(\d{1,2}):(\d{2})/);
+      return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+    };
+    const a = toMinutes(start), b = toMinutes(end);
+    return a !== null && b !== null && b > a ? b - a : null;
+  };
+
+  const qualifyingMinutes = item => {
+    const schedule = Array.isArray(item?.event_schedule) ? item.event_schedule : [];
+    for (const slot of schedule) {
+      const label = `${slot?.key || ''} ${slot?.label_fr || slot?.labelFr || ''} ${slot?.label_en || slot?.labelEn || ''}`.toLowerCase();
+      if (/qual|quali|qualification|\bq\b/.test(label)) {
+        const duration = minutesBetween(slot.start, slot.end);
+        if (duration) return duration;
+      }
+    }
+    return null;
+  };
+
+  const setBarcelonaTime = card => {
+    const key = String(card?.dataset?.eventKey || '');
+    if (!(key.startsWith('2026-09-13|') && /barcelona/i.test(key))) return;
+    const dateEl = card.querySelector('.event-date');
+    if (dateEl) {
+      dateEl.dataset.fr = '13 septembre 2026 à 15:45';
+      dateEl.dataset.en = '13 September 2026 at 15:45';
+      dateEl.textContent = getLang() === 'en' ? dateEl.dataset.en : dateEl.dataset.fr;
+    }
+  };
+
+  const standardizeCard = card => {
+    if (!card) return;
+    setBarcelonaTime(card);
+    const item = matchingApiEvent(card);
+    const meta = card.querySelector('.event-meta');
+    if (!meta) return;
+
+    const oldText = [...meta.querySelectorAll('span')].map(el => el.textContent.trim()).join(' · ');
+    const duration = Number(item?.duration_minutes) || Number(oldText.match(/(?:Course|race)\s*(\d+)/i)?.[1]) || 60;
+    const maxDrivers = Number(item?.max_drivers) || Number(oldText.match(/(\d+)\s*(?:pilotes|drivers)/i)?.[1]) || null;
+    let quali = qualifyingMinutes(item) || Number(oldText.match(/Qualif(?:ications?)?\s*(\d+)/i)?.[1]) || null;
+    const key = String(card.dataset.eventKey || '');
+    if (!quali && key.startsWith('2026-09-13|') && /barcelona/i.test(key)) quali = 15;
+    const pitKnown = typeof item?.mandatory_pit_stop === 'boolean';
+    const pit = pitKnown ? item.mandatory_pit_stop : /arrêt obligatoire|mandatory pit/i.test(oldText);
+
+    const values = [
+      [ `Course ${duration} min`, `${duration}-minute race` ],
+      quali ? [ `Qualifications ${quali} min`, `${quali}-minute qualifying` ] : null,
+      maxDrivers ? [ `${maxDrivers} pilotes maximum`, `${maxDrivers} drivers maximum` ] : null,
+      (pitKnown || pit) ? [ pit ? '1 arrêt obligatoire' : 'Aucun arrêt obligatoire', pit ? '1 mandatory pit stop' : 'No mandatory pit stop' ] : null,
+    ].filter(Boolean);
+
+    meta.replaceChildren(...values.map(([fr, en]) => {
+      const span = document.createElement('span');
+      span.dataset.fr = fr;
+      span.dataset.en = en;
+      span.textContent = getLang() === 'en' ? en : fr;
+      return span;
+    }));
+  };
+
+  const prunePastEvents = () => {
+    if (!eventList) return;
+    const cards = [...eventList.querySelectorAll('.event-card')];
+    cards.forEach(card => {
+      standardizeCard(card);
+      card.hidden = isPastEvent(card);
+    });
+
+    let empty = eventList.querySelector('[data-upcoming-empty]');
+    const anyUpcoming = cards.some(card => !card.hidden);
+    if (!anyUpcoming) {
+      if (!empty) {
+        empty = document.createElement('p');
+        empty.className = 'empty-state events-empty';
+        empty.dataset.upcomingEmpty = '';
+        eventList.append(empty);
+      }
+      empty.dataset.fr = 'Aucun événement à venir pour le moment. Le prochain rendez-vous sera annoncé ici automatiquement.';
+      empty.dataset.en = 'No upcoming event for now. The next race will appear here automatically.';
+      empty.textContent = getLang() === 'en' ? empty.dataset.en : empty.dataset.fr;
+    } else if (empty) {
+      empty.remove();
+    }
+  };
 
   const readCard = card => {
-    if (!card) return null;
+    if (!card || card.hidden || isPastEvent(card)) return null;
     const title = card.querySelector('h3')?.textContent?.trim() || 'ATX Racing';
     const dateEl = card.querySelector('.event-date');
     const pageLink = card.querySelector('.event-body .btn[href]')?.getAttribute('href') || '#events';
     const registerLink = card.querySelector('.event-image[href]')?.getAttribute('href') || pageLink;
-    const meta = [...card.querySelectorAll('.event-meta span')].map(item => item.textContent.trim()).filter(Boolean).slice(0, 3);
-    return { title, dateEl, pageLink, registerLink, meta, date: getEventDate(card) };
+    const meta = [...card.querySelectorAll('.event-meta span')].map(item => textFor(item, getLang())).filter(Boolean).slice(0, 4);
+    return { title, dateEl, pageLink, registerLink, meta, date: getEventStart(card) };
   };
 
   const findNextEvent = () => {
-    const now = new Date();
     const cards = [...document.querySelectorAll('[data-event-list] .event-card')];
-    return cards
-      .map(readCard)
-      .filter(Boolean)
-      .filter(event => event.date && event.date >= now)
-      .sort((a, b) => a.date - b.date)[0] || null;
+    return cards.map(readCard).filter(Boolean).sort((a, b) => a.date - b.date)[0] || null;
   };
 
   const renderNextEvent = () => {
@@ -95,16 +250,28 @@
   };
 
   const refresh = () => {
+    prunePastEvents();
     renderNextEvent();
     renderTicker();
   };
 
-  window.addEventListener('DOMContentLoaded', refresh, { once: true });
-  window.addEventListener('load', refresh, { once: true });
+  const loadPublicEvents = () => fetch(`${apiBase}/public-event`, { cache: 'no-store' })
+    .then(response => response.ok ? response.json() : Promise.reject(new Error('calendar_load_failed')))
+    .then(payload => {
+      publicEvents = [...(payload.events || []), ...(payload.archives || [])];
+      refresh();
+    })
+    .catch(() => refresh());
+
+  window.addEventListener('DOMContentLoaded', loadPublicEvents, { once: true });
+  window.addEventListener('load', () => setTimeout(loadPublicEvents, 120), { once: true });
   document.addEventListener('click', event => {
-    if (event.target.closest('[data-lang-switch]')) setTimeout(refresh, 0);
+    if (event.target.closest('[data-lang-switch], [data-language]')) setTimeout(refresh, 0);
   });
 
-  const eventList = document.querySelector('[data-event-list]');
-  if (eventList) new MutationObserver(refresh).observe(eventList, { childList: true, subtree: true });
+  if (eventList) new MutationObserver(() => setTimeout(refresh, 0)).observe(eventList, { childList: true, subtree: true });
+  if (archiveList) new MutationObserver(() => setTimeout(refresh, 0)).observe(archiveList, { childList: true, subtree: true });
+
+  // Re-evaluate event expiry while the page remains open.
+  setInterval(refresh, 60000);
 })();
