@@ -100,7 +100,7 @@ body.home-page:after{
 }
 
 .home-page .hero{
-  min-height:calc(100vh - 42px);
+  min-height:660px;
   padding:0;
   display:flex;
   align-items:center;
@@ -123,9 +123,9 @@ body.home-page:after{
   z-index:2;
   display:grid;
   grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);
-  gap:64px;
-  align-items:end;
-  padding:110px 0 92px;
+  gap:52px;
+  align-items:center;
+  padding:72px 0 64px;
 }
 
 .home-page .hero-copy{
@@ -139,7 +139,7 @@ body.home-page:after{
 }
 
 .home-next-event{
-  align-self:end;
+  align-self:center;
   justify-self:end;
   width:min(100%,430px);
   padding:24px;
@@ -214,6 +214,50 @@ body.home-page:after{
   scroll-margin-top:54px;
 }
 
+.home-page .events-grid{
+  grid-auto-rows:1fr;
+  align-items:stretch;
+}
+
+.home-page .event-card{
+  height:100%;
+  display:flex;
+  flex-direction:column;
+}
+
+.home-page .event-image{
+  flex:0 0 auto;
+  aspect-ratio:16/9;
+}
+
+.home-page .event-image img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.home-page .event-body{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  min-height:255px;
+}
+
+.home-page .event-meta{
+  min-height:54px;
+  align-content:flex-start;
+}
+
+.home-page .event-body .btn{
+  align-self:flex-start;
+  margin-top:auto;
+}
+
+.home-page .events-empty{
+  grid-column:1/-1;
+  margin:0;
+}
+
 .home-page .event-card,
 .home-page .profile-preview,
 .home-page .archive-box{
@@ -224,7 +268,8 @@ body.home-page:after{
   body.home-page:before,
   body.home-page:after{inset:0}
   .live-ticker{top:0}
-  .home-page .hero-grid{grid-template-columns:1fr;gap:34px;align-items:end;padding:92px 0 70px}
+  .home-page .hero{min-height:auto}
+  .home-page .hero-grid{grid-template-columns:1fr;gap:34px;align-items:end;padding:82px 0 66px}
   .home-next-event{justify-self:start;width:min(100%,520px)}
 }
 
@@ -233,8 +278,9 @@ body.home-page:after{
   .live-ticker:before{width:62px;font-size:10px}
   .live-ticker-track{min-height:38px;padding-left:74px;animation-duration:24s}
   .home-page .hero{min-height:auto}
-  .home-page .hero-grid{padding:76px 0 58px}
+  .home-page .hero-grid{padding:68px 0 54px}
   .home-next-event{padding:19px}
+  .home-page .event-body{min-height:auto}
 }
 
 @media (prefers-reduced-motion:reduce){
