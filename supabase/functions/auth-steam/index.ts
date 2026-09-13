@@ -90,9 +90,12 @@ const decodeXmlText = (value: string): string => value
   .trim();
 
 const cleanPersonaName = (value?: string): string | undefined => {
-  const name = String(value ?? "").trim();
+  let name = String(value ?? "").trim();
   if (!name || /^<!\[CDATA\[.*\]\]>$/is.test(name) || /<!\[CDATA\[/i.test(name)) return undefined;
-  return name.slice(0, 64);
+  // HTML fallbacks can expose the browser page title rather than the persona itself.
+  // Keep only the actual Steam nickname (e.g. "Steam Community :: leclouxrodrigue" -> "leclouxrodrigue").
+  name = name.replace(/^Steam\s+Community\s*::\s*/i, "").trim();
+  return name ? name.slice(0, 64) : undefined;
 };
 
 const xmlTag = (xml: string, tag: string): string | undefined => {
@@ -195,8 +198,6 @@ const finishLogin = async (url: URL): Promise<Response> => {
   const player = await fetchSteamPlayer(steamId);
   let personaName = cleanPersonaName(player.personaname);
 
-  // If Steam does not expose a usable name, preserve the existing ACC name instead
-  // of overwriting it with an XML/CDATA placeholder.
   if (!personaName) {
     const { data: identity } = await supabase.from("driver_identities")
       .select("driver_id").eq("steam_id64", steamId).maybeSingle();
