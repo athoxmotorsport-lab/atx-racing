@@ -89,11 +89,24 @@ const decodeXmlText = (value: string): string => value
   .replaceAll("&#39;", "'")
   .trim();
 
+const cleanPersonaName = (value?: string): string | undefined => {
+  const name = String(value ?? "").trim();
+  if (!name || /^<!\[CDATA\[.*\]\]>$/is.test(name) || /<!\[CDATA\[/i.test(name)) return undefined;
+  return name.slice(0, 64);
+};
+
 const xmlTag = (xml: string, tag: string): string | undefined => {
   const cdata = xml.match(new RegExp(`<${tag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`, "i"));
-  if (cdata?.[1]) return cdata[1].trim();
+  if (cdata) return cleanPersonaName(cdata[1]);
   const plain = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "i"));
-  return plain?.[1] ? decodeXmlText(plain[1]) : undefined;
+  return plain?.[1] ? cleanPersonaName(decodeXmlText(plain[1])) : undefined;
+};
+
+const htmlProfileName = (html: string): string | undefined => {
+  const og = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
+    ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i);
+  const title = html.match(/<title>\s*Steam Community\s*::\s*([\s\S]*?)<\/title>/i);
+  return cleanPersonaName(decodeXmlText(og?.[1] ?? title?.[1] ?? ""));
 };
 
 const fetchCommunityProfile = async (steamId: string): Promise<SteamPlayer> => {
@@ -107,11 +120,21 @@ const fetchCommunityProfile = async (steamId: string): Promise<SteamPlayer> => {
       return {};
     }
     const xml = await response.text();
-    return {
-      personaname: xmlTag(xml, "steamID"),
-      profileurl: profileUrl,
-      avatarfull: xmlTag(xml, "avatarFull"),
-    };
+    let personaname = xmlTag(xml, "steamID");
+    let avatarfull = xmlTag(xml, "avatarFull");
+
+    if (!personaname) {
+      try {
+        const htmlResponse = await fetch(profileUrl, {
+          headers: { "Accept": "text/html", "User-Agent": "ATX-Racing/1.0" },
+        });
+        if (htmlResponse.ok) personaname = htmlProfileName(await htmlResponse.text());
+      } catch {
+        // Keep the ACC display name when Steam does not expose a usable persona name.
+      }
+    }
+
+    return { personaname, profileurl: profileUrl, avatarfull };
   } catch (error) {
     console.warn(
       "Steam Community profile enrichment failed",
@@ -140,7 +163,12 @@ const fetchSteamPlayer = async (steamId: string): Promise<SteamPlayer> => {
       return await fetchCommunityProfile(steamId);
     }
     const body = await response.json();
-    return body?.response?.players?.[0] ?? await fetchCommunityProfile(steamId);
+    const player = body?.response?.players?.[0];
+    if (player) {
+      player.personaname = cleanPersonaName(player.personaname);
+      return player;
+    }
+    return await fetchCommunityProfile(steamId);
   } catch (error) {
     console.warn(
       "Steam profile enrichment failed",
@@ -165,9 +193,23 @@ const finishLogin = async (url: URL): Promise<Response> => {
   if (!steamId) return failureRedirect("steam_verification_failed");
 
   const player = await fetchSteamPlayer(steamId);
+  let personaName = cleanPersonaName(player.personaname);
+
+  // If Steam does not expose a usable name, preserve the existing ACC name instead
+  // of overwriting it with an XML/CDATA placeholder.
+  if (!personaName) {
+    const { data: identity } = await supabase.from("driver_identities")
+      .select("driver_id").eq("steam_id64", steamId).maybeSingle();
+    if (identity?.driver_id) {
+      const { data: existingDriver } = await supabase.from("drivers")
+        .select("display_name").eq("id", identity.driver_id).maybeSingle();
+      personaName = cleanPersonaName(existingDriver?.display_name);
+    }
+  }
+
   const { data: driverId, error: driverError } = await supabase.rpc("upsert_steam_driver", {
     p_steam_id64: steamId,
-    p_persona_name: player.personaname ?? "Steam Driver",
+    p_persona_name: personaName ?? "Steam Driver",
     p_profile_url: player.profileurl ?? `https://steamcommunity.com/profiles/${steamId}`,
     p_avatar_url: player.avatarfull ?? null,
   });
