@@ -9,6 +9,33 @@
   const archiveList = document.querySelector('[data-archive-list]');
   let publicEvents = [];
 
+  const syncAdminShortcut = () => {
+    const topLink = document.querySelector('[data-admin-event]');
+    if (!topLink) return;
+    topLink.dataset.fr = 'Gérer les événements';
+    topLink.dataset.en = 'Manage events';
+    topLink.textContent = getLang() === 'en' ? 'Manage events' : 'Gérer les événements';
+
+    const nav = document.querySelector('.side-links');
+    let sideLink = nav?.querySelector('[data-admin-manage-link]');
+    if (!sideLink && nav) {
+      sideLink = document.createElement('a');
+      sideLink.href = 'event-admin.html#event-manager';
+      sideLink.dataset.adminManageLink = '';
+      sideLink.dataset.fr = 'Gérer événements';
+      sideLink.dataset.en = 'Manage events';
+      const span = document.createElement('span');
+      span.textContent = getLang() === 'en' ? 'Manage events' : 'Gérer événements';
+      sideLink.append(span);
+      nav.append(sideLink);
+    }
+    if (sideLink) {
+      sideLink.hidden = topLink.hidden;
+      const span = sideLink.querySelector('span');
+      if (span) span.textContent = getLang() === 'en' ? 'Manage events' : 'Gérer événements';
+    }
+  };
+
   const localDateKey = value => {
     const date = new Date(value);
     if (!Number.isFinite(date.getTime())) return '';
@@ -46,18 +73,11 @@
     const apiEvent = matchingApiEvent(card);
     if (apiEvent?.starts_at) {
       const parsed = new Date(apiEvent.starts_at);
-      if (Number.isFinite(parsed.getTime())) {
-        // Barcelona 13/09/2026 was entered two hours too late in the source data.
-        if (datePart === '2026-09-13' && /barcelona/i.test(key)) {
-          return new Date('2026-09-13T15:45:00+02:00');
-        }
-        return parsed;
-      }
+      if (Number.isFinite(parsed.getTime())) return parsed;
     }
 
     const dateText = `${card.querySelector('.event-date')?.dataset?.fr || ''} ${card.querySelector('.event-date')?.textContent || ''}`;
     const timeMatch = dateText.match(/(?:à\s*)?(\d{1,2})[:h](\d{2})/i);
-    if (datePart === '2026-09-13' && /barcelona/i.test(key)) return new Date('2026-09-13T15:45:00+02:00');
     if (timeMatch) {
       const hh = String(timeMatch[1]).padStart(2, '0');
       const mm = timeMatch[2];
@@ -104,20 +124,21 @@
     return null;
   };
 
-  const setBarcelonaTime = card => {
-    const key = String(card?.dataset?.eventKey || '');
-    if (!(key.startsWith('2026-09-13|') && /barcelona/i.test(key))) return;
+  const updateDateFromApi = card => {
+    const item = matchingApiEvent(card);
+    if (!item?.starts_at) return;
     const dateEl = card.querySelector('.event-date');
-    if (dateEl) {
-      dateEl.dataset.fr = '13 septembre 2026 à 15:45';
-      dateEl.dataset.en = '13 September 2026 at 15:45';
-      dateEl.textContent = getLang() === 'en' ? dateEl.dataset.en : dateEl.dataset.fr;
-    }
+    if (!dateEl) return;
+    const date = new Date(item.starts_at);
+    if (!Number.isFinite(date.getTime())) return;
+    dateEl.dataset.fr = new Intl.DateTimeFormat('fr-BE', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(date);
+    dateEl.dataset.en = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(date);
+    dateEl.textContent = getLang() === 'en' ? dateEl.dataset.en : dateEl.dataset.fr;
   };
 
   const standardizeCard = card => {
     if (!card) return;
-    setBarcelonaTime(card);
+    updateDateFromApi(card);
     const item = matchingApiEvent(card);
     const meta = card.querySelector('.event-meta');
     if (!meta) return;
@@ -125,9 +146,7 @@
     const oldText = [...meta.querySelectorAll('span')].map(el => el.textContent.trim()).join(' · ');
     const duration = Number(item?.duration_minutes) || Number(oldText.match(/(?:Course|race)\s*(\d+)/i)?.[1]) || 60;
     const maxDrivers = Number(item?.max_drivers) || Number(oldText.match(/(\d+)\s*(?:pilotes|drivers)/i)?.[1]) || null;
-    let quali = qualifyingMinutes(item) || Number(oldText.match(/Qualif(?:ications?)?\s*(\d+)/i)?.[1]) || null;
-    const key = String(card.dataset.eventKey || '');
-    if (!quali && key.startsWith('2026-09-13|') && /barcelona/i.test(key)) quali = 15;
+    const quali = qualifyingMinutes(item) || Number(oldText.match(/Qualif(?:ications?)?\s*(\d+)/i)?.[1]) || null;
     const pitKnown = typeof item?.mandatory_pit_stop === 'boolean';
     const pit = pitKnown ? item.mandatory_pit_stop : /arrêt obligatoire|mandatory pit/i.test(oldText);
 
@@ -250,12 +269,13 @@
   };
 
   const refresh = () => {
+    syncAdminShortcut();
     prunePastEvents();
     renderNextEvent();
     renderTicker();
   };
 
-  const loadPublicEvents = () => fetch(`${apiBase}/public-event`, { cache: 'no-store' })
+  const loadPublicEvents = () => fetch(`${apiBase}/public-event?ts=${Date.now()}`, { cache: 'no-store' })
     .then(response => response.ok ? response.json() : Promise.reject(new Error('calendar_load_failed')))
     .then(payload => {
       publicEvents = [...(payload.events || []), ...(payload.archives || [])];
@@ -269,9 +289,15 @@
     if (event.target.closest('[data-lang-switch], [data-language]')) setTimeout(refresh, 0);
   });
 
+  const adminObserver = new MutationObserver(syncAdminShortcut);
+  const utilityActions = document.querySelector('.utility-actions');
+  if (utilityActions) adminObserver.observe(utilityActions, { attributes:true, childList:true, subtree:true, attributeFilter:['hidden'] });
+
   if (eventList) new MutationObserver(() => setTimeout(refresh, 0)).observe(eventList, { childList: true, subtree: true });
   if (archiveList) new MutationObserver(() => setTimeout(refresh, 0)).observe(archiveList, { childList: true, subtree: true });
 
-  // Re-evaluate event expiry while the page remains open.
-  setInterval(refresh, 60000);
+  setInterval(() => {
+    loadPublicEvents();
+    syncAdminShortcut();
+  }, 60000);
 })();
