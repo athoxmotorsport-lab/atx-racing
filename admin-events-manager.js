@@ -49,6 +49,24 @@
     return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
   };
 
+  // Convert a datetime-local entered as Belgian time to an absolute ISO timestamp.
+  // This prevents 15:45 from being stored as 15:45 UTC and displayed later as 17:45.
+  const brusselsIsoFromLocal = value => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(String(value || ''));
+    if (!match) return String(value || '');
+    const target = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4]), Number(match[5]), 0);
+    let guess = target;
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone:'Europe/Brussels', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hourCycle:'h23'
+    });
+    for (let i = 0; i < 3; i += 1) {
+      const parts = Object.fromEntries(formatter.formatToParts(new Date(guess)).map(part => [part.type, part.value]));
+      const shown = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
+      guess += target - shown;
+    }
+    return new Date(guess).toISOString();
+  };
+
   const scheduleByKey = event => new Map((Array.isArray(event.event_schedule) ? event.event_schedule : []).map(item => [item.key, item]));
   const field = (label, name, value = '', type = 'text', attrs = '') => `<div class="form-field"><label>${label}</label><input name="${name}" type="${type}" value="${esc(value)}" ${attrs}></div>`;
   const select = (label, name, value, options) => `<div class="form-field"><label>${label}</label><select name="${name}">${options.map(([v,t]) => `<option value="${v}"${String(v)===String(value)?' selected':''}>${t}</option>`).join('')}</select></div>`;
@@ -146,20 +164,24 @@
         {key:'qualifying',labelFr:'Qualifications',labelEn:'Qualifying',start:data.get('qualifyingStart'),end:data.get('qualifyingEnd')},
         {key:'race',labelFr:'Course',labelEn:'Race',start:data.get('raceStart'),end:data.get('raceEnd')},
       ];
-      await request('PATCH', {
+      const payload = await request('PATCH', {
         slug:editForm.dataset.slug,
-        titleFr:data.get('titleFr'),titleEn:data.get('titleEn'),circuit:data.get('circuit'),startsAt:data.get('startsAt'),
+        titleFr:data.get('titleFr'),titleEn:data.get('titleEn'),circuit:data.get('circuit'),startsAt:brusselsIsoFromLocal(data.get('startsAt')),
         eventType:data.get('eventType'),durationMinutes:Number(data.get('durationMinutes')),maxDrivers:Number(data.get('maxDrivers')),
         carClass:data.get('carClass'),timezoneLabel:data.get('timezoneLabel'),schedule,
         mandatoryPitStop:data.get('mandatoryPitStop')==='true',mandatoryTyreChange:data.get('mandatoryTyreChange')==='true',mandatoryRefuelling:data.get('mandatoryRefuelling')==='true',
         fixedRefuellingSeconds:data.get('fixedRefuellingSeconds') ? Number(data.get('fixedRefuellingSeconds')) : null,
         timeMultiplier:Number(data.get('timeMultiplier')),serverName:data.get('serverName'),simgridUrl:data.get('simgridUrl'),...image,
       });
-      status.textContent = 'Modifications enregistrées.';
+      const saved = payload?.event?.starts_at ? new Date(payload.event.starts_at) : null;
+      const shown = saved && Number.isFinite(saved.getTime())
+        ? new Intl.DateTimeFormat('fr-BE',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Brussels'}).format(saved)
+        : '';
+      status.textContent = shown ? `Modifications enregistrées · Heure enregistrée : ${shown}` : 'Modifications enregistrées.';
       editWrap.hidden = true;
       await load();
     } catch (error) {
-      status.textContent = error instanceof Error && error.message === 'image_too_large' ? 'L’image dépasse 5 Mo.' : 'Impossible d’enregistrer les modifications.';
+      status.textContent = error instanceof Error && error.message === 'image_too_large' ? 'L’image dépasse 5 Mo.' : `Impossible d’enregistrer les modifications${error instanceof Error ? ` (${error.message})` : ''}.`;
     } finally { submit.disabled = false; }
   });
 
