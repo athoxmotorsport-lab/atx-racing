@@ -15,16 +15,17 @@
   <meta property="og:title" content="ATX Racing | La compétition commence ici">
   <meta property="og:description" content="Courses communautaires, classements officiels et profils pilotes connectés à Steam.">
   <meta property="og:url" content="https://athoxmotorsport-lab.github.io/atx-racing/">
-  <meta property="og:image" content="https://athoxmotorsport-lab.github.io/atx-racing/assets/events/monza-2026-09-09.jpg">
+  <meta property="og:image" content="https://athoxmotorsport-lab.github.io/atx-racing/assets/home/atx-racing-rain.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="ATX Racing | Événements simracing ACC">
   <meta name="twitter:description" content="Une ligue de pilotes propres, des courses régulières et un événement spécial chaque week-end.">
-  <meta name="twitter:image" content="https://athoxmotorsport-lab.github.io/atx-racing/assets/events/monza-2026-09-09.jpg">
+  <meta name="twitter:image" content="https://athoxmotorsport-lab.github.io/atx-racing/assets/home/atx-racing-rain.jpg">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="enhancements.css">
+  <link rel="stylesheet" href="home-experience.css">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"SportsOrganization","name":"ATX Racing","url":"https://athoxmotorsport-lab.github.io/atx-racing/","email":"athoxmotorsport@gmail.com","sport":"Sim racing","parentOrganization":{"@type":"SportsOrganization","name":"ATX Motorsport"},"sameAs":["https://discord.gg/dgyJJYTSsD","https://www.thesimgrid.com/communities/atxracing","https://www.twitch.tv/a_t_h_o_x","https://www.youtube.com/@AthoxMotorsport","https://www.tiktok.com/@athoxmotorsport"]}</script>
 </head>
-<body>
+<body class="home-page">
   <aside class="side-nav" aria-label="Navigation principale">
     <div class="side-brand"><a class="brand" href="index.html">ATX <span>Racing</span></a><small>Event Division</small></div>
     <nav class="side-links"><a class="active" href="#top"><span data-fr="Accueil" data-en="Home">Accueil</span></a><a href="#events"><span data-fr="Calendrier" data-en="Calendar">Calendrier</span></a><a href="reglement.html"><span data-fr="Règlement" data-en="Rules">Règlement</span></a><a href="classement.html"><span data-fr="Classement" data-en="Ranking">Classement</span></a><a href="#archives"><span data-fr="Archives" data-en="Archive">Archives</span></a></nav>
@@ -32,6 +33,16 @@
   </aside>
 
   <main>
+    <div class="live-ticker" aria-label="Informations ATX Racing">
+      <div class="live-ticker-track" data-live-ticker-track>
+        <span class="live-ticker-item">ATX Racing · Prochain événement en préparation</span>
+        <span class="live-ticker-item">Inscriptions et calendrier via SimGrid</span>
+        <span class="live-ticker-item">Infos et direction de course sur Discord</span>
+        <span class="live-ticker-item">Résultats officiels · Performance · SAFE</span>
+        <span class="live-ticker-item">Assetto Corsa Competizione · GT3</span>
+      </div>
+    </div>
+
     <section class="hero" id="top">
       <div class="wrap hero-grid">
         <div>
@@ -43,13 +54,16 @@
             <a class="btn" href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener" data-fr="Rejoindre Discord" data-en="Join Discord">Rejoindre Discord</a>
           </div>
         </div>
-        <article class="hero-event">
-          <a href="https://www.thesimgrid.com/championships/27428" target="_blank" rel="noopener"><img src="assets/events/monza-2026-09-09.jpg" alt="Affiche ATX Racing Monza du 9 septembre 2026"></a>
-          <div class="hero-event-info">
-            <div><small data-fr="Prochaine course" data-en="Next race">Prochaine course</small><strong>Monza · 09.09.26</strong></div>
-            <span class="status" data-fr="Inscriptions ouvertes" data-en="Registration open">Inscriptions ouvertes</span>
+        <aside class="home-next-event" data-home-next-event>
+          <small data-fr="Prochain événement" data-en="Next event">Prochain événement</small>
+          <h3 data-home-next-title>Prochain événement bientôt</h3>
+          <div class="home-next-event-date" data-home-next-date>Calendrier en préparation</div>
+          <div class="home-next-event-meta" data-home-next-meta>Suivez ATX Racing sur Discord et SimGrid pour la prochaine ouverture.</div>
+          <div class="actions">
+            <a class="btn small primary" href="#events" data-home-next-primary>Voir le calendrier</a>
+            <a class="btn small" href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener" data-home-next-secondary>Discord</a>
           </div>
-        </article>
+        </aside>
       </div>
     </section>
 
@@ -107,5 +121,6 @@
 
   <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="https://www.twitch.tv/a_t_h_o_x" target="_blank" rel="noopener">Twitch</a><a href="https://www.youtube.com/@AthoxMotorsport" target="_blank" rel="noopener">YouTube</a><a href="https://www.tiktok.com/@athoxmotorsport" target="_blank" rel="noopener">TikTok</a><a href="reglement.html" data-fr="Règlement" data-en="Rules">Règlement</a><a href="confidentialite.html" data-fr="Confidentialité" data-en="Privacy">Confidentialité</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
   <script src="main.js"></script>
+  <script src="home-experience.js"></script>
 </body>
 </html>
