@@ -5,27 +5,20 @@
   const apiBase = 'https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1';
   const sessionKey = 'atx-racing-session';
   const language = () => document.documentElement.lang === 'en' ? 'en' : 'fr';
-  const say = (fr, en) => language() === 'en' ? en : fr;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
-  const section = document.createElement('section');
-  section.className = 'admin-event-manager';
-  section.innerHTML = `
-    <div class="admin-event-manager-head">
-      <div>
-        <div class="section-label">Gestion des événements</div>
-        <h2>Modifier ou retirer un événement</h2>
-        <p class="intro">Les modifications sont enregistrées dans Supabase et se répercutent ensuite sur l'accueil et le calendrier.</p>
-      </div>
-      <button class="btn small" type="button" data-admin-events-refresh>Actualiser</button>
-    </div>
-    <p class="form-status" data-admin-events-status>Chargement des événements…</p>
-    <div class="admin-events-list" data-admin-events-list></div>
-    <div class="admin-edit-wrap" data-admin-edit-wrap hidden>
-      <div class="admin-edit-head"><h3 data-admin-edit-title>Modifier l'événement</h3><button class="btn small" type="button" data-admin-edit-cancel>Annuler</button></div>
-      <form class="admin-form admin-edit-form" data-admin-edit-form></form>
-    </div>`;
-  shell.append(section);
+  let section = document.querySelector('[data-admin-event-manager]');
+  if (!section) {
+    section = document.createElement('section');
+    section.className = 'admin-event-manager';
+    section.dataset.adminEventManager = '';
+    section.innerHTML = `
+      <div class="admin-event-manager-head"><div><div class="section-label">Gestion des événements</div><h2>Modifier ou retirer un événement</h2></div><button class="btn small" type="button" data-admin-events-refresh>Actualiser</button></div>
+      <p class="form-status" data-admin-events-status>Chargement des événements…</p>
+      <div class="admin-events-list" data-admin-events-list></div>
+      <div class="admin-edit-wrap" data-admin-edit-wrap hidden><div class="admin-edit-head"><h3>Modifier l'événement</h3><button class="btn small" type="button" data-admin-edit-cancel>Annuler</button></div><form class="admin-form admin-edit-form" data-admin-edit-form></form></div>`;
+    shell.prepend(section);
+  }
 
   const list = section.querySelector('[data-admin-events-list]');
   const status = section.querySelector('[data-admin-events-status]');
@@ -41,6 +34,7 @@
       method,
       headers: { Authorization: `Bearer ${access}`, ...(body ? {'Content-Type':'application/json'} : {}) },
       body: body ? JSON.stringify(body) : undefined,
+      cache: 'no-store',
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || 'request_failed');
@@ -123,8 +117,10 @@
       events = payload.events || [];
       render();
       status.textContent = `${events.length} événement(s) enregistré(s).`;
-    } catch {
-      status.textContent = 'Connectez-vous avec le compte administrateur pour gérer les événements.';
+    } catch (error) {
+      status.textContent = error instanceof Error && error.message === 'unauthorized'
+        ? 'Session administrateur absente. Reconnectez-vous avec Steam.'
+        : 'La fonction de gestion n’est pas disponible. Vérifiez que manage-events a bien été redéployée.';
     }
   };
 
@@ -167,12 +163,12 @@
     } finally { submit.disabled = false; }
   });
 
-  section.querySelector('[data-admin-edit-cancel]').addEventListener('click', () => { editWrap.hidden = true; });
-  section.querySelector('[data-admin-events-refresh]').addEventListener('click', load);
+  section.querySelector('[data-admin-edit-cancel]')?.addEventListener('click', () => { editWrap.hidden = true; });
+  section.querySelector('[data-admin-events-refresh]')?.addEventListener('click', load);
 
   const style = document.createElement('style');
-  style.textContent = `.admin-event-manager{margin-top:64px;padding-top:40px;border-top:1px solid var(--line)}.admin-event-manager-head,.admin-edit-head,.admin-event-row{display:flex;align-items:center;justify-content:space-between;gap:20px}.admin-events-list{display:grid;gap:10px;margin-top:20px}.admin-event-row{padding:16px 18px;border:1px solid var(--line);background:#0a0e13}.admin-event-row strong,.admin-event-row small{display:block}.admin-event-row small{margin-top:5px;color:var(--muted)}.admin-event-actions{display:flex;gap:8px}.btn.danger{border-color:#a4242a;color:#ff7378}.btn.danger:hover{background:#a4242a;color:white}.admin-edit-wrap{margin-top:30px;padding:24px;border:1px solid rgba(255,41,41,.45);background:rgba(8,11,15,.92)}.admin-edit-form{margin-top:22px}@media(max-width:700px){.admin-event-manager-head,.admin-event-row,.admin-edit-head{align-items:flex-start;flex-direction:column}.admin-event-actions{width:100%;flex-wrap:wrap}}`;
+  style.textContent = `.admin-event-manager{margin-top:28px;padding:28px;border:1px solid rgba(255,41,41,.35);background:rgba(8,11,15,.82);scroll-margin-top:90px}.admin-event-manager-head,.admin-edit-head,.admin-event-row{display:flex;align-items:center;justify-content:space-between;gap:20px}.admin-events-list{display:grid;gap:10px;margin-top:20px}.admin-event-row{padding:16px 18px;border:1px solid var(--line);background:#0a0e13}.admin-event-row strong,.admin-event-row small{display:block}.admin-event-row small{margin-top:5px;color:var(--muted)}.admin-event-actions{display:flex;gap:8px}.btn.danger{border-color:#a4242a;color:#ff7378}.btn.danger:hover{background:#a4242a;color:white}.admin-edit-wrap{margin-top:30px;padding:24px;border:1px solid rgba(255,41,41,.45);background:rgba(8,11,15,.92)}.admin-edit-form{margin-top:22px}@media(max-width:700px){.admin-event-manager-head,.admin-event-row,.admin-edit-head{align-items:flex-start;flex-direction:column}.admin-event-actions{width:100%;flex-wrap:wrap}}`;
   document.head.append(style);
 
-  setTimeout(load, 250);
+  setTimeout(load, 100);
 })();
