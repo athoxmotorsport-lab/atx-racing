@@ -45,7 +45,7 @@ type ImportPayload = {
   }>;
 };
 
-const PROCESSOR_VERSION = "acc-v3";
+const PROCESSOR_VERSION = "acc-v4";
 const MAX_VALID_ACC_LAP_TIME_MS = 3_600_000;
 
 type EventRow = {
@@ -130,13 +130,17 @@ const positiveOrNull = (value?: number | null): number | null => {
   return Number.isFinite(number) && number > 0 ? Math.round(number) : null;
 };
 
-// ACC can use very large integer sentinel values when no valid lap exists.
-// Such values must never be stored as lap records or used for driver ratings.
 const lapTimeOrNull = (value?: number | null): number | null => {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 && number <= MAX_VALID_ACC_LAP_TIME_MS
     ? Math.round(number)
     : null;
+};
+
+const normalizeSteamId = (value?: string | null): string => {
+  const candidate = String(value ?? "").trim();
+  const match = candidate.match(/^S?(\d{17})$/i);
+  return match?.[1] ?? "";
 };
 
 const performanceClass = (score: number): "alien" | "elite" | "pro" | "rookie" => {
@@ -242,8 +246,6 @@ const resolveEvent = async (payload: ImportPayload): Promise<EventRow> => {
   const serverName = payload.nomServeur?.trim().slice(0, 160);
   const baseTitle = serverName || `ATX Racing · ${payload.circuit}`;
   const slugSuffix = sourceEventKey ? slugPart(sourceEventKey).slice(-24) : payload.empreinte.slice(0, 8);
-  // Normalize the complete value because slicing a long suffix can leave a
-  // leading dash and previously produced invalid slugs containing "--".
   const slug = slugPart(`${date}-${payload.circuit}-${slugSuffix}`);
   const startsAt = payload.debutCourse && !Number.isNaN(Date.parse(payload.debutCourse))
     ? new Date(payload.debutCourse).toISOString()
@@ -332,8 +334,8 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
     const driverIds = new Map<string, string>();
     let rejected = 0;
     for (const result of payload.resultats) {
-      const steamId = result.pilote?.steamId?.trim() ?? "";
-      if (!/^\d{17}$/.test(steamId)) {
+      const steamId = normalizeSteamId(result.pilote?.steamId);
+      if (!steamId) {
         rejected += 1;
         continue;
       }
@@ -362,8 +364,13 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
       if (error) throw error;
     }
 
+    if (payload.resultats.length > 0 && driverIds.size === 0) {
+      throw new Error(`No valid Steam IDs imported (${rejected}/${payload.resultats.length} rejected)`);
+    }
+
     const lapRows = (payload.tours ?? []).flatMap((lap) => {
-      const driverId = lap.steamId ? driverIds.get(lap.steamId) : null;
+      const steamId = normalizeSteamId(lap.steamId);
+      const driverId = steamId ? driverIds.get(steamId) : null;
       return driverId ? [{
         session_id: session.id,
         driver_id: driverId,
@@ -383,7 +390,8 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
     }
 
     const penaltyRows = (payload.penalites ?? []).flatMap((penalty) => {
-      const driverId = penalty.steamId ? driverIds.get(penalty.steamId) : null;
+      const steamId = normalizeSteamId(penalty.steamId);
+      const driverId = steamId ? driverIds.get(steamId) : null;
       return driverId ? [{
         session_id: session.id,
         driver_id: driverId,
@@ -404,13 +412,14 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
     if (payload.typeSession === "R") {
       const timedResults = payload.resultats.flatMap((result) => {
         const bestLapMs = lapTimeOrNull(result.meilleurTourMs);
-        return bestLapMs && result.pilote?.steamId ? [{ result, bestLapMs }] : [];
+        const steamId = normalizeSteamId(result.pilote?.steamId);
+        return bestLapMs && steamId ? [{ result, bestLapMs, steamId }] : [];
       });
       const fastestResult = [...timedResults].sort((first, second) =>
         first.bestLapMs - second.bestLapMs ||
         Number(first.result.position ?? Number.MAX_SAFE_INTEGER) - Number(second.result.position ?? Number.MAX_SAFE_INTEGER)
       )[0];
-      const fastestSteamId = fastestResult?.result.pilote.steamId ?? null;
+      const fastestSteamId = fastestResult?.steamId ?? null;
 
       const { error: clearResultsError } = await supabase.from("results").delete().eq("event_id", event.id);
       if (clearResultsError) throw clearResultsError;
@@ -430,8 +439,8 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
       }
 
       for (const result of payload.resultats) {
-        const steamId = result.pilote?.steamId ?? "";
-        const driverId = driverIds.get(steamId);
+        const steamId = normalizeSteamId(result.pilote?.steamId);
+        const driverId = steamId ? driverIds.get(steamId) : null;
         if (!driverId) continue;
         const classified = statusFromAcc(result.statut) === "classified";
         const { error } = await supabase.from("results").upsert({
@@ -455,10 +464,10 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
         }, { onConflict: "event_id,driver_id" });
         if (error) throw error;
 
-        const driverLaps = (payload.tours ?? []).filter((lap) => lap.steamId === steamId);
+        const driverLaps = (payload.tours ?? []).filter((lap) => normalizeSteamId(lap.steamId) === steamId);
         const validLaps = driverLaps.filter((lap) => lap.valide !== false).length;
         const invalidLaps = driverLaps.length - validLaps;
-        const driverPenalties = (payload.penalites ?? []).filter((penalty) => penalty.steamId === steamId);
+        const driverPenalties = (payload.penalites ?? []).filter((penalty) => normalizeSteamId(penalty.steamId) === steamId);
         const cuts = driverPenalties.filter((penalty) => /cut/i.test(penalty.raison ?? "")).length;
         const { error: safetyError } = await supabase.from("safety_stats").upsert({
           event_id: event.id,
@@ -476,11 +485,11 @@ const ingest = async (payload: ImportPayload, rawJson: string) => {
 
       const reference = Math.min(...timedResults.map(({ bestLapMs }) => bestLapMs));
       if (Number.isFinite(reference)) {
-        for (const { result, bestLapMs } of timedResults) {
-          const driverId = driverIds.get(result.pilote.steamId ?? "");
+        for (const { bestLapMs, steamId } of timedResults) {
+          const driverId = driverIds.get(steamId);
           if (!driverId) continue;
           const score = Number(((bestLapMs / reference) * 100).toFixed(3));
-          const driverLaps = (payload.tours ?? []).filter((lap) => lap.steamId === result.pilote.steamId);
+          const driverLaps = (payload.tours ?? []).filter((lap) => normalizeSteamId(lap.steamId) === steamId);
           const valid = driverLaps.filter((lap) => lap.valide !== false).length;
           const safeScore = driverLaps.length ? Number(((valid / driverLaps.length) * 100).toFixed(3)) : 0;
           const rating = {
