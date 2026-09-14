@@ -1,4 +1,23 @@
 (() => {
+  const nested = /\/events\//.test(location.pathname);
+  const prefix = nested ? '../' : '';
+  if (!document.querySelector('link[data-premium-shell]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `${prefix}premium-shell.css?v=20260914-1425`;
+    link.dataset.premiumShell = '';
+    document.head.append(link);
+  }
+  if (!document.querySelector('script[data-premium-shell]')) {
+    const script = document.createElement('script');
+    script.src = `${prefix}premium-shell.js?v=20260914-1425`;
+    script.defer = true;
+    script.dataset.premiumShell = '';
+    document.head.append(script);
+  }
+})();
+
+(() => {
   const assetPrefix = document.querySelector('script[src^="../"]') ? '../' : '';
   const sideActions = document.querySelector('.side-actions');
   if (sideActions) {
