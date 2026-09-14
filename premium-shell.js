@@ -5,29 +5,44 @@
   const lang = () => document.documentElement.lang === 'en' ? 'en' : 'fr';
   const apiBase = 'https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1';
 
+  const currentPage = () => path.split('/').pop() || 'index.html';
+  const currentSection = () => String(location.hash || '').toLowerCase();
   const isActive = href => {
-    const page = path.split('/').pop() || 'index.html';
-    if (href === 'index.html') return page === '' || page === 'index.html';
-    if (href === 'reglement.html') return page === 'reglement.html';
-    if (href === 'classement.html') return page === 'classement.html';
-    if (href === 'gtworld.html') return page === 'gtworld.html';
-    return false;
+    const page = currentPage();
+    const [targetPage, targetHash = ''] = href.split('#');
+    if (page === '' || page === 'index.html') {
+      if (targetPage !== 'index.html') return false;
+      const hash = currentSection();
+      if (targetHash === 'events') return hash === '#events';
+      if (targetHash === 'archives') return hash === '#archives';
+      return !hash || (hash !== '#events' && hash !== '#archives');
+    }
+    return targetPage === page;
   };
 
   const nav = document.querySelector('.side-links');
+  const links = [
+    ['index.html','Accueil','Home'],
+    ['index.html#events','Calendrier','Calendar'],
+    ['reglement.html','Règlement','Rules'],
+    ['classement.html','Classement','Ranking'],
+    ['gtworld.html','GT World S1','GT World S1'],
+    ['index.html#archives','Archives','Archives'],
+  ];
+
+  const syncActiveNav = () => {
+    if (!nav) return;
+    [...nav.querySelectorAll('a')].forEach((a, index) => {
+      const href = links[index]?.[0] || '';
+      a.classList.toggle('active', isActive(href));
+    });
+  };
+
   if (nav) {
-    const links = [
-      ['index.html','Accueil','Home'],
-      ['index.html#events','Calendrier','Calendar'],
-      ['reglement.html','Règlement','Rules'],
-      ['classement.html','Classement','Ranking'],
-      ['gtworld.html','GT World S1','GT World S1'],
-      ['index.html#archives','Archives','Archives'],
-    ];
     nav.replaceChildren(...links.map(([href,fr,en]) => {
       const a = document.createElement('a');
       a.href = `${prefix}${href}`;
-      if (isActive(href.split('#')[0])) a.classList.add('active');
+      if (isActive(href)) a.classList.add('active');
       const span = document.createElement('span');
       span.dataset.fr = fr;
       span.dataset.en = en;
@@ -35,6 +50,7 @@
       a.append(span);
       return a;
     }));
+    window.addEventListener('hashchange', syncActiveNav);
   }
 
   const footer = document.querySelector('.site-footer');
