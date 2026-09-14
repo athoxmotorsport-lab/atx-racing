@@ -75,14 +75,19 @@ Deno.serve(async (request) => {
   try {
     const supabase = adminClient();
 
+    // Circuit rankings are based on imported ACC timing data, not on whether a
+    // driver has made their profile public. Privacy only controls profile links.
     const { data: drivers, error: driversError } = await supabase.from("drivers")
-      .select("id, display_name, avatar_url, team_name").eq("is_profile_public", true);
+      .select("id, display_name, avatar_url, team_name, is_profile_public");
     if (driversError) throw driversError;
 
     const { data: claimedRows, error: claimedError } = await supabase.from("driver_identities")
       .select("driver_id").not("last_login_at", "is", null);
     if (claimedError) throw claimedError;
     const claimed = new Set((claimedRows ?? []).map((row) => row.driver_id));
+    const profileIsPublic = new Map((drivers ?? []).map((driver) => [driver.id, driver.is_profile_public === true]));
+    const publicProfileId = (driverId: string): string | null =>
+      claimed.has(driverId) && profileIsPublic.get(driverId) === true ? driverId : null;
 
     const results: Array<Record<string, unknown>> = [];
     for (let from = 0; from < 10000; from += 1000) {
@@ -98,17 +103,20 @@ Deno.serve(async (request) => {
     const sessionResults: Array<Record<string, unknown>> = [];
     for (let from = 0; from < 10000; from += 1000) {
       const { data, error } = await supabase.from("acc_session_results")
-        .select("driver_id, best_lap_ms, created_at, session:acc_sessions!inner(session_type, session_date, published_at, created_at, event:events!inner(circuit_key, circuit_name, is_public))")
+        .select("driver_id, best_lap_ms, created_at, session:acc_sessions!inner(session_type, session_date, published_at, created_at, event:events!inner(circuit_key, circuit_name, is_public, is_official))")
         .order("created_at", { ascending: true }).range(from, from + 999);
       if (error) throw error;
       sessionResults.push(...(data ?? []));
       if (!data || data.length < 1000) break;
     }
 
-    const publicSessionResults = sessionResults.filter((result) => {
+    // Any official timing file received from the collector must contribute to
+    // FP/Q/R circuit records. An event can be hidden from the calendar/archive
+    // without making its valid lap data disappear from the timing leaderboard.
+    const rankingSessionResults = sessionResults.filter((result) => {
       const session = Array.isArray(result.session) ? result.session[0] : result.session as Record<string, unknown> | null;
       const event = Array.isArray(session?.event) ? session.event[0] : session?.event as Record<string, unknown> | null;
-      return event?.is_public === true;
+      return event?.is_official !== false;
     });
 
     const { data: ratings, error: ratingsError } = await supabase.from("driver_ratings")
@@ -120,7 +128,7 @@ Deno.serve(async (request) => {
     const bestByDriverCircuitSession = new Map<string, BestLap>();
     const timelineByDriver = new Map<string, Array<{ at: number; circuit_key: string; lap_ms: number }>>();
 
-    for (const result of publicSessionResults) {
+    for (const result of rankingSessionResults) {
       const session = Array.isArray(result.session) ? result.session[0] : result.session as Record<string, unknown> | null;
       const event = Array.isArray(session?.event) ? session.event[0] : session?.event as Record<string, unknown> | null;
       const circuitKey = canonicalCircuitKey(event?.circuit_key ?? event?.circuit_name);
@@ -182,7 +190,7 @@ Deno.serve(async (request) => {
 
       return {
         driver_id: driver.id,
-        profile_id: claimed.has(driver.id) ? driver.id : null,
+        profile_id: publicProfileId(driver.id),
         display_name: driver.display_name,
         avatar_url: driver.avatar_url,
         team_name: driver.team_name,
@@ -210,7 +218,7 @@ Deno.serve(async (request) => {
         if (!best) return [];
         return [{
           driver_id: driver.id,
-          profile_id: claimed.has(driver.id) ? driver.id : null,
+          profile_id: publicProfileId(driver.id),
           display_name: driver.display_name,
           avatar_url: driver.avatar_url,
           best_lap_ms: best.lap_ms,
