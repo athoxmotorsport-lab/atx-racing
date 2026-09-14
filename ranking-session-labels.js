@@ -13,12 +13,153 @@
   };
 
   const normalise = value => String(value || '').trim().replace(/\s+/g, ' ');
+  const slug = value => normalise(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 
-  const circuitImages = {
-    monza: 'assets/events/monza-2026-09-09.jpg',
-    nurburgring: 'assets/events/nurburgring-gp-2026-09-11.webp',
+  const circuitVisuals = {
+    barcelona: {
+      image: 'https://cdn-image.as-web.jp/2022/12/15112208/asimg_2022Barcelona-Catalunya-AerialView-XPB1_ea639a84cff2f1f-765x510.jpg',
+      colors: ['#c60b1e', '#ffc400', '#c60b1e'], country: 'ESP'
+    },
+    brands_hatch: {
+      image: 'https://cdn-8.motorsport.com/images/amp/0JBJBbQ0/s6/bh-1.jpg',
+      colors: ['#1b2f68', '#ffffff', '#d81e36'], country: 'GBR'
+    },
+    circuit_of_the_americas: {
+      image: 'https://www.jalopnik.com/img/gallery/12-american-race-tracks-every-gearhead-should-visit/circuit-of-the-americas-texas-1770307445.jpg',
+      colors: ['#b31942', '#ffffff', '#0a3161'], country: 'USA'
+    },
+    cota: {
+      image: 'https://www.jalopnik.com/img/gallery/12-american-race-tracks-every-gearhead-should-visit/circuit-of-the-americas-texas-1770307445.jpg',
+      colors: ['#b31942', '#ffffff', '#0a3161'], country: 'USA'
+    },
+    donington_park: {
+      image: 'https://lirp.cdn-website.com/7752febc/dms3rep/multi/opt/Donington%2BPark-640w.jpg',
+      colors: ['#1b2f68', '#ffffff', '#d81e36'], country: 'GBR'
+    },
+    donington: {
+      image: 'https://lirp.cdn-website.com/7752febc/dms3rep/multi/opt/Donington%2BPark-640w.jpg',
+      colors: ['#1b2f68', '#ffffff', '#d81e36'], country: 'GBR'
+    },
+    hungaroring: {
+      image: 'https://cdn.guerinsportivo.it/images/2024/07/19/084017775-fb678899-494f-445d-a8fb-62ad22f729e5.jpg',
+      colors: ['#ce2939', '#ffffff', '#477050'], country: 'HUN'
+    },
+    imola: {
+      image: 'https://file.mahalo.cz/2016/02/zavodni-okruh-mesta-imola-1024x768.jpg',
+      colors: ['#009246', '#ffffff', '#ce2b37'], country: 'ITA'
+    },
+    indianapolis: {
+      image: 'https://assets.simpleviewinc.com/simpleview/image/upload/c_limit%2Ch_1200%2Cq_75%2Cw_1200/v1/clients/indy/IMS_d8ff3a49-7759-4dc8-b292-f4f44b0a81cd.jpg',
+      colors: ['#b31942', '#ffffff', '#0a3161'], country: 'USA'
+    },
+    kyalami: {
+      image: 'https://cms.groupeditors.com/img/autodealer/2490_1.jpg',
+      colors: ['#007749', '#ffb81c', '#de3831'], country: 'RSA'
+    },
+    laguna_seca: {
+      image: 'https://www.roadracingworld.com/wp-content/uploads/rrw/b4dc59d3-8f9a-4885-893e-a46ecf458ece.jpg',
+      colors: ['#b31942', '#ffffff', '#0a3161'], country: 'USA'
+    },
+    misano: {
+      image: 'https://www.billetweb.fr/files/page/upload/486221/misano_circuit.jpg',
+      colors: ['#009246', '#ffffff', '#ce2b37'], country: 'ITA'
+    },
+    monza: {
+      image: 'https://backoffice.gpt-worldwide.com/uploads/1599471039_3845352C-C193-4733-9A84-1138251A6D44.jpeg',
+      colors: ['#009246', '#ffffff', '#ce2b37'], country: 'ITA'
+    },
+    mount_panorama: {
+      image: 'https://static.wixstatic.com/media/dbd020_1fdc6312134a402e8f90f3337503a809~mv2.jpg/v1/fill/w_922%2Ch_518%2Cal_c%2Clg_1%2Cq_85/dbd020_1fdc6312134a402e8f90f3337503a809~mv2.jpg',
+      colors: ['#012169', '#ffffff', '#e4002b'], country: 'AUS'
+    },
+    nurburgring: {
+      image: 'https://www.blick-aktuell.de/Bilder/Die-Grand-Prix-Strecke-des-Nuerburgrings-Am-12-Mai-1984-896001og.jpg',
+      colors: ['#000000', '#dd0000', '#ffcc00'], country: 'GER'
+    },
+    nurburgring_gp: {
+      image: 'https://www.blick-aktuell.de/Bilder/Die-Grand-Prix-Strecke-des-Nuerburgrings-Am-12-Mai-1984-896001og.jpg',
+      colors: ['#000000', '#dd0000', '#ffcc00'], country: 'GER'
+    },
+    nurburgring_24h: {
+      image: 'https://www.getspeed.de/wp-content/uploads/2023/05/6bec5f13-ea21-b7b3-2438-66cfe73ad71b.jpg',
+      colors: ['#000000', '#dd0000', '#ffcc00'], country: 'GER'
+    },
+    oulton_park: {
+      image: 'https://www.snaplap.net/wp-content/uploads/2016/06/oulton-park.jpg',
+      colors: ['#1b2f68', '#ffffff', '#d81e36'], country: 'GBR'
+    },
+    paul_ricard: {
+      image: 'https://media.statsf1.fr/circuit/lecastellet.jpg',
+      colors: ['#0055a4', '#ffffff', '#ef4135'], country: 'FRA'
+    },
+    red_bull_ring: {
+      image: 'https://s2-ge.glbimg.com/j6-GRLhWKg6zEQ9Hx9wRBSy9EjU%3D/3096x0/filters%3Aformat%28jpeg%29/https%3A/i.s3.glbimg.com/v1/AUTH_bc8228b6673f488aa253bbcb03c80ec5/internal_photos/bs/2019/b/v/slIkvATjGnLCYdoNCQIw/ap-1n3mkxjrn2111-hires-jpeg-24bit-rgb-news.jpg',
+      colors: ['#ed2939', '#ffffff', '#ed2939'], country: 'AUT'
+    },
+    silverstone: {
+      image: 'https://media.formula1.com/image/upload/c_lfill%2Cw_3392/q_auto/v1740000001/content/dam/fom-website/manual/Misc/2021manual/Silverstone/GettyImages-996096950.webp',
+      colors: ['#1b2f68', '#ffffff', '#d81e36'], country: 'GBR'
+    },
+    snetterton: {
+      image: 'https://lapmeta.com/storage/track-banner/SnettertonCircuit1773290200.jpg',
+      colors: ['#1b2f68', '#ffffff', '#d81e36'], country: 'GBR'
+    },
+    spa: {
+      image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/805550/ss_85d9db26b66ab573ce4f6d5e96fc907e7c25512f.jpg',
+      colors: ['#000000', '#ffd90c', '#ef3340'], country: 'BEL'
+    },
+    spa_francorchamps: {
+      image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/805550/ss_85d9db26b66ab573ce4f6d5e96fc907e7c25512f.jpg',
+      colors: ['#000000', '#ffd90c', '#ef3340'], country: 'BEL'
+    },
+    suzuka: {
+      image: 'https://i.pinimg.com/originals/c3/ec/fa/c3ecfa29f27a19e31e85ef57e6542058.jpg',
+      colors: ['#ffffff', '#bc002d', '#ffffff'], country: 'JPN'
+    },
+    valencia: {
+      image: 'https://palco23.mundodeportivo.com/palco23/files/0002017/000redaccion/competiciones/motor/Circuito%20Ricardo%20Tormo%20Cheste%20Valencia%20948.jpg',
+      colors: ['#c60b1e', '#ffc400', '#c60b1e'], country: 'ESP'
+    },
+    watkins_glen: {
+      image: 'https://www.indynxt.com/-/media/IndyCar/News/Standard/2016/05/05-13-Watkins-Glen-Aerial-Shot.jpg',
+      colors: ['#b31942', '#ffffff', '#0a3161'], country: 'USA'
+    },
+    zandvoort: {
+      image: 'https://media.formula1.com/image/upload/f_auto%2Cc_limit%2Cw_1440%2Cq_auto/f_auto/q_auto/content/dam/fom-website/manual/Misc/2021manual/2021DutchGPManuals/Thursday/Zandvoort-aerial',
+      colors: ['#ae1c28', '#ffffff', '#21468b'], country: 'NED'
+    },
+    zolder: {
+      image: 'https://www.heusden-zolder.eu/afb/groot/circuit-heeft-definitief-omgevingsvergunning.jpg',
+      colors: ['#000000', '#ffd90c', '#ef3340'], country: 'BEL'
+    },
   };
-  const fallbackCircuitImage = 'atx-racing-background.webp';
+
+  const fallbackVisual = {
+    image: 'atx-racing-background.webp',
+    colors: ['#e62d36', '#ffffff', '#e62d36'],
+    country: 'ATX'
+  };
+
+  const aliases = {
+    'circuit_de_americas': 'circuit_of_the_americas',
+    'circuit_of_the_americas': 'circuit_of_the_americas',
+    'brands_hatch': 'brands_hatch',
+    'nurburgring_gp': 'nurburgring',
+    'nurburgring_24h': 'nurburgring_24h',
+    'spa_francorchamps': 'spa',
+    'mount_panorama': 'mount_panorama',
+    'donington_park': 'donington_park',
+    'oulton_park': 'oulton_park',
+    'red_bull_ring': 'red_bull_ring',
+    'watkins_glen': 'watkins_glen'
+  };
+
+  const visualForCircuit = circuit => {
+    const rawKey = slug(circuit?.circuit_key || '');
+    const nameKey = slug(circuit?.circuit_name || '');
+    const key = aliases[rawKey] || aliases[nameKey] || rawKey || nameKey;
+    return circuitVisuals[key] || circuitVisuals[nameKey] || fallbackVisual;
+  };
 
   const sessionItem = (type, lap) => {
     const value = formatLap(lap);
@@ -89,12 +230,15 @@
     if (!card || !circuit) return;
     const lap = formatLap(circuit.reference_lap_ms);
     const driver = String(circuit.reference_driver || '').trim();
-    const image = circuitImages[circuit.circuit_key] || fallbackCircuitImage;
-    const signature = `${circuit.circuit_key}|${lap}|${driver}|${image}`;
+    const visual = visualForCircuit(circuit);
+    const signature = `${circuit.circuit_key}|${lap}|${driver}|${visual.image}`;
     if (card.dataset.circuitVisualSignature === signature) return;
 
     card.dataset.circuitVisualSignature = signature;
     card.classList.add('circuit-visual-card');
+    card.style.setProperty('--flag-a', visual.colors[0]);
+    card.style.setProperty('--flag-b', visual.colors[1]);
+    card.style.setProperty('--flag-c', visual.colors[2]);
     card.setAttribute('aria-label', lap
       ? `${circuit.circuit_name}, ${driver}, ${lap}`
       : `${circuit.circuit_name}, aucun chrono`);
@@ -102,11 +246,20 @@
     const media = document.createElement('span');
     media.className = 'circuit-card-media';
     const img = document.createElement('img');
-    img.src = image;
-    img.alt = '';
+    img.src = visual.image;
+    img.alt = `Circuit ${circuit.circuit_name}`;
     img.loading = 'lazy';
     img.decoding = 'async';
+    img.referrerPolicy = 'no-referrer';
+    img.addEventListener('error', () => {
+      img.src = fallbackVisual.image;
+    }, { once: true });
     media.append(img);
+
+    const country = document.createElement('span');
+    country.className = 'circuit-card-country';
+    country.textContent = visual.country;
+    media.append(country);
 
     const content = document.createElement('span');
     content.className = 'circuit-card-content';
