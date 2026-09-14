@@ -49,8 +49,6 @@
     return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
   };
 
-  // Convert a datetime-local entered as Belgian time to an absolute ISO timestamp.
-  // This prevents 15:45 from being stored as 15:45 UTC and displayed later as 17:45.
   const brusselsIsoFromLocal = value => {
     const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(String(value || ''));
     if (!match) return String(value || '');
@@ -97,7 +95,7 @@
       ${select('Arrêt au stand obligatoire','mandatoryPitStop',String(Boolean(event.mandatory_pit_stop)),[['true','Oui'],['false','Non']])}
       ${select('Changement de pneus obligatoire','mandatoryTyreChange',String(Boolean(event.mandatory_tyre_change)),[['false','Non'],['true','Oui']])}
       ${select('Ravitaillement obligatoire','mandatoryRefuelling',String(Boolean(event.mandatory_refuelling)),[['false','Non'],['true','Oui']])}
-      ${field('Durée fixe du ravitaillement (secondes)','fixedRefuellingSeconds',event.fixed_refuelling_seconds ?? '','number','min="0" max="600"')}
+      ${field('Durée fixe du ravitaillement (secondes)','fixedRefuellingSeconds',event.fixed_refuelling_seconds ?? '','number','min="0"')}
       ${field('Accélération du temps','timeMultiplier',event.time_multiplier || 1,'number','min="1" max="24" step="0.1" required')}
       ${field('Nom du serveur','serverName',event.server_name || '','text','maxlength="120"')}
       ${field('Lien SimGrid','simgridUrl',event.simgrid_url || '','url','maxlength="300" required')}
