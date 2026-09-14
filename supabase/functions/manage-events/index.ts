@@ -101,7 +101,9 @@ Deno.serve(async (request) => {
     const mandatoryPitStop = body.mandatoryPitStop === true;
     const mandatoryTyreChange = body.mandatoryTyreChange === true;
     const mandatoryRefuelling = body.mandatoryRefuelling === true;
-    const fixedRefuellingSeconds = body.fixedRefuellingSeconds === null ? null : Number(body.fixedRefuellingSeconds);
+    const fixedRefuellingSeconds = body.fixedRefuellingSeconds === null || body.fixedRefuellingSeconds === ""
+      ? null
+      : Number(body.fixedRefuellingSeconds);
     const timeMultiplier = Number(body.timeMultiplier);
     const serverName = cleanText(body.serverName, 120);
     const startsAt = parseBrusselsLocal(body.startsAt);
@@ -120,7 +122,7 @@ Deno.serve(async (request) => {
     if (isEdit && !requestedSlug) return jsonResponse(request, { error: "invalid_slug" }, 400);
     if (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 1440 ||
       !Number.isInteger(maxDrivers) || maxDrivers < 1 || maxDrivers > 100 || Number.isNaN(startsAt.getTime()) ||
-      (fixedRefuellingSeconds !== null && (!Number.isInteger(fixedRefuellingSeconds) || fixedRefuellingSeconds < 0 || fixedRefuellingSeconds > 600)) ||
+      (fixedRefuellingSeconds !== null && (!Number.isInteger(fixedRefuellingSeconds) || fixedRefuellingSeconds < 0)) ||
       !Number.isFinite(timeMultiplier) || timeMultiplier < 1 || timeMultiplier > 24) {
       return jsonResponse(request, { error: "invalid_fields" }, 400);
     }
