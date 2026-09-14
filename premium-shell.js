@@ -4,54 +4,62 @@
   const prefix = nested ? '../' : '';
   const lang = () => document.documentElement.lang === 'en' ? 'en' : 'fr';
   const apiBase = 'https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1';
+  const page = path.split('/').pop() || 'index.html';
 
-  const currentPage = () => path.split('/').pop() || 'index.html';
-  const currentSection = () => String(location.hash || '').toLowerCase();
+  const pageClass = (() => {
+    if (page === 'index.html' || page === '') return 'premium-page-home';
+    if (page === 'classement.html') return 'premium-page-ranking';
+    if (page === 'reglement.html') return 'premium-page-rules';
+    if (page === 'gtworld.html') return 'premium-page-gtworld';
+    if (page === 'profil-pilote.html') return 'premium-page-profile';
+    if (page === 'course.html' || nested) return 'premium-page-course';
+    if (page === 'event-admin.html') return 'premium-page-admin';
+    if (page === 'confidentialite.html') return 'premium-page-privacy';
+    return 'premium-page-generic';
+  })();
+  document.body.classList.add('premium-site', pageClass);
+
   const isActive = href => {
-    const page = currentPage();
     const [targetPage, targetHash = ''] = href.split('#');
-    if (page === '' || page === 'index.html') {
-      if (targetPage !== 'index.html') return false;
-      const hash = currentSection();
-      if (targetHash === 'events') return hash === '#events';
-      if (targetHash === 'archives') return hash === '#archives';
-      return !hash || (hash !== '#events' && hash !== '#archives');
+    const currentHash = location.hash.replace('#', '');
+    if (targetPage === 'index.html') {
+      if (page !== '' && page !== 'index.html') return false;
+      if (targetHash) return currentHash === targetHash;
+      return currentHash !== 'events' && currentHash !== 'archives';
     }
-    return targetPage === page;
+    return page === targetPage;
   };
 
   const nav = document.querySelector('.side-links');
-  const links = [
-    ['index.html','Accueil','Home'],
-    ['index.html#events','Calendrier','Calendar'],
-    ['reglement.html','Règlement','Rules'],
-    ['classement.html','Classement','Ranking'],
-    ['gtworld.html','GT World S1','GT World S1'],
-    ['index.html#archives','Archives','Archives'],
-  ];
-
-  const syncActiveNav = () => {
-    if (!nav) return;
-    [...nav.querySelectorAll('a')].forEach((a, index) => {
-      const href = links[index]?.[0] || '';
-      a.classList.toggle('active', isActive(href));
-    });
-  };
-
+  let navLinks = [];
   if (nav) {
-    nav.replaceChildren(...links.map(([href,fr,en]) => {
+    const links = [
+      ['index.html','Accueil','Home'],
+      ['index.html#events','Calendrier','Calendar'],
+      ['reglement.html','Règlement','Rules'],
+      ['classement.html','Classement','Ranking'],
+      ['gtworld.html','GT World S1','GT World S1'],
+      ['index.html#archives','Archives','Archives'],
+    ];
+    navLinks = links.map(([href,fr,en]) => {
       const a = document.createElement('a');
       a.href = `${prefix}${href}`;
-      if (isActive(href)) a.classList.add('active');
+      a.dataset.premiumHref = href;
       const span = document.createElement('span');
       span.dataset.fr = fr;
       span.dataset.en = en;
       span.textContent = lang() === 'en' ? en : fr;
       a.append(span);
       return a;
-    }));
-    window.addEventListener('hashchange', syncActiveNav);
+    });
+    nav.replaceChildren(...navLinks);
   }
+
+  const syncNavActive = () => {
+    navLinks.forEach(link => link.classList.toggle('active', isActive(link.dataset.premiumHref || '')));
+  };
+  syncNavActive();
+  window.addEventListener('hashchange', syncNavActive);
 
   const footer = document.querySelector('.site-footer');
   if (footer) {
@@ -75,7 +83,7 @@
     const now = Date.now();
     const next = (events || []).filter(e => new Date(e.starts_at).getTime() >= now).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at))[0];
     const messages = next ? [
-      lang()==='en'?`Next event · ${next.title || next.circuit_name || 'ATX Racing'}`:`Prochain événement · ${next.title || next.circuit_name || 'ATX Racing'}`,
+      lang()==='en'?`Next event · ${next.title || next.title_fr || next.circuit_name || 'ATX Racing'}`:`Prochain événement · ${next.title || next.title_fr || next.circuit_name || 'ATX Racing'}`,
       localDate(next.starts_at),
       lang()==='en'?'Registration via SimGrid':'Inscriptions via SimGrid',
       lang()==='en'?'Official results · Performance · SAFE':'Résultats officiels · Performance · SAFE',
@@ -93,6 +101,32 @@
 
   const circuitHeading = document.querySelector('[data-ranking-panel="circuit"] .ranking-panel-head h2');
   if (circuitHeading) circuitHeading.innerHTML = '<span class="premium-red">CLASSEMENT</span><br>MEILLEURS TOURS <span class="premium-outline">PAR CIRCUIT</span>';
+
+  const decorateSectionHeadings = () => {
+    document.querySelectorAll('main section .wrap').forEach(wrap => {
+      const label = wrap.querySelector(':scope > .section-label');
+      const heading = wrap.querySelector(':scope > h1, :scope > h2');
+      if (label && heading) wrap.classList.add('premium-section-heading');
+    });
+  };
+  decorateSectionHeadings();
+
+  const fixRedBullRingImage = () => {
+    document.querySelectorAll('.circuit-visual-card').forEach(card => {
+      const name = card.querySelector('.circuit-card-name')?.textContent?.trim().toLowerCase() || '';
+      if (!name.includes('red bull ring')) return;
+      const img = card.querySelector('.circuit-card-media img');
+      if (!img) return;
+      const replacement = 'https://gdm-universal-media.b-cdn.net/racinggames/77340ace8cf3f6e652f0d196344d7d7a304b9083-3840x2160.jpg?height=840&width=1600';
+      if (img.src !== replacement) img.src = replacement;
+      img.alt = 'Red Bull Ring dans Assetto Corsa Competizione';
+    });
+  };
+  fixRedBullRingImage();
+  if (page === 'classement.html') {
+    const rankingRoot = document.querySelector('[data-alltime-leaderboard]') || document.body;
+    new MutationObserver(() => fixRedBullRingImage()).observe(rankingRoot,{childList:true,subtree:true});
+  }
 
   document.addEventListener('click', event => {
     if (event.target.closest('[data-language],[data-lang-switch]')) setTimeout(() => {
