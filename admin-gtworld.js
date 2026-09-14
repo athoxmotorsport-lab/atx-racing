@@ -1,0 +1,77 @@
+(() => {
+  const shell = document.querySelector('.admin-shell');
+  if (!shell) return;
+  const apiBase = 'https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1';
+  const sessionKey = 'atx-racing-session';
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const section = document.createElement('section');
+  section.className = 'admin-event-manager';
+  section.id = 'gtworld-manager';
+  section.innerHTML = `
+    <div class="admin-event-manager-head"><div><div class="section-label">GT World Saison 1</div><h2>Associer les pilotes aux équipes</h2><p class="intro">Pour les événements dont le titre commence par SPRINT ou ENDU, attribuez chaque pilote à son équipe de championnat. Le nom de l'équipe est la référence du classement, même si l'équipage change d'une manche à l'autre.</p></div><button class="btn small" type="button" data-gtw-refresh>Actualiser</button></div>
+    <p class="form-status" data-gtw-status>Chargement des manches GT World…</p>
+    <div class="form-field" style="max-width:520px"><label>Manche GT World</label><select data-gtw-event></select></div>
+    <form data-gtw-form><div class="admin-events-list" data-gtw-drivers></div><div class="actions" style="margin-top:18px"><button class="btn primary" type="submit">Enregistrer les équipes</button><a class="btn" href="gtworld.html" target="_blank" rel="noopener">Voir le classement GT World</a></div></form>`;
+  shell.insertBefore(section, document.querySelector('#new-event-form'));
+
+  const eventSelect = section.querySelector('[data-gtw-event]');
+  const driversBox = section.querySelector('[data-gtw-drivers]');
+  const status = section.querySelector('[data-gtw-status]');
+  const form = section.querySelector('[data-gtw-form]');
+  let events = [];
+
+  const request = async (method, body) => {
+    const token = sessionStorage.getItem(sessionKey);
+    if (!token) throw new Error('unauthorized');
+    const response = await fetch(`${apiBase}/manage-gtworld`, { method, headers:{ Authorization:`Bearer ${token}`, ...(body ? {'Content-Type':'application/json'} : {}) }, body: body ? JSON.stringify(body) : undefined, cache:'no-store' });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || 'request_failed');
+    return payload;
+  };
+
+  const renderDrivers = () => {
+    const current = events.find(event => event.slug === eventSelect.value);
+    driversBox.replaceChildren();
+    if (!current) return;
+    for (const driver of current.drivers || []) {
+      const row = document.createElement('article');
+      row.className = 'admin-event-row';
+      row.dataset.driverId = driver.driver_id;
+      row.innerHTML = `<div><strong>${esc(driver.display_name)}</strong><small>${driver.finish_position ? `P${driver.finish_position}` : 'Position —'}</small></div><div class="form-field" style="margin:0;min-width:300px"><label>Équipe championnat</label><input name="teamName" maxlength="96" value="${esc(driver.team_name || '')}" placeholder="Ex. ATX Motorsport Team 1"></div>`;
+      driversBox.append(row);
+    }
+    if (!current.drivers?.length) driversBox.innerHTML = '<p class="empty-state">Aucun résultat importé pour cette manche.</p>';
+  };
+
+  const load = async () => {
+    try {
+      status.textContent = 'Chargement des manches GT World…';
+      const payload = await request('GET');
+      events = payload.events || [];
+      eventSelect.innerHTML = events.map(event => `<option value="${esc(event.slug)}">${esc(event.title_fr)} · ${new Intl.DateTimeFormat('fr-BE',{dateStyle:'medium',timeZone:'Europe/Brussels'}).format(new Date(event.starts_at))}</option>`).join('');
+      renderDrivers();
+      status.textContent = events.length ? `${events.length} manche(s) GT World détectée(s).` : 'Aucune manche GT World détectée. Utilisez SPRINT ou ENDU au début du titre.';
+    } catch (error) {
+      status.textContent = error instanceof Error && error.message === 'unauthorized' ? 'Session administrateur absente.' : 'Impossible de charger la gestion GT World. Déployez manage-gtworld.';
+    }
+  };
+
+  eventSelect.addEventListener('change', renderDrivers);
+  section.querySelector('[data-gtw-refresh]').addEventListener('click', load);
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const rows = [...driversBox.querySelectorAll('[data-driver-id]')];
+    const assignments = rows.map(row => ({ driverId: row.dataset.driverId, teamName: row.querySelector('input[name="teamName"]')?.value || '' }));
+    try {
+      status.textContent = 'Enregistrement des équipes…';
+      await request('PATCH', { eventSlug:eventSelect.value, assignments });
+      status.textContent = 'Équipes enregistrées pour cette manche.';
+      await load();
+    } catch (error) {
+      status.textContent = `Impossible d'enregistrer les équipes${error instanceof Error ? ` (${error.message})` : ''}.`;
+    }
+  });
+
+  setTimeout(load, 180);
+})();
