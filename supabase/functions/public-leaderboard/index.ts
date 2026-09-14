@@ -36,6 +36,12 @@ const normaliseSessionType = (value: unknown): "FP" | "Q" | "R" | null => {
   return type === "FP" || type === "Q" || type === "R" ? type : null;
 };
 
+const isGtWorldEvent = (event: unknown): boolean => {
+  const row = Array.isArray(event) ? event[0] : event as Record<string, unknown> | null;
+  const title = String(row?.title_fr ?? row?.title_en ?? "").trim();
+  return /^(SPRINT|ENDU)\b/i.test(title);
+};
+
 const canonicalCircuitKey = (value: unknown): string => {
   const key = String(value ?? "")
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -81,12 +87,13 @@ Deno.serve(async (request) => {
     const results: Array<Record<string, unknown>> = [];
     for (let from = 0; from < 10000; from += 1000) {
       const { data, error } = await supabase.from("results")
-        .select("driver_id, status, finish_position, points, best_lap_ms, created_at, event:events!inner(id, circuit_key, circuit_name, starts_at, is_public)")
+        .select("driver_id, status, finish_position, points, best_lap_ms, created_at, event:events!inner(id, circuit_key, circuit_name, starts_at, is_public, title_fr, title_en)")
         .eq("event.is_public", true).order("created_at", { ascending: true }).range(from, from + 999);
       if (error) throw error;
       results.push(...(data ?? []));
       if (!data || data.length < 1000) break;
     }
+    const generalResults = results.filter((result) => !isGtWorldEvent(result.event));
 
     const sessionResults: Array<Record<string, unknown>> = [];
     for (let from = 0; from < 10000; from += 1000) {
@@ -153,7 +160,7 @@ Deno.serve(async (request) => {
     });
 
     const rows = (drivers ?? []).map((driver) => {
-      const driverResults = results.filter((result) => result.driver_id === driver.id);
+      const driverResults = generalResults.filter((result) => result.driver_id === driver.id);
       const circuitPaces: number[] = [];
       for (const [circuitKey] of circuits) {
         const best = bestByDriverCircuit.get(`${driver.id}|${circuitKey}`);
