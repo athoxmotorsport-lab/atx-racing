@@ -35,6 +35,152 @@
   font-size: 1em;
 }
 
-.ranking-circuit-card small .session-lap-prefix {
-  font-size: .9em;
+/* Circuit ranking visual test */
+[data-ranking-circuits].circuits-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.ranking-circuit-card.circuit-visual-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 238px;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid rgba(113, 145, 170, .34);
+  background: linear-gradient(180deg, #0b1925 0%, #08121c 100%);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .16);
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+
+.ranking-circuit-card.circuit-visual-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-top: 2px solid transparent;
+  transition: border-color .22s ease;
+}
+
+.ranking-circuit-card.circuit-visual-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(235, 45, 51, .76);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, .32), 0 0 0 1px rgba(235, 45, 51, .08);
+}
+
+.ranking-circuit-card.circuit-visual-card:hover::after,
+.ranking-circuit-card.circuit-visual-card.active::after {
+  border-top-color: #eb2d33;
+}
+
+.ranking-circuit-card.circuit-visual-card.active {
+  border-color: #eb2d33;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, .34), 0 0 24px rgba(235, 45, 51, .12);
+}
+
+.circuit-card-media {
+  position: relative;
+  display: block;
+  height: 128px;
+  overflow: hidden;
+  background: #07111a;
+}
+
+.circuit-card-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(3, 8, 13, .02) 15%, rgba(3, 8, 13, .25) 64%, rgba(3, 8, 13, .92) 100%);
+}
+
+.circuit-card-media img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(.9) contrast(1.06) brightness(.88);
+  transform: scale(1.015);
+  transition: transform .35s ease, filter .35s ease;
+}
+
+.ranking-circuit-card.circuit-visual-card:hover .circuit-card-media img {
+  transform: scale(1.065);
+  filter: saturate(1.05) contrast(1.08) brightness(.96);
+}
+
+.circuit-card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  padding: 12px 14px 15px;
+  background: linear-gradient(135deg, rgba(13, 31, 45, .96), rgba(7, 17, 27, .98));
+}
+
+.circuit-card-name {
+  display: block;
+  min-height: 2.25em;
+  color: #f4f7fa;
+  font-size: .98rem;
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: .01em;
+  text-transform: uppercase;
+}
+
+.circuit-card-driver {
+  display: block;
+  margin-top: 10px;
+  overflow: hidden;
+  color: #b9c8d3;
+  font-size: .76rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: .025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.circuit-card-lap {
+  display: block;
+  margin-top: 4px;
+  color: #fff;
+  font-size: 1.28rem;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: .045em;
+  font-variant-numeric: tabular-nums;
+}
+
+.circuit-card-empty {
+  display: block;
+  margin-top: auto;
+  padding-top: 14px;
+  color: #657888;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 980px) {
+  [data-ranking-circuits].circuits-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  [data-ranking-circuits].circuits-grid {
+    grid-template-columns: 1fr;
+  }
+  .ranking-circuit-card.circuit-visual-card {
+    min-height: 220px;
+  }
+  .circuit-card-media {
+    height: 122px;
+  }
 }
