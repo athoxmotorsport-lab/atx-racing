@@ -45,7 +45,7 @@ type ImportPayload = {
   }>;
 };
 
-const PROCESSOR_VERSION = "acc-v4";
+const PROCESSOR_VERSION = "acc-v5";
 const MAX_VALID_ACC_LAP_TIME_MS = 3_600_000;
 
 type EventRow = {
@@ -199,16 +199,31 @@ const resolveEvent = async (payload: ImportPayload): Promise<EventRow> => {
     ? payload.dateSession
     : new Date().toISOString().slice(0, 10);
   const key = circuitKey(payload.circuit);
-  const sourceEventKey = payload.cleCourse?.trim() ?? "";
+  let sourceEventKey = payload.cleCourse?.trim() ?? "";
   if (sourceEventKey && !/^[a-z0-9][a-z0-9_-]{7,119}$/.test(sourceEventKey)) {
     throw new Error("Invalid ACC race key");
   }
+
+  // ACC/collector race keys can be reused between server restarts or weekends.
+  // Never attach a timing session to an event from another circuit just because
+  // the external key happens to be identical.
   if (sourceEventKey) {
     const { data: byKey, error: keyError } = await supabase.from("events").select("*")
       .eq("source_event_key", sourceEventKey).maybeSingle();
     if (keyError) throw keyError;
-    if (byKey) return byKey as EventRow;
+    if (byKey) {
+      const eventCircuit = circuitKey(String(byKey.circuit_key ?? byKey.circuit_name ?? ""));
+      if (eventCircuit === key) return byKey as EventRow;
+
+      const scopedKey = `${sourceEventKey}_${key}`.slice(0, 120);
+      const { data: byScopedKey, error: scopedError } = await supabase.from("events").select("*")
+        .eq("source_event_key", scopedKey).maybeSingle();
+      if (scopedError) throw scopedError;
+      if (byScopedKey) return byScopedKey as EventRow;
+      sourceEventKey = scopedKey;
+    }
   }
+
   const nextDate = new Date(`${date}T00:00:00Z`);
   nextDate.setUTCDate(nextDate.getUTCDate() + 1);
   const { data: sameDay, error } = await supabase.from("events").select("*")
