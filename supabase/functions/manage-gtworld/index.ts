@@ -69,7 +69,9 @@ Deno.serve(async (request) => {
       const teamName = clean(assignment?.teamName, 96);
       if (!/^[0-9a-f-]{36}$/i.test(driverId)) continue;
       if (!teamName) {
-        await supabase.from("registrations").delete().eq("event_id", event.id).eq("driver_id", driverId).eq("external_source", "atx-gtworld-admin");
+        const { error } = await supabase.from("registrations")
+          .update({ team_name: null }).eq("event_id", event.id).eq("driver_id", driverId);
+        if (error) throw error;
         continue;
       }
       const { error } = await supabase.from("registrations").upsert({
