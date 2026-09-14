@@ -14,6 +14,12 @@
 
   const normalise = value => String(value || '').trim().replace(/\s+/g, ' ');
 
+  const circuitImages = {
+    monza: 'assets/events/monza-2026-09-09.jpg',
+    nurburgring: 'assets/events/nurburgring-gp-2026-09-11.webp',
+  };
+  const fallbackCircuitImage = 'atx-racing-background.webp';
+
   const sessionItem = (type, lap) => {
     const value = formatLap(lap);
     if (!value || !type) return null;
@@ -79,6 +85,55 @@
     return ids;
   };
 
+  const enhanceCircuitCard = (card, circuit) => {
+    if (!card || !circuit) return;
+    const lap = formatLap(circuit.reference_lap_ms);
+    const driver = String(circuit.reference_driver || '').trim();
+    const image = circuitImages[circuit.circuit_key] || fallbackCircuitImage;
+    const signature = `${circuit.circuit_key}|${lap}|${driver}|${image}`;
+    if (card.dataset.circuitVisualSignature === signature) return;
+
+    card.dataset.circuitVisualSignature = signature;
+    card.classList.add('circuit-visual-card');
+    card.setAttribute('aria-label', lap
+      ? `${circuit.circuit_name}, ${driver}, ${lap}`
+      : `${circuit.circuit_name}, aucun chrono`);
+
+    const media = document.createElement('span');
+    media.className = 'circuit-card-media';
+    const img = document.createElement('img');
+    img.src = image;
+    img.alt = '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    media.append(img);
+
+    const content = document.createElement('span');
+    content.className = 'circuit-card-content';
+
+    const name = document.createElement('strong');
+    name.className = 'circuit-card-name';
+    name.textContent = circuit.circuit_name;
+    content.append(name);
+
+    if (lap) {
+      const pilot = document.createElement('span');
+      pilot.className = 'circuit-card-driver';
+      pilot.textContent = driver || 'Pilote référence';
+      const time = document.createElement('span');
+      time.className = 'circuit-card-lap';
+      time.textContent = lap;
+      content.append(pilot, time);
+    } else {
+      const empty = document.createElement('span');
+      empty.className = 'circuit-card-empty';
+      empty.textContent = 'Aucun chrono';
+      content.append(empty);
+    }
+
+    card.replaceChildren(media, content);
+  };
+
   let payload = null;
   let decorating = false;
 
@@ -110,10 +165,7 @@
       }
 
       document.querySelectorAll('[data-ranking-circuits] .ranking-circuit-card').forEach((card, index) => {
-        const circuitData = payload.circuits?.[index];
-        const small = card.querySelector('small');
-        if (!small || !circuitData?.reference_lap_ms) return;
-        setReference(small, circuitData.reference_session_type, circuitData.reference_lap_ms, circuitData.reference_driver);
+        enhanceCircuitCard(card, payload.circuits?.[index]);
       });
 
       const select = document.querySelector('[data-driver-ranking-select]');
