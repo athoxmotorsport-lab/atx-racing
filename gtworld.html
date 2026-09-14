@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GT World Saison 1 | ATX Racing</title>
+  <meta name="description" content="Classement général par équipe du championnat ATX Racing GT World Saison 1.">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#07101a">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; connect-src https://twjpjzalyvbsdpbzhqln.supabase.co; img-src 'self' data: https://community.fastly.steamstatic.com https://avatars.fastly.steamstatic.com https://avatars.cloudflare.steamstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self' https://steamcommunity.com; upgrade-insecure-requests">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="enhancements.css">
+  <style>
+    .gtw-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:28px 0}.gtw-summary article,.gtw-event{border:1px solid var(--line);background:rgba(9,18,28,.82);padding:18px}.gtw-summary small{display:block;color:var(--muted);text-transform:uppercase}.gtw-summary strong{display:block;margin-top:6px;font-size:1.3rem}.gtw-badge{display:inline-flex;border:1px solid rgba(255,48,55,.65);padding:4px 8px;font-weight:800;font-size:.75rem;letter-spacing:.08em}.gtw-events{display:grid;gap:18px;margin-top:24px}.gtw-event header{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:14px}.gtw-event h3{margin:5px 0 0}.gtw-members{color:var(--muted);font-size:.88rem}.gtw-fast{font-weight:800;color:#ffd15a}.gtw-note{margin:18px 0 28px;padding:16px 18px;border-left:3px solid var(--accent);background:rgba(255,35,45,.06)}@media(max-width:800px){.gtw-summary{grid-template-columns:1fr 1fr}.gtw-event header{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <aside class="side-nav" aria-label="Navigation principale">
+    <div class="side-brand"><a class="brand" href="index.html">ATX <span>Racing</span></a><small>Event Division</small></div>
+    <nav class="side-links">
+      <a href="index.html"><span data-fr="Accueil" data-en="Home">Accueil</span></a>
+      <a href="index.html#events"><span data-fr="Calendrier" data-en="Calendar">Calendrier</span></a>
+      <a href="reglement.html"><span data-fr="Règlement" data-en="Rules">Règlement</span></a>
+      <a href="classement.html"><span data-fr="Classement" data-en="Ranking">Classement</span></a>
+      <a class="active" href="gtworld.html"><span>GT World S1</span></a>
+      <a href="index.html#archives"><span data-fr="Archives" data-en="Archive">Archives</span></a>
+    </nav>
+    <div class="side-actions"><a class="steam-button" data-steam-login href="https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/auth-steam" aria-label="Sign in through Steam"><img src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam"></a><div class="side-tools"></div></div>
+  </aside>
+  <main>
+    <section>
+      <div class="wrap">
+        <div class="section-label">ATX Racing GT World</div>
+        <h1>Saison 1 · Classement général</h1>
+        <p class="hero-copy">Un championnat unique réunissant les manches <strong>SPRINT</strong> et <strong>ENDU</strong>. Le classement est établi par nom d'équipe : la composition des équipages peut varier d'une manche à l'autre sans modifier l'identité de l'équipe.</p>
+        <div class="gtw-note"><strong>Barème :</strong> P1 50 · P2 36 · P3 30 · P4 24 · P5 20 · P6 16 · P7 12 · P8 8 · P9 4 · P10 2 · meilleur tour +2.</div>
+        <p class="empty-state" data-gtw-status>Chargement du championnat…</p>
+        <div data-gtw-content hidden>
+          <div class="gtw-summary"><article><small>Championnat</small><strong>GT World S1</strong></article><article><small>Classement</small><strong>Par équipe</strong></article><article><small>Formats</small><strong>SPRINT + ENDU</strong></article><article><small>Bonus</small><strong>+2 meilleur tour</strong></article></div>
+          <div class="leaderboard-wrap"><table class="leaderboard-table"><thead><tr><th>#</th><th>Équipe</th><th>Points</th><th>Manches</th><th>Victoires</th><th>Podiums</th><th>Sprint</th><th>Endurance</th><th>Meilleurs tours</th></tr></thead><tbody data-gtw-standings></tbody></table></div>
+          <div style="margin-top:48px"><div class="section-label">Manches</div><h2>Historique du championnat</h2><div class="gtw-events" data-gtw-events></div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="reglement.html">Règlement</a></div></div></div></footer>
+  <script src="main.js"></script>
+  <script src="gtworld.js"></script>
+</body>
+</html>
