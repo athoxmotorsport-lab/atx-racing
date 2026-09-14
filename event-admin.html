@@ -19,6 +19,7 @@
       <a class="active" href="index.html#events"><span data-fr="Calendrier" data-en="Calendar">Calendrier</span></a>
       <a href="reglement.html"><span data-fr="Règlement" data-en="Rules">Règlement</span></a>
       <a href="classement.html"><span data-fr="Classement" data-en="Ranking">Classement</span></a>
+      <a href="gtworld.html"><span>GT World S1</span></a>
       <a href="index.html#archives"><span data-fr="Archives" data-en="Archive">Archives</span></a>
     </nav>
     <div class="side-actions"><a class="steam-button" data-steam-login href="https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/auth-steam" aria-label="Sign in through Steam"><img src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam"></a><div class="side-tools"></div></div>
@@ -32,6 +33,7 @@
         <p class="hero-copy" data-fr="Créez, modifiez ou retirez vos événements ATX Racing. Les changements sont enregistrés dans Supabase et se répercutent sur l’accueil et le calendrier." data-en="Create, edit or remove ATX Racing events. Changes are stored in Supabase and reflected on the home page and calendar.">Créez, modifiez ou retirez vos événements ATX Racing. Les changements sont enregistrés dans Supabase et se répercutent sur l’accueil et le calendrier.</p>
         <div class="actions" style="margin-bottom:28px">
           <a class="btn primary" href="#event-manager" data-fr="Modifier / retirer" data-en="Edit / remove">Modifier / retirer</a>
+          <a class="btn" href="#gtworld-manager">GT World S1</a>
           <a class="btn" href="#new-event-form" data-fr="Créer un événement" data-en="Create event">Créer un événement</a>
         </div>
         <p class="form-status" data-form-status role="status" aria-live="polite" data-fr="Vérification de votre session…" data-en="Checking your session…">Vérification de votre session…</p>
@@ -76,7 +78,7 @@
           <div class="form-field"><label for="mandatory-stop" data-fr="Arrêt au stand obligatoire" data-en="Mandatory pit stop">Arrêt au stand obligatoire</label><select id="mandatory-stop" name="mandatoryPitStop"><option value="true">Oui / Yes</option><option value="false">Non / No</option></select></div>
           <div class="form-field"><label for="mandatory-tyres" data-fr="Changement de pneus obligatoire" data-en="Mandatory tyre change">Changement de pneus obligatoire</label><select id="mandatory-tyres" name="mandatoryTyreChange"><option value="false">Non / No</option><option value="true">Oui / Yes</option></select></div>
           <div class="form-field"><label for="mandatory-fuel" data-fr="Ravitaillement obligatoire" data-en="Mandatory refuelling">Ravitaillement obligatoire</label><select id="mandatory-fuel" name="mandatoryRefuelling"><option value="false">Non / No</option><option value="true">Oui / Yes</option></select></div>
-          <div class="form-field"><label for="fixed-refuel" data-fr="Durée fixe du ravitaillement (secondes)" data-en="Fixed refuelling time (seconds)">Durée fixe du ravitaillement (secondes)</label><input id="fixed-refuel" name="fixedRefuellingSeconds" type="number" min="0" max="600" placeholder="0"></div>
+          <div class="form-field"><label for="fixed-refuel" data-fr="Durée fixe du ravitaillement (secondes)" data-en="Fixed refuelling time (seconds)">Durée fixe du ravitaillement (secondes)</label><input id="fixed-refuel" name="fixedRefuellingSeconds" type="number" min="0" placeholder="0"></div>
           <div class="form-field"><label for="time-multiplier" data-fr="Accélération du temps" data-en="Time multiplier">Accélération du temps</label><input id="time-multiplier" name="timeMultiplier" type="number" min="1" max="24" step="0.1" value="1" required></div>
           <div class="form-field"><label for="server-name" data-fr="Nom du serveur" data-en="Server name">Nom du serveur</label><input id="server-name" name="serverName" maxlength="120" placeholder="ATX Racing | Daily Race Monza"></div>
           <div class="form-field"><label for="server-password" data-fr="Mot de passe serveur (non enregistré)" data-en="Server password (not saved)">Mot de passe serveur (non enregistré)</label><input id="server-password" name="serverPassword" type="text" maxlength="64" autocomplete="off"><small data-fr="Utilisé uniquement pour générer le rappel Discord dans votre navigateur." data-en="Only used to generate the Discord reminder in your browser.">Utilisé uniquement pour générer le rappel Discord dans votre navigateur.</small></div>
@@ -89,7 +91,8 @@
     </section>
   </main>
   <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="reglement.html" data-fr="Règlement" data-en="Rules">Règlement</a><a href="confidentialite.html" data-fr="Confidentialité" data-en="Privacy">Confidentialité</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
-  <script src="main.js?v=20260913-1409"></script>
-  <script src="admin-events-manager.js?v=20260913-1409"></script>
+  <script src="main.js?v=20260914-gtw1"></script>
+  <script src="admin-events-manager.js?v=20260914-gtw1"></script>
+  <script src="admin-gtworld.js?v=20260914-gtw1"></script>
 </body>
 </html>
