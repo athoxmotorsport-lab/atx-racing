@@ -1,0 +1,102 @@
+(() => {
+  const panel = document.querySelector('[data-ranking-panel="team"]');
+  const body = document.querySelector('[data-team-ranking-body]');
+  if (!panel || !body) return;
+  const base = 'https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1';
+  let payload = null, identities = [];
+  const normalise = value => String(value || '').trim().toLocaleLowerCase('fr');
+  const flag = code => code ? String.fromCodePoint(...String(code).toUpperCase().split('').map(c => 127397 + c.charCodeAt())) : '';
+  const metaFor = id => identities.find(item => item.driver_id === id) || {};
+
+  const ensureDetail = () => {
+    let detail = panel.querySelector('[data-team-members-detail]');
+    if (detail) return detail;
+    detail = document.createElement('section');
+    detail.className = 'team-members-detail';
+    detail.dataset.teamMembersDetail = '';
+    detail.hidden = true;
+    detail.innerHTML = '<header><div><small>Équipe sélectionnée</small><h3 data-team-detail-title>—</h3></div><strong data-team-detail-count>0 pilote</strong></header><div class="team-members-grid" data-team-members-grid></div>';
+    panel.append(detail);
+    return detail;
+  };
+
+  const badge = (label, value, type = '') => {
+    const span = document.createElement('span');
+    span.className = `team-member-badge ${type}`;
+    span.innerHTML = `<small>${label}</small><b>${value}</b>`;
+    return span;
+  };
+
+  const showMembers = (team, activeRow) => {
+    const detail = ensureDetail();
+    const members = (payload.drivers || []).filter(driver => normalise(driver.team_name) === normalise(team.team_name));
+    body.querySelectorAll('tr').forEach(row => {
+      const active = row === activeRow;
+      row.classList.toggle('active-team', active);
+      row.setAttribute('aria-expanded', String(active));
+    });
+    detail.querySelector('[data-team-detail-title]').textContent = team.team_name;
+    detail.querySelector('[data-team-detail-count]').textContent = `${members.length} pilote${members.length > 1 ? 's' : ''}`;
+    const grid = detail.querySelector('[data-team-members-grid]');
+    grid.replaceChildren();
+    members.sort((a,b) => Number(b.points || 0) - Number(a.points || 0) || String(a.display_name).localeCompare(String(b.display_name),'fr')).forEach(driver => {
+      const meta = metaFor(driver.driver_id);
+      const card = document.createElement('article'); card.className = 'team-member-card';
+      const top = document.createElement('div'); top.className = 'team-member-top';
+      const avatar = document.createElement('span'); avatar.className = 'team-member-avatar';
+      if (driver.avatar_url) { const img=document.createElement('img'); img.src=driver.avatar_url; img.alt=''; img.referrerPolicy='no-referrer'; avatar.append(img); }
+      else avatar.textContent = String(driver.display_name || 'AT').slice(0,2).toUpperCase();
+      const identity = document.createElement('div'); identity.className = 'team-member-identity';
+      const name = document.createElement(driver.profile_id ? 'a' : 'strong'); name.textContent = driver.display_name || 'ACC Driver';
+      if (driver.profile_id) name.href = `profil-pilote.html?driver=${encodeURIComponent(driver.profile_id)}`;
+      const metaLine = document.createElement('small');
+      const parts = []; if (meta.country_code) parts.push(`${flag(meta.country_code)} ${meta.country_code}`); if (meta.car_number) parts.push(`#${meta.car_number}`);
+      metaLine.textContent = parts.join(' · '); metaLine.hidden = !parts.length;
+      identity.append(name, metaLine); top.append(avatar, identity); card.append(top);
+      const badges = document.createElement('div'); badges.className = 'team-member-badges';
+      badges.append(badge('Performance', String(driver.performance_class || 'unranked').toUpperCase(), `perf ${driver.performance_class || 'unranked'}`));
+      if (driver.safety_class) badges.append(badge('SAFE', String(driver.safety_class).toUpperCase(), `safe ${driver.safety_class}`));
+      if (meta.fast_driver_count) badges.append(badge('Fast Driver', `× ${meta.fast_driver_count}`, 'fast'));
+      if (meta.gentleman_driver_count) badges.append(badge('Gentleman', `× ${meta.gentleman_driver_count}`, 'gentleman'));
+      card.append(badges);
+      const stats = document.createElement('div'); stats.className = 'team-member-stats';
+      [['Points',driver.points],['Courses',driver.races],['Victoires',driver.wins],['Podiums',driver.podiums]].forEach(([label,value]) => {
+        const item=document.createElement('span'); item.innerHTML=`<small>${label}</small><b>${Number(value || 0).toLocaleString('fr-BE',{maximumFractionDigits:1})}</b>`; stats.append(item);
+      });
+      card.append(stats); grid.append(card);
+    });
+    detail.hidden = false;
+    detail.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  };
+
+  const render = () => {
+    if (!payload) return;
+    const observerWas = observer.takeRecords(); void observerWas;
+    observer.disconnect();
+    body.replaceChildren();
+    (payload.teams || []).forEach(team => {
+      const row = document.createElement('tr'); row.className = 'team-ranking-row'; row.tabIndex = 0; row.setAttribute('role','button'); row.setAttribute('aria-expanded','false');
+      const values = [team.rank, team.team_name, team.points, team.drivers, team.races, team.wins, team.podiums, Number.isFinite(team.performance_score) ? `${Number(team.performance_score).toFixed(2)}%` : '—'];
+      values.forEach((value,index) => {
+        const cell=document.createElement(index===1?'th':'td'); if(index===1){cell.scope='row';const wrap=document.createElement('span');wrap.className='team-name-action';wrap.textContent=String(value ?? '—');const hint=document.createElement('small');hint.textContent='Voir les membres';cell.append(wrap,hint);}else cell.textContent=String(value ?? '—');row.append(cell);
+      });
+      const open = () => showMembers(team,row); row.addEventListener('click',open); row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}}); body.append(row);
+    });
+    if (!(payload.teams || []).length) {
+      const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=8;cell.textContent='Aucune équipe n’a encore été renseignée dans les profils.';row.append(cell);body.append(row);
+    }
+    observer.observe(body,{childList:true});
+  };
+
+  const observer = new MutationObserver(() => {
+    if (!payload) return;
+    const enhanced = body.querySelector('.team-ranking-row');
+    if (!enhanced && body.children.length) render();
+  });
+  observer.observe(body,{childList:true});
+
+  Promise.all([
+    fetch(`${base}/public-leaderboard`,{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()),
+    fetch(`${base}/public-driver-identities`,{cache:'no-store'}).then(r=>r.ok?r.json():{drivers:[]}),
+  ]).then(([ranking,identityData])=>{payload=ranking;identities=identityData.drivers||[];render();}).catch(()=>{});
+})();
