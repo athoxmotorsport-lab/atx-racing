@@ -4,13 +4,13 @@
   if (!document.querySelector('link[data-premium-shell]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `${prefix}premium-shell.css?v=20260914-1425`;
+    link.href = `${prefix}premium-shell.css?v=20260916-identity-ticker`;
     link.dataset.premiumShell = '';
     document.head.append(link);
   }
   if (!document.querySelector('script[data-premium-shell]')) {
     const script = document.createElement('script');
-    script.src = `${prefix}premium-shell.js?v=20260914-1425`;
+    script.src = `${prefix}premium-shell.js?v=20260916-identity-ticker`;
     script.defer = true;
     script.dataset.premiumShell = '';
     document.head.append(script);
@@ -386,7 +386,7 @@
   if (leaderboard) {
     const leaderboardStatus = document.querySelector('[data-leaderboard-status]');
     const leaderboardBody = document.querySelector('[data-leaderboard-body]');
-    fetch(`${apiBase}/public-leaderboard`)
+    fetch(`${apiBase}/public-leaderboard`, { cache: 'no-store' })
       .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed')))
       .then(payload => {
         leaderboardBody.replaceChildren();
@@ -974,6 +974,7 @@
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || 'save_failed');
       renderProfileInfo(payload.driver);
+      await loadProfile(token);
       formStatus.textContent = language === 'fr' ? 'Profil enregistré.' : 'Profile saved.';
       applyLanguage(language);
     } catch {

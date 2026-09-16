@@ -29,6 +29,37 @@
   };
   ensureFields();
 
+  const setAvatar = (container, avatarUrl, displayName) => {
+    if (!container) return;
+    container.replaceChildren();
+    if (avatarUrl) {
+      const image = document.createElement('img');
+      image.src = avatarUrl;
+      image.alt = '';
+      image.referrerPolicy = 'no-referrer';
+      container.append(image);
+    } else {
+      container.textContent = String(displayName || 'AT').slice(0, 2).toUpperCase();
+    }
+  };
+
+  const syncVisibleIdentity = driver => {
+    const displayName = driver.display_name || 'ATX Driver';
+    const name = profile.querySelector('[data-profile-name]');
+    if (name) {
+      delete name.dataset.fr;
+      delete name.dataset.en;
+      name.textContent = displayName;
+    }
+    setAvatar(profile.querySelector('[data-profile-avatar]'), driver.avatar_url, displayName);
+    const header = document.querySelector('[data-header-profile]');
+    if (header) {
+      setAvatar(header.querySelector('span'), driver.avatar_url, displayName);
+      const headerName = header.querySelector('strong');
+      if (headerName) headerName.textContent = displayName;
+    }
+  };
+
   const paint = (driver = {}, meta = {}, owner = false) => {
     const country = String(driver.country_code || meta.country_code || '').trim().toUpperCase();
     const car = String(driver.car_number || meta.car_number || '').trim().toUpperCase();
@@ -52,6 +83,7 @@
       if (form.elements.countryCode) form.elements.countryCode.value = country;
       if (form.elements.carNumber) form.elements.carNumber.value = car;
       if (form.elements.displayName) form.elements.displayName.value = driver.display_name || '';
+      syncVisibleIdentity(driver);
     }
   };
 
@@ -141,8 +173,7 @@
         const response = await fetch(`${base}/upload-driver-avatar`, { method:'POST', headers:{ Authorization:`Bearer ${token}`,'Content-Type':'application/json' }, body:JSON.stringify({image}) });
         if (!response.ok) throw new Error('upload_failed');
         const out = await response.json();
-        const avatar = profile.querySelector('[data-profile-avatar]');
-        if (avatar && out.avatar_url) { avatar.replaceChildren(); const img=document.createElement('img'); img.src=out.avatar_url; img.alt=''; avatar.append(img); }
+        if (out.avatar_url) syncVisibleIdentity({ display_name: form.elements.displayName?.value || 'ATX Driver', avatar_url: out.avatar_url });
       } catch { if (status) status.textContent = 'La photo n’a pas pu être enregistrée.'; }
     }
     setTimeout(load, 650);

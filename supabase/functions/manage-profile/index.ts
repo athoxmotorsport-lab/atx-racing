@@ -32,12 +32,15 @@ Deno.serve(async (request) => {
     const { data: session } = await supabase.from("auth_sessions").select("driver_id").eq("token_hash", await hmacHex(token)).is("revoked_at", null).gt("expires_at", new Date().toISOString()).maybeSingle();
     if (!session) return jsonResponse(request, { error: "unauthorized" }, 401);
     const body = await request.json().catch(() => ({}));
-    const values = {
+    const displayName = textValue(body.displayName, 64);
+    const values: Record<string, string | null> = {
+      custom_display_name: displayName,
       team_name: textValue(body.teamName, 64), country_code: countryValue(body.countryCode), car_number: carNumberValue(body.carNumber),
       bio_fr: textValue(body.bioFr, 500), bio_en: textValue(body.bioEn, 500),
       twitch_url: urlValue(body.twitchUrl, ["twitch.tv"]), tiktok_url: urlValue(body.tiktokUrl, ["tiktok.com"]),
       youtube_url: urlValue(body.youtubeUrl, ["youtube.com", "youtu.be"]), website_url: urlValue(body.websiteUrl),
     };
+    if (displayName) values.display_name = displayName;
     const { data: driver, error } = await supabase.from("drivers").update(values).eq("id", session.driver_id)
       .select("id, display_name, avatar_url, country_code, car_number, team_name, bio_fr, bio_en, twitch_url, tiktok_url, youtube_url, website_url").single();
     if (error) throw error;
