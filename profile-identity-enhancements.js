@@ -31,15 +31,19 @@
 
   const setAvatar = (container, avatarUrl, displayName) => {
     if (!container) return;
+    const initials = String(displayName || 'AT').slice(0, 2).toUpperCase();
     container.replaceChildren();
     if (avatarUrl) {
       const image = document.createElement('img');
       image.src = avatarUrl;
       image.alt = '';
       image.referrerPolicy = 'no-referrer';
+      image.addEventListener('error', () => {
+        container.replaceChildren(document.createTextNode(initials));
+      }, { once: true });
       container.append(image);
     } else {
-      container.textContent = String(displayName || 'AT').slice(0, 2).toUpperCase();
+      container.textContent = initials;
     }
   };
 

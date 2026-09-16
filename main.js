@@ -4,13 +4,13 @@
   if (!document.querySelector('link[data-premium-shell]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `${prefix}premium-shell.css?v=20260916-ranking-structure`;
+    link.href = `${prefix}premium-shell.css?v=20260916-avatar-fix`;
     link.dataset.premiumShell = '';
     document.head.append(link);
   }
   if (!document.querySelector('script[data-premium-shell]')) {
     const script = document.createElement('script');
-    script.src = `${prefix}premium-shell.js?v=20260916-ranking-structure`;
+    script.src = `${prefix}premium-shell.js?v=20260916-avatar-fix`;
     script.defer = true;
     script.dataset.premiumShell = '';
     document.head.append(script);
@@ -34,8 +34,8 @@
     adminLink.href = `${assetPrefix}event-admin.html`;
     adminLink.hidden = true;
     adminLink.dataset.adminEvent = '';
-    adminLink.dataset.fr = 'Ajouter un événement';
-    adminLink.dataset.en = 'Add an event';
+    adminLink.dataset.fr = 'Gestion événement';
+    adminLink.dataset.en = 'Event management';
     sideActions.prepend(adminLink);
     utility.append(sideActions);
     document.body.insertBefore(utility, document.querySelector('main'));
@@ -94,6 +94,24 @@
     return payload;
   };
 
+  const paintAvatar = (container, avatarUrl, displayName) => {
+    if (!container) return;
+    const initials = String(displayName || 'AT').slice(0, 2).toUpperCase();
+    container.replaceChildren();
+    if (!avatarUrl) {
+      container.textContent = initials;
+      return;
+    }
+    const image = document.createElement('img');
+    image.src = avatarUrl;
+    image.alt = '';
+    image.referrerPolicy = 'no-referrer';
+    image.addEventListener('error', () => {
+      container.replaceChildren(document.createTextNode(initials));
+    }, { once: true });
+    container.append(image);
+  };
+
   const revealAdminTools = driver => {
     const isAdmin = Array.isArray(driver?.roles) && driver.roles.includes('admin');
     document.querySelectorAll('[data-admin-event]').forEach(link => { link.hidden = !isAdmin; });
@@ -114,13 +132,7 @@
     }
     link.replaceChildren();
     const avatar = document.createElement('span');
-    if (driver.avatar_url) {
-      const image = document.createElement('img');
-      image.src = driver.avatar_url;
-      image.alt = '';
-      image.referrerPolicy = 'no-referrer';
-      avatar.append(image);
-    } else avatar.textContent = String(driver.display_name || 'AT').slice(0, 2).toUpperCase();
+    paintAvatar(avatar, driver.avatar_url, driver.display_name);
     const name = document.createElement('strong');
     name.textContent = driver.display_name || 'ATX Driver';
     link.append(avatar, name);
@@ -416,13 +428,7 @@
           identityBox.className = 'leaderboard-driver';
           const avatar = document.createElement('span');
           avatar.className = 'leaderboard-avatar';
-          if (driver.avatar_url) {
-            const image = document.createElement('img');
-            image.src = driver.avatar_url;
-            image.alt = '';
-            image.referrerPolicy = 'no-referrer';
-            avatar.append(image);
-          } else avatar.textContent = String(driver.display_name || 'AT').slice(0, 2).toUpperCase();
+          paintAvatar(avatar, driver.avatar_url, driver.display_name);
           const driverName = document.createElement(driver.profile_id ? 'a' : 'strong');
           driverName.textContent = driver.display_name || 'ACC Driver';
           if (driver.profile_id) {
@@ -834,16 +840,7 @@
     profile.querySelector('[data-profile-points]').textContent = Number(stats.points || 0).toLocaleString(language === 'fr' ? 'fr-BE' : 'en-GB');
 
     const avatar = profile.querySelector('[data-profile-avatar]');
-    avatar.replaceChildren();
-    if (driver.avatar_url) {
-      const image = document.createElement('img');
-      image.src = driver.avatar_url;
-      image.alt = '';
-      image.referrerPolicy = 'no-referrer';
-      avatar.append(image);
-    } else {
-      avatar.textContent = driver.display_name.slice(0, 2).toUpperCase();
-    }
+    paintAvatar(avatar, driver.avatar_url, driver.display_name);
 
     const performance = profile.querySelector('[data-performance-badge]');
     const performanceTier = rating?.performance_class || 'unranked';

@@ -44,8 +44,9 @@
       const card = document.createElement('article'); card.className = 'team-member-card';
       const top = document.createElement('div'); top.className = 'team-member-top';
       const avatar = document.createElement('span'); avatar.className = 'team-member-avatar';
-      if (driver.avatar_url) { const img=document.createElement('img'); img.src=driver.avatar_url; img.alt=''; img.referrerPolicy='no-referrer'; avatar.append(img); }
-      else avatar.textContent = String(driver.display_name || 'AT').slice(0,2).toUpperCase();
+      const initials = String(driver.display_name || 'AT').slice(0,2).toUpperCase();
+      if (driver.avatar_url) { const img=document.createElement('img'); img.src=driver.avatar_url; img.alt=''; img.referrerPolicy='no-referrer'; img.addEventListener('error',()=>{ avatar.replaceChildren(document.createTextNode(initials)); },{ once:true }); avatar.append(img); }
+      else avatar.textContent = initials;
       const identity = document.createElement('div'); identity.className = 'team-member-identity';
       const name = document.createElement(driver.profile_id ? 'a' : 'strong'); name.textContent = driver.display_name || 'ACC Driver';
       if (driver.profile_id) name.href = `profil-pilote.html?driver=${encodeURIComponent(driver.profile_id)}`;

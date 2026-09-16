@@ -38,6 +38,120 @@ const normaliseSessionType = (value: unknown): "FP" | "Q" | "R" | null => {
 
 type RaceCategory = "WGT" | "DR" | "OL";
 type RankingScope = RaceCategory | "ALL";
+type SteamIdentity = {
+  driver_id: string;
+  steam_id64: string;
+  steam_persona_name: string | null;
+  steam_profile_url: string | null;
+  steam_avatar_url: string | null;
+  last_login_at: string | null;
+};
+const DEFAULT_STEAM_AVATAR = "https://avatars.akamai.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg";
+
+const usableAvatarUrl = (value: unknown): boolean => {
+  const url = String(value ?? "").trim();
+  return /^https:\/\//i.test(url) && /\.(?:jpe?g|png|webp)(?:\?|$)/i.test(url);
+};
+
+const decodeXml = (value: string): string => value
+  .replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+  .replaceAll("&quot;", "\"").replaceAll("&#39;", "'");
+
+const xmlValue = (xml: string, tag: string): string | null => {
+  const cdata = xml.match(new RegExp(`<${tag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`, "i"));
+  const plain = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  return decodeXml(String(cdata?.[1] ?? plain?.[1] ?? "")).trim() || null;
+};
+
+const fetchCommunitySummary = async (steamId: string): Promise<Record<string, unknown> | null> => {
+  try {
+    const profileUrl = `https://steamcommunity.com/profiles/${steamId}`;
+    const response = await fetch(`${profileUrl}/?xml=1`, {
+      headers: { "Accept": "application/xml", "User-Agent": "ATX-Racing/1.0" },
+    });
+    if (!response.ok) return null;
+    const xml = await response.text();
+    return {
+      steamid: steamId,
+      personaname: xmlValue(xml, "steamID"),
+      profileurl: profileUrl,
+      avatarfull: xmlValue(xml, "avatarFull") ?? DEFAULT_STEAM_AVATAR,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const hydrateSteamProfiles = async (
+  supabase: ReturnType<typeof adminClient>,
+  drivers: Array<Record<string, any>>,
+  identities: SteamIdentity[],
+): Promise<void> => {
+  const pending = identities.filter((identity) =>
+    !String(identity.steam_persona_name ?? "").trim() || !usableAvatarUrl(identity.steam_avatar_url)
+  );
+  const apiKey = Deno.env.get("STEAM_API_KEY");
+  if (pending.length === 0) return;
+
+  const summaries = new Map<string, Record<string, unknown>>();
+  if (apiKey) {
+    for (let offset = 0; offset < pending.length; offset += 100) {
+      const batch = pending.slice(offset, offset + 100);
+      const endpoint = new URL("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/");
+      endpoint.searchParams.set("key", apiKey);
+      endpoint.searchParams.set("steamids", batch.map((identity) => identity.steam_id64).join(","));
+      try {
+        const response = await fetch(endpoint, { headers: { "Accept": "application/json", "User-Agent": "ATX-Racing/1.0" } });
+        if (!response.ok) continue;
+        const body = await response.json();
+        for (const player of body?.response?.players ?? []) summaries.set(String(player.steamid), player);
+      } catch (error) {
+        console.warn("Steam profile synchronization failed", error instanceof Error ? error.message : "unknown error");
+      }
+    }
+  }
+
+  const unresolved = pending.filter((identity) => !summaries.has(identity.steam_id64));
+  for (let offset = 0; offset < unresolved.length; offset += 20) {
+    const batch = unresolved.slice(offset, offset + 20);
+    const players = await Promise.all(batch.map((identity) => fetchCommunitySummary(identity.steam_id64)));
+    players.forEach((player) => { if (player?.steamid) summaries.set(String(player.steamid), player); });
+  }
+
+  const driverById = new Map(drivers.map((driver) => [String(driver.id), driver]));
+  await Promise.all(pending.map(async (identity) => {
+    const player = summaries.get(identity.steam_id64);
+    if (!player) return;
+    const driver = driverById.get(identity.driver_id);
+    const personaName = String(player.personaname ?? driver?.display_name ?? "").trim().slice(0, 64) || null;
+    const avatarUrl = usableAvatarUrl(player.avatarfull) ? String(player.avatarfull) : null;
+    const profileUrl = String(player.profileurl ?? "").startsWith("https://")
+      ? String(player.profileurl)
+      : `https://steamcommunity.com/profiles/${identity.steam_id64}`;
+    if (!personaName && !avatarUrl) return;
+
+    await supabase.from("driver_identities").update({
+      steam_persona_name: personaName ?? identity.steam_persona_name,
+      steam_profile_url: profileUrl,
+      steam_avatar_url: avatarUrl ?? identity.steam_avatar_url,
+    }).eq("driver_id", identity.driver_id);
+
+    identity.steam_persona_name = personaName ?? identity.steam_persona_name;
+    identity.steam_profile_url = profileUrl;
+    identity.steam_avatar_url = avatarUrl ?? identity.steam_avatar_url;
+    if (!driver) return;
+    const updates: Record<string, string> = {};
+    if (!driver.custom_display_name && personaName) {
+      driver.display_name = personaName;
+      updates.display_name = personaName;
+    }
+    if (!driver.custom_avatar_url && avatarUrl) {
+      driver.avatar_url = avatarUrl;
+      updates.avatar_url = avatarUrl;
+    }
+    if (Object.keys(updates).length) await supabase.from("drivers").update(updates).eq("id", identity.driver_id);
+  }));
+};
 
 const eventRow = (event: unknown): Record<string, unknown> | null => {
   const row = Array.isArray(event) ? event[0] : event as Record<string, unknown> | null;
@@ -94,13 +208,20 @@ Deno.serve(async (request) => {
     // Circuit rankings are based on imported ACC timing data, not on whether a
     // driver has made their profile public. Privacy only controls profile links.
     const { data: drivers, error: driversError } = await supabase.from("drivers")
-      .select("id, display_name, avatar_url, team_name, is_profile_public");
+      .select("id, display_name, custom_display_name, avatar_url, custom_avatar_url, team_name, is_profile_public");
     if (driversError) throw driversError;
 
-    const { data: claimedRows, error: claimedError } = await supabase.from("driver_identities")
-      .select("driver_id").not("last_login_at", "is", null);
+    const { data: identityRows, error: claimedError } = await supabase.from("driver_identities")
+      .select("driver_id, steam_id64, steam_persona_name, steam_profile_url, steam_avatar_url, last_login_at");
     if (claimedError) throw claimedError;
-    const claimed = new Set((claimedRows ?? []).map((row) => row.driver_id));
+    await hydrateSteamProfiles(supabase, drivers ?? [], (identityRows ?? []) as SteamIdentity[]);
+    const identityByDriver = new Map((identityRows ?? []).map((identity) => [identity.driver_id, identity]));
+    for (const driver of drivers ?? []) {
+      const identity = identityByDriver.get(driver.id);
+      driver.display_name = driver.custom_display_name || identity?.steam_persona_name || driver.display_name;
+      driver.avatar_url = driver.custom_avatar_url || identity?.steam_avatar_url || driver.avatar_url;
+    }
+    const claimed = new Set((identityRows ?? []).filter((row) => row.last_login_at).map((row) => row.driver_id));
     const profileIsPublic = new Map((drivers ?? []).map((driver) => [driver.id, driver.is_profile_public === true]));
     const publicProfileId = (driverId: string): string | null =>
       claimed.has(driverId) && profileIsPublic.get(driverId) === true ? driverId : null;
