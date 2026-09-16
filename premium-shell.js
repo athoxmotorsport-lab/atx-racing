@@ -24,15 +24,18 @@
   document.body.classList.add('premium-site', pageClass);
 
   const isActive = href => {
-    const [targetPage, targetHash = ''] = href.split('#');
-    const currentHash = location.hash.replace('#', '');
+    const [targetLocation, targetHash = ''] = href.split('#');
+    const targetPage = targetLocation.split('?')[0];
+    const currentHash = location.hash.replace('#', '') || 'points';
     if (targetPage === 'index.html') return page === '' || page === 'index.html';
+    if (targetPage === 'classement.html' && targetHash) return page === targetPage && currentHash === targetHash;
     return page === targetPage;
   };
 
   const nav = document.querySelector('.side-links');
   let navLinks = [];
   let courseToggle = null;
+  let rankingToggle = null;
   if (nav) {
     const makeLink = ([href,fr,en]) => {
       const a = document.createElement('a');
@@ -53,31 +56,64 @@
     courseToggle.className = 'side-nav-group-toggle';
     courseToggle.setAttribute('aria-expanded','false');
     courseToggle.innerHTML = '<span data-fr="Courses" data-en="Racing">Courses</span><i aria-hidden="true">⌄</i>';
-    const submenu = document.createElement('div');
-    submenu.className = 'side-submenu';
-    submenu.append(
+    const courseSubmenu = document.createElement('div');
+    courseSubmenu.className = 'side-submenu';
+    courseSubmenu.append(
       makeLink(['gtworld.html','World GT','World GT']),
       makeLink(['daily-race.html','Daily Race','Daily Race']),
       makeLink(['open-lobby.html','Open Lobby','Open Lobby'])
     );
-    courseGroup.append(courseToggle, submenu);
-    const primary = [
-      makeLink(['calendrier.html','Calendrier','Calendar']),
-      makeLink(['classement.html','Classements','Standings']),
-      makeLink(['archives.html','Archives','Archives']),
-      makeLink(['reglement.html','Règlement','Rules']),
+    courseGroup.append(courseToggle, courseSubmenu);
+
+    const rankingPinned = page === 'classement.html' && matchMedia('(min-width:821px)').matches;
+    const rankingGroup = document.createElement('div');
+    rankingGroup.className = `side-nav-group side-ranking-group${rankingPinned ? ' open persistent-open' : ''}`;
+    rankingToggle = document.createElement('button');
+    rankingToggle.type = 'button';
+    rankingToggle.className = 'side-nav-group-toggle';
+    rankingToggle.setAttribute('aria-expanded', String(rankingPinned));
+    rankingToggle.innerHTML = '<span data-fr="Classements" data-en="Standings">Classements</span><i aria-hidden="true">⌄</i>';
+    const rankingSubmenu = document.createElement('div');
+    rankingSubmenu.className = 'side-submenu ranking-submenu';
+    const rankingLinks = [
+      makeLink(['classement.html?type=DR#points','Classement points','Points standings']),
+      makeLink(['classement.html#circuit','Par circuit','By circuit']),
+      makeLink(['classement.html#driver','Par pilotes','By driver']),
+      makeLink(['classement.html#team','Par équipe','By team']),
     ];
-    nav.replaceChildren(home, courseGroup, ...primary);
+    ['points','circuit','driver','team'].forEach((section, index) => { rankingLinks[index].dataset.rankingSection = section; });
+    rankingSubmenu.append(...rankingLinks);
+    rankingGroup.append(rankingToggle, rankingSubmenu);
+
+    nav.replaceChildren(
+      home,
+      courseGroup,
+      makeLink(['calendrier.html','Calendrier','Calendar']),
+      rankingGroup,
+      makeLink(['archives.html','Archives','Archives']),
+      makeLink(['reglement.html','Règlement','Rules'])
+    );
     navLinks = [...nav.querySelectorAll('a[data-premium-href]')];
     courseToggle.addEventListener('click', () => {
       const open = !courseGroup.classList.contains('open');
       courseGroup.classList.toggle('open', open);
       courseToggle.setAttribute('aria-expanded', String(open));
     });
+    rankingToggle.addEventListener('click', () => {
+      if (rankingGroup.classList.contains('persistent-open')) return;
+      const open = !rankingGroup.classList.contains('open');
+      rankingGroup.classList.toggle('open', open);
+      rankingToggle.setAttribute('aria-expanded', String(open));
+    });
     document.addEventListener('click', event => {
-      if (courseGroup.contains(event.target)) return;
-      courseGroup.classList.remove('open');
-      courseToggle.setAttribute('aria-expanded','false');
+      if (!courseGroup.contains(event.target)) {
+        courseGroup.classList.remove('open');
+        courseToggle.setAttribute('aria-expanded','false');
+      }
+      if (!rankingGroup.contains(event.target) && !rankingGroup.classList.contains('persistent-open')) {
+        rankingGroup.classList.remove('open');
+        rankingToggle.setAttribute('aria-expanded','false');
+      }
     });
   }
 
@@ -85,6 +121,7 @@
     navLinks.forEach(link => link.classList.toggle('active', isActive(link.dataset.premiumHref || '')));
     const courseActive = ['gtworld.html','daily-race.html','open-lobby.html'].includes(page);
     courseToggle?.classList.toggle('active', courseActive);
+    rankingToggle?.classList.toggle('active', page === 'classement.html');
   };
   syncNavActive();
   window.addEventListener('hashchange', syncNavActive);

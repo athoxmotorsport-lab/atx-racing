@@ -37,6 +37,7 @@ const normaliseSessionType = (value: unknown): "FP" | "Q" | "R" | null => {
 };
 
 type RaceCategory = "WGT" | "DR" | "OL";
+type RankingScope = RaceCategory | "ALL";
 
 const eventRow = (event: unknown): Record<string, unknown> | null => {
   const row = Array.isArray(event) ? event[0] : event as Record<string, unknown> | null;
@@ -88,7 +89,7 @@ Deno.serve(async (request) => {
   try {
     const supabase = adminClient();
     const requestedCategory = new URL(request.url).searchParams.get("category")?.toUpperCase();
-    const category: RaceCategory = requestedCategory === "WGT" || requestedCategory === "OL" ? requestedCategory : "DR";
+    const category: RankingScope = requestedCategory === "WGT" || requestedCategory === "OL" || requestedCategory === "ALL" ? requestedCategory : "DR";
 
     // Circuit rankings are based on imported ACC timing data, not on whether a
     // driver has made their profile public. Privacy only controls profile links.
@@ -113,11 +114,12 @@ Deno.serve(async (request) => {
       results.push(...(data ?? []));
       if (!data || data.length < 1000) break;
     }
-    const generalResults = results.filter((result) => raceCategory(result.event) === category);
+    const generalResults = results.filter((result) => category === "ALL" || raceCategory(result.event) === category);
     const wgtPoints = new Map([[1, 50], [2, 36], [3, 30], [4, 24], [5, 20], [6, 16], [7, 12], [8, 8], [9, 4], [10, 2]]);
     const fastestByEvent = new Map<string, number>();
-    if (category === "WGT") {
+    if (category === "WGT" || category === "ALL") {
       for (const result of generalResults) {
+        if (raceCategory(result.event) !== "WGT") continue;
         const eventId = String(eventRow(result.event)?.id ?? "");
         const lap = Number(result.best_lap_ms);
         if (!eventId || !Number.isFinite(lap) || lap <= 0) continue;
@@ -126,7 +128,7 @@ Deno.serve(async (request) => {
       }
     }
     const pointsForResult = (result: Record<string, unknown>): number => {
-      if (category !== "WGT") return Number(result.points ?? 0);
+      if (raceCategory(result.event) !== "WGT") return Number(result.points ?? 0);
       const position = Number(result.finish_position);
       const base = result.status === "classified" ? wgtPoints.get(position) ?? 0 : 0;
       const eventId = String(eventRow(result.event)?.id ?? "");
@@ -150,7 +152,7 @@ Deno.serve(async (request) => {
     const rankingSessionResults = sessionResults.filter((result) => {
       const session = Array.isArray(result.session) ? result.session[0] : result.session as Record<string, unknown> | null;
       const event = Array.isArray(session?.event) ? session.event[0] : session?.event as Record<string, unknown> | null;
-      return event?.is_official !== false && raceCategory(event) === category;
+      return event?.is_official !== false && (category === "ALL" || raceCategory(event) === category);
     });
 
     const { data: ratings, error: ratingsError } = await supabase.from("driver_ratings")
@@ -249,7 +251,7 @@ Deno.serve(async (request) => {
         safety_class: safetyClass(safety?.safety_score == null ? null : Number(safety.safety_score)),
         safety_score: safety?.safety_score ?? null,
       };
-    }).filter((row) => row.circuits > 0)
+    }).filter((row) => row.circuits > 0 || row.races > 0)
       .sort((first, second) => second.points - first.points || second.wins - first.wins || (first.performance_score ?? 999) - (second.performance_score ?? 999))
       .map((row, index) => ({ rank: index + 1, ...row }));
 

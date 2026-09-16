@@ -51,3 +51,49 @@ h1,h2,h3{letter-spacing:-.02em}main>section:first-of-type .wrap>h1,.premium-disp
 @media(max-width:900px){.course-format-grid{grid-template-columns:1fr}.course-steps{grid-template-columns:1fr}.home-portal-grid{grid-template-columns:1fr}}
 @media(max-width:820px){.side-nav-group{flex:0 0 auto}.side-nav-group-toggle{min-height:44px;width:auto;padding:0 10px;font-size:11px}.side-submenu{position:fixed;z-index:90;top:66px;left:12px;width:220px;max-height:0;padding-left:0;border:0;background:#07131e;box-shadow:0 18px 40px rgba(0,0,0,.45)}.side-nav-group.open .side-submenu,.side-nav-group:focus-within .side-submenu{max-height:190px;padding:8px;opacity:1;border:1px solid rgba(118,151,175,.28)}.side-submenu a{width:100%}.race-category-switch{grid-template-columns:1fr}.course-format-page{padding-top:54px}}
 @media(max-width:620px){.format-specs{grid-template-columns:1fr}.home-portal-card{min-height:170px}}
+
+/* Ranking structure and outline-only navigation refinement */
+.side-nav-group-toggle:hover,
+.side-nav-group-toggle.active,
+.side-nav-group.open>.side-nav-group-toggle,
+.side-links>a:hover,
+.side-links>a.active,
+.side-submenu a:hover,
+.side-submenu a.active{background:transparent!important}
+.side-nav-group.open .side-submenu,
+.side-nav-group:focus-within .side-submenu,
+.side-ranking-group.persistent-open>.ranking-submenu{max-height:240px;opacity:1;padding-top:6px}
+.side-ranking-group.persistent-open>.side-nav-group-toggle i{transform:rotate(180deg)}
+@keyframes navFrameWave{0%,100%{border-color:rgba(237,41,57,.52);box-shadow:0 0 0 rgba(237,41,57,0),inset 0 0 0 rgba(237,41,57,0)}50%{border-color:rgba(237,41,57,.95);box-shadow:0 0 12px rgba(237,41,57,.12),inset 0 0 10px rgba(237,41,57,.025)}}
+.side-links>a:hover,
+.side-links>a.active,
+.side-nav-group-toggle:hover,
+.side-nav-group-toggle.active,
+.side-nav-group.open>.side-nav-group-toggle,
+.side-submenu a:hover,
+.side-submenu a.active{animation:navFrameWave 2.8s ease-in-out infinite}
+.side-links>a:after,
+.side-nav-group-toggle:after,
+.side-submenu a:after{content:"";position:absolute;pointer-events:none;inset:3px;border:1px solid transparent;transform:skewX(-.4deg);transition:border-color .2s,transform .3s}
+.side-links>a:hover:after,
+.side-links>a.active:after,
+.side-nav-group-toggle:hover:after,
+.side-nav-group-toggle.active:after,
+.side-nav-group.open>.side-nav-group-toggle:after,
+.side-submenu a:hover:after,
+.side-submenu a.active:after{border-color:rgba(237,41,57,.34);transform:skewX(.55deg)}
+.race-category-switch{margin:20px 0 18px}
+.race-category-switch a{min-height:70px;padding:14px 18px;background:transparent}
+.race-category-switch a:hover,.race-category-switch a.active{background:transparent;box-shadow:0 0 0 1px rgba(237,41,57,.12),0 12px 30px rgba(0,0,0,.22)}
+.premium-page-ranking .leaderboard-wrap{max-width:100%;overflow-x:auto}
+.premium-page-ranking .leaderboard-table{min-width:860px}
+.premium-page-ranking .points-ranking-table{width:100%;min-width:0;table-layout:auto}
+.premium-page-ranking .points-ranking-table th,.premium-page-ranking .points-ranking-table td{padding:14px 10px}
+.premium-page-ranking .points-ranking-table .leaderboard-driver{min-width:150px}
+.premium-page-ranking .points-ranking-table .pace-heading{min-width:205px}
+.ranking-section-heading{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-top:26px;padding-bottom:15px;border-bottom:1px solid rgba(118,151,175,.2)}
+.ranking-section-heading small{color:var(--premium-red);font:900 11px "Barlow";letter-spacing:.16em}
+.ranking-section-heading h2{margin:5px 0 0;font-size:clamp(30px,4vw,48px)}
+@media(max-width:1180px){.premium-page-ranking .points-ranking-table th,.premium-page-ranking .points-ranking-table td{padding-inline:8px}.premium-page-ranking .points-ranking-table .leaderboard-driver{min-width:135px}.premium-page-ranking .points-ranking-table .pace-heading{min-width:180px}}
+@media(max-width:820px){.side-ranking-group .ranking-submenu{max-height:0;padding:0;opacity:0}.side-ranking-group.open .ranking-submenu{max-height:260px;padding:8px;opacity:1}.premium-page-ranking .points-ranking-table{min-width:820px}}
+@media(prefers-reduced-motion:reduce){.side-links>a:hover,.side-links>a.active,.side-nav-group-toggle:hover,.side-nav-group-toggle.active,.side-nav-group.open>.side-nav-group-toggle,.side-submenu a:hover,.side-submenu a.active{animation:none}}

@@ -4,13 +4,13 @@
   if (!document.querySelector('link[data-premium-shell]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `${prefix}premium-shell.css?v=20260916-race-structure`;
+    link.href = `${prefix}premium-shell.css?v=20260916-ranking-structure`;
     link.dataset.premiumShell = '';
     document.head.append(link);
   }
   if (!document.querySelector('script[data-premium-shell]')) {
     const script = document.createElement('script');
-    script.src = `${prefix}premium-shell.js?v=20260916-race-structure`;
+    script.src = `${prefix}premium-shell.js?v=20260916-ranking-structure`;
     script.defer = true;
     script.dataset.premiumShell = '';
     document.head.append(script);
@@ -80,6 +80,7 @@
   const requestedRankingCategory = new URLSearchParams(location.search).get('type')?.toUpperCase();
   const rankingCategory = ['WGT', 'DR', 'OL'].includes(requestedRankingCategory) ? requestedRankingCategory : 'DR';
   const rankingEndpoint = `${apiBase}/public-leaderboard?category=${encodeURIComponent(rankingCategory)}`;
+  const globalRankingEndpoint = `${apiBase}/public-leaderboard?category=ALL`;
   document.querySelectorAll('[data-race-category]').forEach(link => {
     const active = link.dataset.raceCategory === rankingCategory;
     link.classList.toggle('active', active);
@@ -396,11 +397,15 @@
   if (leaderboard) {
     const leaderboardStatus = document.querySelector('[data-leaderboard-status]');
     const leaderboardBody = document.querySelector('[data-leaderboard-body]');
-    fetch(rankingEndpoint, { cache: 'no-store' })
-      .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed')))
-      .then(payload => {
+    const globalLeaderboardPromise = window.atxGlobalLeaderboardPromise || fetch(globalRankingEndpoint, { cache: 'no-store' })
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('global_leaderboard_load_failed')));
+    window.atxGlobalLeaderboardPromise = globalLeaderboardPromise;
+    Promise.all([
+      fetch(rankingEndpoint, { cache: 'no-store' }).then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed'))),
+      globalLeaderboardPromise,
+    ]).then(([pointsPayload, payload]) => {
         leaderboardBody.replaceChildren();
-        (payload.drivers || []).forEach(driver => {
+        (pointsPayload.drivers || []).forEach(driver => {
           const row = document.createElement('tr');
           const rank = document.createElement('td');
           rank.className = 'leaderboard-rank';
@@ -472,11 +477,7 @@
             safeBadge.textContent = String(driver.safety_class).toUpperCase();
             safe.append(safeBadge);
           } else safe.textContent = '—';
-          const car = document.createElement('td');
-          car.className = 'leaderboard-car';
-          const carsUsed = driver.cars_used?.length ? driver.cars_used : [driver.primary_car].filter(Boolean);
-          car.textContent = carsUsed.join(' · ') || '—';
-          row.append(rank, identity, car, numericCell(driver.points), numericCell(driver.races), numericCell(driver.wins), numericCell(driver.podiums), pace, safe);
+          row.append(rank, identity, numericCell(driver.points), numericCell(driver.races), numericCell(driver.wins), numericCell(driver.podiums), pace, safe);
           leaderboardBody.append(row);
         });
         leaderboard.hidden = false;
@@ -573,10 +574,13 @@
             row.append(cell); teamBody.append(row);
           }
         }
-        document.querySelectorAll('[data-ranking-tab]').forEach(button => button.addEventListener('click', () => {
-          document.querySelectorAll('[data-ranking-tab]').forEach(item => item.classList.toggle('active', item === button));
-          document.querySelectorAll('[data-ranking-panel]').forEach(panel => { panel.hidden = panel.dataset.rankingPanel !== button.dataset.rankingTab; });
-        }));
+        const activateRankingSection = () => {
+          const requested = location.hash.replace('#', '');
+          const section = ['circuit', 'driver', 'team'].includes(requested) ? requested : 'general';
+          document.querySelectorAll('[data-ranking-panel]').forEach(panel => { panel.hidden = panel.dataset.rankingPanel !== section; });
+        };
+        activateRankingSection();
+        window.addEventListener('hashchange', activateRankingSection);
         applyLanguage(language);
       })
       .catch(() => {

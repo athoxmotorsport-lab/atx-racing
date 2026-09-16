@@ -340,10 +340,10 @@
     }
   };
 
-  const requestedCategory = new URLSearchParams(location.search).get('type')?.toUpperCase();
-  const rankingCategory = ['WGT', 'DR', 'OL'].includes(requestedCategory) ? requestedCategory : 'DR';
-  fetch(`${apiBase}/public-leaderboard?category=${encodeURIComponent(rankingCategory)}`, { cache: 'no-store' })
-    .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed')))
+  const globalLeaderboardPromise = window.atxGlobalLeaderboardPromise || fetch(`${apiBase}/public-leaderboard?category=ALL`, { cache: 'no-store' })
+    .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed')));
+  window.atxGlobalLeaderboardPromise = globalLeaderboardPromise;
+  globalLeaderboardPromise
     .then(data => {
       payload = data;
       decorate();
