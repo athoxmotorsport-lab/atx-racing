@@ -312,7 +312,7 @@
             row.remove();
             return;
           }
-          const lapCell = row.children[2];
+          const lapCell = row.children[3];
           if (lapCell) setSessionLine(lapCell, entry);
         });
       }
@@ -340,7 +340,9 @@
     }
   };
 
-  fetch(`${apiBase}/public-leaderboard`, { cache: 'no-store' })
+  const requestedCategory = new URLSearchParams(location.search).get('type')?.toUpperCase();
+  const rankingCategory = ['WGT', 'DR', 'OL'].includes(requestedCategory) ? requestedCategory : 'DR';
+  fetch(`${apiBase}/public-leaderboard?category=${encodeURIComponent(rankingCategory)}`, { cache: 'no-store' })
     .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed')))
     .then(data => {
       payload = data;

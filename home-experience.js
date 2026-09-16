@@ -181,7 +181,23 @@
 
   const findNextEvent = () => {
     const cards = [...document.querySelectorAll('[data-event-list] .event-card')];
-    return cards.map(readCard).filter(Boolean).sort((a, b) => a.date - b.date)[0] || null;
+    const cardEvent = cards.map(readCard).filter(Boolean).sort((a, b) => a.date - b.date)[0];
+    if (cardEvent) return cardEvent;
+    const item = publicEvents.filter(event => Date.parse(event.starts_at) >= Date.now())
+      .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))[0];
+    if (!item) return null;
+    const dateEl = document.createElement('span');
+    const instant = new Date(item.starts_at);
+    dateEl.dataset.fr = new Intl.DateTimeFormat('fr-BE', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(instant);
+    dateEl.dataset.en = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(instant);
+    return {
+      title: item.title_fr || item.title_en || item.circuit_name || 'ATX Racing',
+      dateEl,
+      pageLink: item.slug ? `course.html?event=${encodeURIComponent(item.slug)}` : 'calendrier.html',
+      registerLink: item.simgrid_url || 'calendrier.html',
+      meta: [item.circuit_name, item.duration_minutes ? `${item.duration_minutes} min` : null].filter(Boolean),
+      date: instant,
+    };
   };
 
   const renderNextEvent = () => {
@@ -213,7 +229,7 @@
     meta.textContent = lang === 'en'
       ? 'Follow ATX Racing on Discord and SimGrid for the next opening.'
       : 'Suivez ATX Racing sur Discord et SimGrid pour la prochaine ouverture.';
-    primary.href = '#events';
+    primary.href = 'calendrier.html';
     primary.textContent = lang === 'en' ? 'View calendar' : 'Voir le calendrier';
     secondary.href = 'https://discord.gg/dgyJJYTSsD';
     secondary.hidden = false;

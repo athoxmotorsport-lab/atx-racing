@@ -95,8 +95,9 @@
   });
   observer.observe(body,{childList:true});
 
+  const requestedCategory=new URLSearchParams(location.search).get('type')?.toUpperCase(),rankingCategory=['WGT','DR','OL'].includes(requestedCategory)?requestedCategory:'DR';
   Promise.all([
-    fetch(`${base}/public-leaderboard`,{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()),
+    fetch(`${base}/public-leaderboard?category=${encodeURIComponent(rankingCategory)}`,{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()),
     fetch(`${base}/public-driver-identities`,{cache:'no-store'}).then(r=>r.ok?r.json():{drivers:[]}),
   ]).then(([ranking,identityData])=>{payload=ranking;identities=identityData.drivers||[];render();}).catch(()=>{});
 })();

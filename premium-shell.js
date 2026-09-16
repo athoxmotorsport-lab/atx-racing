@@ -11,6 +11,10 @@
     if (page === 'classement.html') return 'premium-page-ranking';
     if (page === 'reglement.html') return 'premium-page-rules';
     if (page === 'gtworld.html') return 'premium-page-gtworld';
+    if (page === 'daily-race.html') return 'premium-page-daily';
+    if (page === 'open-lobby.html') return 'premium-page-open-lobby';
+    if (page === 'calendrier.html') return 'premium-page-calendar';
+    if (page === 'archives.html') return 'premium-page-archives';
     if (page === 'profil-pilote.html') return 'premium-page-profile';
     if (page === 'course.html' || nested) return 'premium-page-course';
     if (page === 'event-admin.html') return 'premium-page-admin';
@@ -22,26 +26,15 @@
   const isActive = href => {
     const [targetPage, targetHash = ''] = href.split('#');
     const currentHash = location.hash.replace('#', '');
-    if (targetPage === 'index.html') {
-      if (page !== '' && page !== 'index.html') return false;
-      if (targetHash) return currentHash === targetHash;
-      return currentHash !== 'events' && currentHash !== 'archives';
-    }
+    if (targetPage === 'index.html') return page === '' || page === 'index.html';
     return page === targetPage;
   };
 
   const nav = document.querySelector('.side-links');
   let navLinks = [];
+  let courseToggle = null;
   if (nav) {
-    const links = [
-      ['index.html','Accueil','Home'],
-      ['index.html#events','Calendrier','Calendar'],
-      ['reglement.html','Règlement','Rules'],
-      ['classement.html','Classement','Ranking'],
-      ['gtworld.html','GT World S1','GT World S1'],
-      ['index.html#archives','Archives','Archives'],
-    ];
-    navLinks = links.map(([href,fr,en]) => {
+    const makeLink = ([href,fr,en]) => {
       const a = document.createElement('a');
       a.href = `${prefix}${href}`;
       a.dataset.premiumHref = href;
@@ -51,19 +44,54 @@
       span.textContent = lang() === 'en' ? en : fr;
       a.append(span);
       return a;
+    };
+    const home = makeLink(['index.html','Accueil','Home']);
+    const courseGroup = document.createElement('div');
+    courseGroup.className = 'side-nav-group';
+    courseToggle = document.createElement('button');
+    courseToggle.type = 'button';
+    courseToggle.className = 'side-nav-group-toggle';
+    courseToggle.setAttribute('aria-expanded','false');
+    courseToggle.innerHTML = '<span data-fr="Courses" data-en="Racing">Courses</span><i aria-hidden="true">⌄</i>';
+    const submenu = document.createElement('div');
+    submenu.className = 'side-submenu';
+    submenu.append(
+      makeLink(['gtworld.html','World GT','World GT']),
+      makeLink(['daily-race.html','Daily Race','Daily Race']),
+      makeLink(['open-lobby.html','Open Lobby','Open Lobby'])
+    );
+    courseGroup.append(courseToggle, submenu);
+    const primary = [
+      makeLink(['calendrier.html','Calendrier','Calendar']),
+      makeLink(['classement.html','Classements','Standings']),
+      makeLink(['archives.html','Archives','Archives']),
+      makeLink(['reglement.html','Règlement','Rules']),
+    ];
+    nav.replaceChildren(home, courseGroup, ...primary);
+    navLinks = [...nav.querySelectorAll('a[data-premium-href]')];
+    courseToggle.addEventListener('click', () => {
+      const open = !courseGroup.classList.contains('open');
+      courseGroup.classList.toggle('open', open);
+      courseToggle.setAttribute('aria-expanded', String(open));
     });
-    nav.replaceChildren(...navLinks);
+    document.addEventListener('click', event => {
+      if (courseGroup.contains(event.target)) return;
+      courseGroup.classList.remove('open');
+      courseToggle.setAttribute('aria-expanded','false');
+    });
   }
 
   const syncNavActive = () => {
     navLinks.forEach(link => link.classList.toggle('active', isActive(link.dataset.premiumHref || '')));
+    const courseActive = ['gtworld.html','daily-race.html','open-lobby.html'].includes(page);
+    courseToggle?.classList.toggle('active', courseActive);
   };
   syncNavActive();
   window.addEventListener('hashchange', syncNavActive);
 
   const footer = document.querySelector('.site-footer');
   if (footer) {
-    footer.innerHTML = `<div class="wrap"><div class="premium-footer-grid"><div><a class="brand" href="${prefix}index.html">ATX <span>Racing</span></a><p class="premium-footer-copy" data-fr="Compétition ACC, événements, classements et progression pilote — une identité ATX Motorsport." data-en="ACC competition, events, standings and driver progression — an ATX Motorsport identity.">Compétition ACC, événements, classements et progression pilote — une identité ATX Motorsport.</p></div><nav class="premium-footer-links" aria-label="Footer"><a href="${prefix}index.html">Accueil</a><a href="${prefix}index.html#events">Calendrier</a><a href="${prefix}reglement.html">Règlement</a><a href="${prefix}classement.html">Classement</a><a href="${prefix}gtworld.html">GT World S1</a><a href="${prefix}index.html#archives">Archives</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="${prefix}confidentialite.html">Confidentialité</a></nav></div><div class="premium-footer-legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div>`;
+    footer.innerHTML = `<div class="wrap"><div class="premium-footer-grid"><div><a class="brand" href="${prefix}index.html">ATX <span>Racing</span></a><p class="premium-footer-copy" data-fr="Compétition ACC, événements, classements et progression pilote — une identité ATX Motorsport." data-en="ACC competition, events, standings and driver progression — an ATX Motorsport identity.">Compétition ACC, événements, classements et progression pilote — une identité ATX Motorsport.</p></div><nav class="premium-footer-links" aria-label="Footer"><a href="${prefix}index.html">Accueil</a><a href="${prefix}gtworld.html">World GT</a><a href="${prefix}daily-race.html">Daily Race</a><a href="${prefix}open-lobby.html">Open Lobby</a><a href="${prefix}calendrier.html">Calendrier</a><a href="${prefix}classement.html">Classements</a><a href="${prefix}archives.html">Archives</a><a href="${prefix}reglement.html">Règlement</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="${prefix}confidentialite.html">Confidentialité</a></nav></div><div class="premium-footer-legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div>`;
   }
 
   const main = document.querySelector('main');

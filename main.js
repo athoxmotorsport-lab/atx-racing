@@ -4,13 +4,13 @@
   if (!document.querySelector('link[data-premium-shell]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `${prefix}premium-shell.css?v=20260916-identity-ticker`;
+    link.href = `${prefix}premium-shell.css?v=20260916-race-structure`;
     link.dataset.premiumShell = '';
     document.head.append(link);
   }
   if (!document.querySelector('script[data-premium-shell]')) {
     const script = document.createElement('script');
-    script.src = `${prefix}premium-shell.js?v=20260916-identity-ticker`;
+    script.src = `${prefix}premium-shell.js?v=20260916-race-structure`;
     script.defer = true;
     script.dataset.premiumShell = '';
     document.head.append(script);
@@ -77,6 +77,14 @@
   }
 
   const apiBase = 'https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1';
+  const requestedRankingCategory = new URLSearchParams(location.search).get('type')?.toUpperCase();
+  const rankingCategory = ['WGT', 'DR', 'OL'].includes(requestedRankingCategory) ? requestedRankingCategory : 'DR';
+  const rankingEndpoint = `${apiBase}/public-leaderboard?category=${encodeURIComponent(rankingCategory)}`;
+  document.querySelectorAll('[data-race-category]').forEach(link => {
+    const active = link.dataset.raceCategory === rankingCategory;
+    link.classList.toggle('active', active);
+    link.setAttribute('aria-current', active ? 'page' : 'false');
+  });
   const sessionKey = 'atx-racing-session';
   const requestSession = async (options = {}) => {
     const response = await fetch(`${apiBase}/auth-session`, options);
@@ -296,7 +304,8 @@
   }
 
   const eventList = document.querySelector('[data-event-list]');
-  if (eventList) {
+  const archiveList = document.querySelector('[data-archive-list]');
+  if (eventList || archiveList) {
     const eventKey = (startsAt, circuit) => {
       const instant = new Date(startsAt);
       const parts = new Intl.DateTimeFormat('en-CA', {
@@ -310,8 +319,9 @@
     fetch(`${apiBase}/public-event`)
       .then(response => response.ok ? response.json() : Promise.reject(new Error('calendar_load_failed')))
       .then(payload => {
-        const existingKeys = new Set([...eventList.querySelectorAll('[data-event-key]')].map(card => card.dataset.eventKey));
-        (payload.events || []).slice().sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).forEach(item => {
+        if (eventList) {
+          const existingKeys = new Set([...eventList.querySelectorAll('[data-event-key]')].map(card => card.dataset.eventKey));
+          (payload.events || []).slice().sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).forEach(item => {
           const key = eventKey(item.starts_at, item.circuit_name);
           if (!item.simgrid_url || !item.image_url || existingKeys.has(key)) return;
           existingKeys.add(key);
@@ -357,9 +367,9 @@
           result.dataset.en = 'View race';
           body.append(date, title, meta, result);
           card.append(imageLink, body);
-          eventList.append(card);
-        });
-        const archiveList = document.querySelector('[data-archive-list]');
+            eventList.append(card);
+          });
+        }
         if (archiveList && Array.isArray(payload.archives) && payload.archives.length) {
           archiveList.replaceChildren();
           payload.archives.forEach(item => {
@@ -370,7 +380,7 @@
             const eventDate = new Date(item.starts_at);
             date.dataset.fr = new Intl.DateTimeFormat('fr-BE', { dateStyle: 'long', timeZone: 'Europe/Brussels' }).format(eventDate);
             date.dataset.en = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/Brussels' }).format(eventDate);
-            const title = document.createElement('strong'); title.textContent = `Daily Race · ${item.circuit_name}`;
+            const title = document.createElement('strong'); title.textContent = item.title_fr || item.title_en || `ATX Racing · ${item.circuit_name}`;
             const meta = document.createElement('small');
             meta.dataset.fr = `${item.result_count} pilote(s) classé(s) · Voir le classement`;
             meta.dataset.en = `${item.result_count} classified driver(s) · View standings`;
@@ -386,7 +396,7 @@
   if (leaderboard) {
     const leaderboardStatus = document.querySelector('[data-leaderboard-status]');
     const leaderboardBody = document.querySelector('[data-leaderboard-body]');
-    fetch(`${apiBase}/public-leaderboard`, { cache: 'no-store' })
+    fetch(rankingEndpoint, { cache: 'no-store' })
       .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed')))
       .then(payload => {
         leaderboardBody.replaceChildren();
@@ -462,7 +472,11 @@
             safeBadge.textContent = String(driver.safety_class).toUpperCase();
             safe.append(safeBadge);
           } else safe.textContent = '—';
-          row.append(rank, identity, numericCell(driver.points), numericCell(driver.races), numericCell(driver.wins), numericCell(driver.podiums), pace, safe);
+          const car = document.createElement('td');
+          car.className = 'leaderboard-car';
+          const carsUsed = driver.cars_used?.length ? driver.cars_used : [driver.primary_car].filter(Boolean);
+          car.textContent = carsUsed.join(' · ') || '—';
+          row.append(rank, identity, car, numericCell(driver.points), numericCell(driver.races), numericCell(driver.wins), numericCell(driver.podiums), pace, safe);
           leaderboardBody.append(row);
         });
         leaderboard.hidden = false;
@@ -483,7 +497,7 @@
           (circuit.drivers || []).forEach((driver, index) => {
             const row = document.createElement('tr');
             row.classList.toggle('no-time', !driver.best_lap_ms);
-            const cells = [driver.best_lap_ms ? String(index + 1) : '—', driver.display_name, formatLap(driver.best_lap_ms),
+            const cells = [driver.best_lap_ms ? String(index + 1) : '—', driver.display_name, driver.car_model_name || '—', formatLap(driver.best_lap_ms),
               driver.pace_percent ? `${Number(driver.pace_percent).toFixed(2)}%` : '—', String(driver.performance_class || 'unranked').toUpperCase()];
             cells.forEach((value, cellIndex) => {
               const cell = document.createElement(cellIndex === 1 ? 'th' : 'td');
@@ -527,7 +541,7 @@
             const label = document.createElement('strong'); label.textContent = circuit.circuit_name;
             const lap = document.createElement('b'); lap.textContent = result.best_lap_ms ? formatLap(result.best_lap_ms) : (language === 'fr' ? 'Aucun chrono' : 'No lap time');
             const detail = document.createElement('small');
-            detail.textContent = result.pace_percent ? `${Number(result.pace_percent).toFixed(2)}% · ${String(result.performance_class).toUpperCase()}` : (language === 'fr' ? 'Circuit à compléter' : 'Circuit to complete');
+            detail.textContent = result.pace_percent ? `${result.car_model_name || '—'} · ${Number(result.pace_percent).toFixed(2)}% · ${String(result.performance_class).toUpperCase()}` : (language === 'fr' ? 'Circuit à compléter' : 'Circuit to complete');
             card.append(label, lap, detail); driverGrid.append(card);
           });
         };
