@@ -1,0 +1,167 @@
+(() => {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+  const frameSelector = [
+    '.home-next-event',
+    '.home-portal-card',
+    '.profile-preview',
+    '.event-card',
+    '.archive-race-card',
+    '.driver-circuit-card',
+    '.course-format-card',
+    '.rule-item',
+    '.honour-card',
+  ].join(',');
+  const tableWrapperSelector = '.leaderboard-wrap,.results-table-wrap,.penalty-table-wrap';
+
+  const translate = (fr, en) => document.documentElement.lang === 'en' ? en : fr;
+
+  const decorateFrames = root => {
+    const elements = root.matches?.(frameSelector)
+      ? [root]
+      : [...(root.querySelectorAll?.(frameSelector) || [])];
+    elements.forEach(element => element.classList.add('atx-apex-frame'));
+  };
+
+  const enhanceTableWrapper = wrapper => {
+    if (wrapper.dataset.atxAccessible === 'true') return;
+    wrapper.dataset.atxAccessible = 'true';
+    wrapper.tabIndex = 0;
+    wrapper.setAttribute('role', 'region');
+
+    const caption = wrapper.querySelector('caption')?.textContent?.trim();
+    wrapper.setAttribute('aria-label', caption || translate('Tableau de classement', 'Standings table'));
+
+    const hint = document.createElement('span');
+    hint.className = 'atx-scroll-hint';
+    hint.setAttribute('aria-hidden', 'true');
+    hint.dataset.fr = 'Faire défiler →';
+    hint.dataset.en = 'Scroll →';
+    hint.textContent = translate(hint.dataset.fr, hint.dataset.en);
+    wrapper.append(hint);
+
+    const update = () => {
+      const scrollable = wrapper.scrollWidth > wrapper.clientWidth + 2;
+      const atEnd = wrapper.scrollLeft + wrapper.clientWidth >= wrapper.scrollWidth - 2;
+      wrapper.classList.toggle('is-scrollable', scrollable);
+      wrapper.classList.toggle('is-at-end', atEnd);
+    };
+
+    wrapper.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    if ('ResizeObserver' in window) new ResizeObserver(update).observe(wrapper);
+    requestAnimationFrame(update);
+  };
+
+  const enhanceTables = root => {
+    const wrappers = root.matches?.(tableWrapperSelector)
+      ? [root]
+      : [...(root.querySelectorAll?.(tableWrapperSelector) || [])];
+    wrappers.forEach(enhanceTableWrapper);
+  };
+
+  const initScrollReveal = () => {
+    if (!document.body.classList.contains('home-page')) return;
+    const elements = [
+      ...document.querySelectorAll('main > section:not(.hero), main > .trust-strip'),
+    ];
+    if (!elements.length) return;
+
+    elements.forEach((element, index) => {
+      element.dataset.atxReveal = '';
+      element.style.setProperty('--atx-reveal-delay', `${Math.min(index, 3) * 55}ms`);
+    });
+    document.documentElement.classList.add('atx-reveal-ready');
+
+    if (reducedMotion || !('IntersectionObserver' in window)) {
+      elements.forEach(element => element.classList.add('is-visible'));
+      return;
+    }
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: .12, rootMargin: '0px 0px -8% 0px' });
+
+    elements.forEach(element => observer.observe(element));
+  };
+
+  const initHeroMotion = () => {
+    const hero = document.querySelector('.home-page .hero');
+    if (!hero || hero.querySelector('.atx-speed-layer')) return;
+
+    const layer = document.createElement('div');
+    layer.className = 'atx-speed-layer';
+    layer.setAttribute('aria-hidden', 'true');
+    hero.prepend(layer);
+
+    if (reducedMotion || coarsePointer) return;
+    let pointerX = 0;
+    let pointerY = 0;
+    let scrollY = 0;
+    let frameRequested = false;
+
+    const paint = () => {
+      hero.style.setProperty('--hero-shift-x', `${pointerX * 8}px`);
+      hero.style.setProperty('--hero-shift-y', `${pointerY * 5 + scrollY * .025}px`);
+      frameRequested = false;
+    };
+    const schedule = () => {
+      if (frameRequested) return;
+      frameRequested = true;
+      requestAnimationFrame(paint);
+    };
+
+    hero.addEventListener('pointermove', event => {
+      const rect = hero.getBoundingClientRect();
+      pointerX = (event.clientX - rect.left) / rect.width - .5;
+      pointerY = (event.clientY - rect.top) / rect.height - .5;
+      schedule();
+    }, { passive: true });
+    hero.addEventListener('pointerleave', () => {
+      pointerX = 0;
+      pointerY = 0;
+      schedule();
+    });
+    window.addEventListener('scroll', () => {
+      scrollY = Math.min(window.scrollY, hero.offsetHeight);
+      schedule();
+    }, { passive: true });
+  };
+
+  const syncTranslatedEnhancements = () => {
+    document.querySelectorAll('.atx-scroll-hint[data-fr][data-en]').forEach(element => {
+      element.textContent = translate(element.dataset.fr, element.dataset.en);
+    });
+  };
+
+  const initialise = () => {
+    decorateFrames(document);
+    enhanceTables(document);
+    initScrollReveal();
+    initHeroMotion();
+
+    const observer = new MutationObserver(records => {
+      records.forEach(record => record.addedNodes.forEach(node => {
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        decorateFrames(node);
+        enhanceTables(node);
+      }));
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener('click', event => {
+      if (!event.target.closest('[data-language],[data-lang-switch]')) return;
+      setTimeout(syncTranslatedEnhancements, 0);
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialise, { once: true });
+  } else {
+    initialise();
+  }
+})();

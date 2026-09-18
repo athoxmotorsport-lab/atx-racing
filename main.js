@@ -4,15 +4,29 @@
   if (!document.querySelector('link[data-premium-shell]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `${prefix}premium-shell.css?v=20260916-avatar-fix`;
+    link.href = `${prefix}premium-shell.css?v=20260918-premium-ux`;
     link.dataset.premiumShell = '';
+    document.head.append(link);
+  }
+  if (!document.querySelector('link[data-atx-experience]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `${prefix}atx-experience.css?v=20260918-premium-ux`;
+    link.dataset.atxExperience = '';
     document.head.append(link);
   }
   if (!document.querySelector('script[data-premium-shell]')) {
     const script = document.createElement('script');
-    script.src = `${prefix}premium-shell.js?v=20260916-avatar-fix`;
+    script.src = `${prefix}premium-shell.js?v=20260918-premium-ux`;
     script.defer = true;
     script.dataset.premiumShell = '';
+    document.head.append(script);
+  }
+  if (!document.querySelector('script[data-atx-experience]')) {
+    const script = document.createElement('script');
+    script.src = `${prefix}atx-experience.js?v=20260918-premium-ux`;
+    script.defer = true;
+    script.dataset.atxExperience = '';
     document.head.append(script);
   }
 })();
@@ -79,12 +93,12 @@
   const apiBase = 'https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1';
   const requestedRankingCategory = new URLSearchParams(location.search).get('type')?.toUpperCase();
   const rankingCategory = ['WGT', 'DR', 'OL'].includes(requestedRankingCategory) ? requestedRankingCategory : 'DR';
-  const rankingEndpoint = `${apiBase}/public-leaderboard?category=${encodeURIComponent(rankingCategory)}`;
   const globalRankingEndpoint = `${apiBase}/public-leaderboard?category=ALL`;
   document.querySelectorAll('[data-race-category]').forEach(link => {
     const active = link.dataset.raceCategory === rankingCategory;
     link.classList.toggle('active', active);
-    link.setAttribute('aria-current', active ? 'page' : 'false');
+    if (active) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
   });
   const sessionKey = 'atx-racing-session';
   const requestSession = async (options = {}) => {
@@ -94,7 +108,7 @@
     return payload;
   };
 
-  const paintAvatar = (container, avatarUrl, displayName) => {
+  const paintAvatar = (container, avatarUrl, displayName, lazy = false) => {
     if (!container) return;
     const initials = String(displayName || 'AT').slice(0, 2).toUpperCase();
     container.replaceChildren();
@@ -105,6 +119,8 @@
     const image = document.createElement('img');
     image.src = avatarUrl;
     image.alt = '';
+    image.decoding = 'async';
+    if (lazy) image.loading = 'lazy';
     image.referrerPolicy = 'no-referrer';
     image.addEventListener('error', () => {
       container.replaceChildren(document.createTextNode(initials));
@@ -172,6 +188,171 @@
     elite: ['Alien · 101.99%', 'Alien · 101.99%'],
     alien: ['Niveau maximal', 'Top level'],
   }[tier] || ['Premiers chronos requis', 'First lap times required']);
+
+  const skeletonLine = modifier => {
+    const line = document.createElement('span');
+    line.className = `atx-skeleton-line${modifier ? ` ${modifier}` : ''}`;
+    return line;
+  };
+  const calendarSkeleton = () => {
+    const grid = document.createElement('div');
+    grid.className = 'atx-loading-grid';
+    grid.setAttribute('aria-hidden', 'true');
+    for (let index = 0; index < 3; index += 1) {
+      const card = document.createElement('article');
+      card.className = 'atx-skeleton atx-skeleton-event';
+      const media = document.createElement('div');
+      media.className = 'atx-skeleton-event-media';
+      const body = document.createElement('div');
+      body.className = 'atx-skeleton-event-body';
+      body.append(skeletonLine('is-short'), skeletonLine('is-title'), skeletonLine('is-medium'), skeletonLine('is-short'));
+      card.append(media, body); grid.append(card);
+    }
+    return grid;
+  };
+  const rankingSkeleton = () => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'atx-skeleton atx-ranking-skeleton';
+    wrapper.setAttribute('aria-hidden', 'true');
+    for (let rowIndex = 0; rowIndex < 7; rowIndex += 1) {
+      const row = document.createElement('div');
+      row.className = 'atx-ranking-skeleton-row';
+      for (let cellIndex = 0; cellIndex < 8; cellIndex += 1) {
+        const cell = document.createElement('span');
+        cell.className = 'atx-ranking-skeleton-cell';
+        row.append(cell);
+      }
+      wrapper.append(row);
+    }
+    return wrapper;
+  };
+
+  const rankingRequests = new Map();
+  const fetchPointsRanking = category => {
+    const cached = rankingRequests.get(category);
+    if (cached && Date.now() - cached.createdAt < 60000) return cached.promise;
+    const request = fetch(`${apiBase}/public-leaderboard?category=${encodeURIComponent(category)}`)
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed')));
+    const entry = { createdAt: Date.now(), promise: request };
+    rankingRequests.set(category, entry);
+    request.catch(() => {
+      if (rankingRequests.get(category) === entry) rankingRequests.delete(category);
+    });
+    return request;
+  };
+
+  const renderPointsLeaderboard = (container, drivers = []) => {
+    const fragment = document.createDocumentFragment();
+    const numericCell = value => {
+      const cell = document.createElement('td');
+      cell.textContent = Number(value || 0).toLocaleString(language === 'fr' ? 'fr-BE' : 'en-GB', { maximumFractionDigits: 1 });
+      return cell;
+    };
+
+    drivers.forEach(driver => {
+      const row = document.createElement('tr');
+      const tier = String(driver.performance_class || 'unranked').toLowerCase();
+      row.dataset.tier = tier;
+
+      const rank = document.createElement('td');
+      rank.className = 'leaderboard-rank';
+      rank.textContent = String(driver.rank || '—');
+
+      const identity = document.createElement('th');
+      identity.scope = 'row';
+      const identityBox = document.createElement('div');
+      identityBox.className = 'leaderboard-driver';
+      const avatar = document.createElement('span');
+      avatar.className = 'leaderboard-avatar';
+      paintAvatar(avatar, driver.avatar_url, driver.display_name, true);
+      const driverName = document.createElement(driver.profile_id ? 'a' : 'strong');
+      driverName.textContent = driver.display_name || 'ACC Driver';
+      if (driver.profile_id) {
+        driverName.href = `profil-pilote.html?driver=${encodeURIComponent(driver.profile_id)}`;
+        driverName.className = 'driver-profile-link';
+      }
+      identityBox.append(avatar, driverName); identity.append(identityBox);
+
+      const pace = document.createElement('td');
+      const tierLine = document.createElement('div');
+      tierLine.className = 'pace-heading';
+      const tierBadge = document.createElement('span');
+      tierBadge.className = 'tier-pill';
+      tierBadge.dataset.tier = tier;
+      tierBadge.textContent = tier.toUpperCase();
+      const scoreValue = driver.performance_score == null ? Number.NaN : Number(driver.performance_score);
+      const score = document.createElement('strong');
+      score.textContent = Number.isFinite(scoreValue) ? `${scoreValue.toFixed(2)}%` : '—';
+      const trend = document.createElement('span');
+      trend.className = 'pace-trend';
+      const trendValue = driver.progression == null ? Number.NaN : Number(driver.progression);
+      if (Number.isFinite(trendValue) && Math.abs(trendValue) >= 0.005) {
+        trend.dataset.direction = trendValue > 0 ? 'up' : 'down';
+        trend.textContent = `${trendValue > 0 ? '↑' : '↓'} ${Math.abs(trendValue).toFixed(2)}%`;
+      } else trend.textContent = '—';
+      tierLine.append(tierBadge, score, trend);
+
+      const rail = document.createElement('div');
+      rail.className = 'pace-progress';
+      rail.setAttribute('role', 'progressbar');
+      rail.setAttribute('aria-label', language === 'fr' ? 'Progression de rythme' : 'Pace progression');
+      const progress = tierProgress(tier, scoreValue);
+      rail.setAttribute('aria-valuenow', String(Math.round(progress)));
+      rail.setAttribute('aria-valuemin', '0');
+      rail.setAttribute('aria-valuemax', '100');
+      const fill = document.createElement('i');
+      fill.style.width = `${progress}%`; rail.append(fill);
+      const target = document.createElement('small');
+      const targetText = nextTier(tier);
+      target.dataset.fr = `Prochain objectif : ${targetText[0]}`;
+      target.dataset.en = `Next target: ${targetText[1]}`;
+      pace.append(tierLine, rail, target);
+
+      const safe = document.createElement('td');
+      safe.className = 'safe-cell';
+      const safeTier = String(driver.safety_class || '').toLowerCase();
+      const safeScore = driver.safety_score == null ? Number.NaN : Number(driver.safety_score);
+      if (safeTier) {
+        safe.dataset.safeTier = safeTier;
+        const safeBadge = document.createElement('span');
+        safeBadge.className = 'tier-pill';
+        safeBadge.dataset.tier = safeTier;
+        safeBadge.textContent = safeTier.toUpperCase();
+        safe.append(safeBadge);
+      }
+      if (Number.isFinite(safeScore)) {
+        const boundedScore = Math.max(0, Math.min(100, safeScore));
+        const safeRail = document.createElement('div');
+        safeRail.className = 'safe-meter';
+        safeRail.setAttribute('role', 'progressbar');
+        safeRail.setAttribute('aria-label', 'Indice SAFE');
+        safeRail.setAttribute('aria-valuemin', '0');
+        safeRail.setAttribute('aria-valuemax', '100');
+        safeRail.setAttribute('aria-valuenow', String(Math.round(boundedScore)));
+        const safeFill = document.createElement('i');
+        safeFill.style.setProperty('--safe-value', `${boundedScore}%`);
+        safeRail.append(safeFill);
+        const safeLabel = document.createElement('small');
+        safeLabel.className = 'safe-value';
+        safeLabel.textContent = `${boundedScore.toFixed(0)} / 100`;
+        safe.append(safeRail, safeLabel);
+      }
+      if (!safeTier && !Number.isFinite(safeScore)) safe.textContent = '—';
+
+      row.append(rank, identity, numericCell(driver.points), numericCell(driver.races), numericCell(driver.wins), numericCell(driver.podiums), pace, safe);
+      fragment.append(row);
+    });
+
+    if (!drivers.length) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 8;
+      cell.dataset.fr = 'Aucun pilote n’est encore classé dans cette catégorie.';
+      cell.dataset.en = 'No driver is ranked in this category yet.';
+      row.append(cell); fragment.append(row);
+    }
+    container.replaceChildren(fragment);
+  };
 
   const eventView = document.querySelector('[data-public-event]');
   if (eventView) {
@@ -319,6 +500,20 @@
   const eventList = document.querySelector('[data-event-list]');
   const archiveList = document.querySelector('[data-archive-list]');
   if (eventList || archiveList) {
+    let eventLoader = null;
+    let eventLoadingStatus = null;
+    if (eventList && !eventList.querySelector('[data-event-key]')) {
+      eventLoader = calendarSkeleton();
+      eventLoadingStatus = document.createElement('p');
+      eventLoadingStatus.className = 'atx-sr-only';
+      eventLoadingStatus.setAttribute('role', 'status');
+      eventLoadingStatus.setAttribute('aria-live', 'polite');
+      eventLoadingStatus.dataset.fr = 'Chargement du calendrier…';
+      eventLoadingStatus.dataset.en = 'Loading calendar…';
+      eventLoadingStatus.textContent = language === 'fr' ? eventLoadingStatus.dataset.fr : eventLoadingStatus.dataset.en;
+      eventList.before(eventLoadingStatus);
+      eventList.append(eventLoader);
+    }
     const eventKey = (startsAt, circuit) => {
       const instant = new Date(startsAt);
       const parts = new Intl.DateTimeFormat('en-CA', {
@@ -332,6 +527,7 @@
     fetch(`${apiBase}/public-event`)
       .then(response => response.ok ? response.json() : Promise.reject(new Error('calendar_load_failed')))
       .then(payload => {
+        eventLoader?.remove();
         if (eventList) {
           const existingKeys = new Set([...eventList.querySelectorAll('[data-event-key]')].map(card => card.dataset.eventKey));
           (payload.events || []).slice().sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).forEach(item => {
@@ -382,6 +578,13 @@
           card.append(imageLink, body);
             eventList.append(card);
           });
+          if (!eventList.querySelector('.event-card')) {
+            const empty = document.createElement('p');
+            empty.className = 'empty-state';
+            empty.dataset.fr = 'Aucune course n’est programmée pour le moment.';
+            empty.dataset.en = 'No race is currently scheduled.';
+            eventList.append(empty);
+          }
         }
         if (archiveList && Array.isArray(payload.archives) && payload.archives.length) {
           archiveList.replaceChildren();
@@ -400,92 +603,45 @@
             link.append(date, title, meta); archiveList.append(link);
           });
         }
+        if (eventLoadingStatus) {
+          eventLoadingStatus.dataset.fr = 'Calendrier chargé.';
+          eventLoadingStatus.dataset.en = 'Calendar loaded.';
+        }
         applyLanguage(language);
       })
-      .catch(() => { /* Static event cards remain available as a safe fallback. */ });
+      .catch(() => {
+        eventLoader?.remove();
+        if (eventList && !eventList.querySelector('.event-card,.empty-state')) {
+          const error = document.createElement('p');
+          error.className = 'empty-state';
+          error.dataset.fr = 'Le calendrier est momentanément indisponible.';
+          error.dataset.en = 'The calendar is temporarily unavailable.';
+          eventList.append(error);
+        }
+        if (eventLoadingStatus) eventLoadingStatus.remove();
+        applyLanguage(language);
+      });
   }
 
   const leaderboard = document.querySelector('[data-alltime-leaderboard]');
   if (leaderboard) {
     const leaderboardStatus = document.querySelector('[data-leaderboard-status]');
     const leaderboardBody = document.querySelector('[data-leaderboard-body]');
-    const globalLeaderboardPromise = window.atxGlobalLeaderboardPromise || fetch(globalRankingEndpoint, { cache: 'no-store' })
+    const pointsTable = document.querySelector('.points-ranking-table');
+    const leaderboardLoader = rankingSkeleton();
+    leaderboard.before(leaderboardLoader);
+    leaderboardStatus.classList.add('atx-sr-only');
+    leaderboardStatus.setAttribute('role', 'status');
+    leaderboardStatus.setAttribute('aria-live', 'polite');
+    const globalLeaderboardPromise = window.atxGlobalLeaderboardPromise || fetch(globalRankingEndpoint)
       .then(response => response.ok ? response.json() : Promise.reject(new Error('global_leaderboard_load_failed')));
     window.atxGlobalLeaderboardPromise = globalLeaderboardPromise;
     Promise.all([
-      fetch(rankingEndpoint, { cache: 'no-store' }).then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard_load_failed'))),
+      fetchPointsRanking(rankingCategory),
       globalLeaderboardPromise,
     ]).then(([pointsPayload, payload]) => {
-        leaderboardBody.replaceChildren();
-        (pointsPayload.drivers || []).forEach(driver => {
-          const row = document.createElement('tr');
-          const rank = document.createElement('td');
-          rank.className = 'leaderboard-rank';
-          rank.textContent = String(driver.rank);
-          const identity = document.createElement('th');
-          identity.scope = 'row';
-          const identityBox = document.createElement('div');
-          identityBox.className = 'leaderboard-driver';
-          const avatar = document.createElement('span');
-          avatar.className = 'leaderboard-avatar';
-          paintAvatar(avatar, driver.avatar_url, driver.display_name);
-          const driverName = document.createElement(driver.profile_id ? 'a' : 'strong');
-          driverName.textContent = driver.display_name || 'ACC Driver';
-          if (driver.profile_id) {
-            driverName.href = `profil-pilote.html?driver=${encodeURIComponent(driver.profile_id)}`;
-            driverName.className = 'driver-profile-link';
-          }
-          identityBox.append(avatar, driverName);
-          identity.append(identityBox);
-          const numericCell = value => {
-            const cell = document.createElement('td');
-            cell.textContent = Number(value || 0).toLocaleString(language === 'fr' ? 'fr-BE' : 'en-GB', { maximumFractionDigits: 1 });
-            return cell;
-          };
-          const pace = document.createElement('td');
-          const tier = String(driver.performance_class || 'unranked');
-          const tierLine = document.createElement('div');
-          tierLine.className = 'pace-heading';
-          const tierBadge = document.createElement('span');
-          tierBadge.className = 'tier-pill';
-          tierBadge.dataset.tier = tier;
-          tierBadge.textContent = tier.toUpperCase();
-          const score = document.createElement('strong');
-          score.textContent = Number.isFinite(driver.performance_score) ? `${Number(driver.performance_score).toFixed(2)}%` : '—';
-          const trend = document.createElement('span');
-          trend.className = 'pace-trend';
-          const trendValue = Number(driver.progression);
-          if (Number.isFinite(trendValue) && Math.abs(trendValue) >= 0.005) {
-            trend.dataset.direction = trendValue > 0 ? 'up' : 'down';
-            trend.textContent = `${trendValue > 0 ? '↑' : '↓'} ${Math.abs(trendValue).toFixed(2)}%`;
-          } else trend.textContent = '—';
-          tierLine.append(tierBadge, score, trend);
-          const rail = document.createElement('div');
-          rail.className = 'pace-progress';
-          rail.setAttribute('role', 'progressbar');
-          const progress = tierProgress(tier, Number(driver.performance_score));
-          rail.setAttribute('aria-valuenow', String(Math.round(progress)));
-          rail.setAttribute('aria-valuemin', '0');
-          rail.setAttribute('aria-valuemax', '100');
-          const fill = document.createElement('i');
-          fill.style.width = `${progress}%`;
-          rail.append(fill);
-          const target = document.createElement('small');
-          const targetText = nextTier(tier);
-          target.dataset.fr = `Prochain objectif : ${targetText[0]}`;
-          target.dataset.en = `Next target: ${targetText[1]}`;
-          pace.append(tierLine, rail, target);
-          const safe = document.createElement('td');
-          if (driver.safety_class) {
-            const safeBadge = document.createElement('span');
-            safeBadge.className = 'tier-pill';
-            safeBadge.dataset.tier = driver.safety_class;
-            safeBadge.textContent = String(driver.safety_class).toUpperCase();
-            safe.append(safeBadge);
-          } else safe.textContent = '—';
-          row.append(rank, identity, numericCell(driver.points), numericCell(driver.races), numericCell(driver.wins), numericCell(driver.podiums), pace, safe);
-          leaderboardBody.append(row);
-        });
+        leaderboardLoader.remove();
+        renderPointsLeaderboard(leaderboardBody, pointsPayload.drivers || []);
         leaderboard.hidden = false;
         leaderboardStatus.hidden = true;
         const circuitGrid = document.querySelector('[data-ranking-circuits]');
@@ -585,11 +741,79 @@
           const section = ['circuit', 'driver', 'team'].includes(requested) ? requested : 'general';
           document.querySelectorAll('[data-ranking-panel]').forEach(panel => { panel.hidden = panel.dataset.rankingPanel !== section; });
         };
+        let activePointsCategory = rankingCategory;
+        let categorySwitchToken = 0;
+        const categoryLinks = [...document.querySelectorAll('[data-race-category]')];
+        const setActivePointsCategory = category => {
+          categoryLinks.forEach(link => {
+            const active = link.dataset.raceCategory === category;
+            link.classList.toggle('active', active);
+            if (active) link.setAttribute('aria-current', 'page');
+            else link.removeAttribute('aria-current');
+          });
+        };
+        const switchPointsCategory = async (category, updateHistory = true) => {
+          if (!['WGT', 'DR', 'OL'].includes(category) || category === activePointsCategory) return;
+          const token = ++categorySwitchToken;
+          leaderboardStatus.hidden = false;
+          leaderboardStatus.classList.add('atx-sr-only');
+          leaderboardStatus.dataset.fr = `Chargement du classement ${category}…`;
+          leaderboardStatus.dataset.en = `Loading ${category} standings…`;
+          applyLanguage(language);
+          pointsTable?.setAttribute('aria-busy', 'true');
+          leaderboardBody.classList.add('is-switching');
+          try {
+            const [nextPayload] = await Promise.all([
+              fetchPointsRanking(category),
+              new Promise(resolve => setTimeout(resolve, 150)),
+            ]);
+            if (token !== categorySwitchToken) return;
+            renderPointsLeaderboard(leaderboardBody, nextPayload.drivers || []);
+            activePointsCategory = category;
+            setActivePointsCategory(category);
+            document.querySelectorAll('[data-ranking-panel]').forEach(panel => { panel.hidden = panel.dataset.rankingPanel !== 'general'; });
+            if (updateHistory) history.pushState({ pointsCategory: category }, '', `${location.pathname}?type=${category}#points`);
+            leaderboardStatus.dataset.fr = `Classement ${category} chargé.`;
+            leaderboardStatus.dataset.en = `${category} standings loaded.`;
+            applyLanguage(language);
+            requestAnimationFrame(() => leaderboardBody.classList.remove('is-switching'));
+            setTimeout(() => { leaderboardStatus.hidden = true; }, 450);
+          } catch {
+            if (token !== categorySwitchToken) return;
+            leaderboardBody.classList.remove('is-switching');
+            leaderboardStatus.hidden = false;
+            leaderboardStatus.classList.remove('atx-sr-only');
+            leaderboardStatus.dataset.fr = 'Le classement demandé est momentanément indisponible.';
+            leaderboardStatus.dataset.en = 'The requested standings are temporarily unavailable.';
+            applyLanguage(language);
+          } finally {
+            if (token === categorySwitchToken) pointsTable?.removeAttribute('aria-busy');
+          }
+        };
+        categoryLinks.forEach(link => {
+          const category = String(link.dataset.raceCategory || '').toUpperCase();
+          link.addEventListener('click', event => {
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+            switchPointsCategory(category);
+          });
+          const prefetch = () => fetchPointsRanking(category).catch(() => {});
+          link.addEventListener('pointerenter', prefetch, { once: true });
+          link.addEventListener('focus', prefetch, { once: true });
+        });
         activateRankingSection();
         window.addEventListener('hashchange', activateRankingSection);
+        window.addEventListener('popstate', () => {
+          const requested = new URLSearchParams(location.search).get('type')?.toUpperCase();
+          switchPointsCategory(['WGT', 'DR', 'OL'].includes(requested) ? requested : 'DR', false);
+          activateRankingSection();
+        });
         applyLanguage(language);
       })
       .catch(() => {
+        leaderboardLoader.remove();
+        leaderboardStatus.hidden = false;
+        leaderboardStatus.classList.remove('atx-sr-only');
         leaderboardStatus.dataset.fr = 'Le classement est momentanément indisponible.';
         leaderboardStatus.dataset.en = 'The ranking is temporarily unavailable.';
         applyLanguage(language);
@@ -729,6 +953,14 @@
     safe.querySelector('.crest-mark').textContent = '–';
     const safeLabel = profile.querySelector('[data-safe-label]');
     safeLabel.dataset.fr = 'Non classé'; safeLabel.dataset.en = 'Unranked';
+    const safeProgress = profile.querySelector('[data-profile-safe-progress]');
+    if (safeProgress) {
+      safeProgress.hidden = true;
+      safeProgress.removeAttribute('data-safe-tier');
+      profile.querySelector('[data-profile-safe-score]').textContent = '—';
+      profile.querySelector('[data-profile-safe-fill]').style.setProperty('--safe-value', '0%');
+      profile.querySelector('[data-profile-safe-meter]').setAttribute('aria-valuenow', '0');
+    }
     profile.querySelector('[data-profile-awards]')?.replaceChildren();
     applyLanguage(language);
   };
@@ -858,6 +1090,17 @@
     const safeLabel = profile.querySelector('[data-safe-label]');
     safeLabel.dataset.fr = rating?.safety_class ? safeTier : 'Non classé';
     safeLabel.dataset.en = rating?.safety_class ? safeTier : 'Unranked';
+    const safeScoreValue = rating?.safety_score == null ? Number.NaN : Number(rating.safety_score);
+    const safeProgress = profile.querySelector('[data-profile-safe-progress]');
+    if (safeProgress) {
+      const hasSafeScore = Number.isFinite(safeScoreValue);
+      const boundedSafeScore = hasSafeScore ? Math.max(0, Math.min(100, safeScoreValue)) : 0;
+      safeProgress.hidden = !hasSafeScore;
+      safeProgress.dataset.safeTier = safeTier;
+      profile.querySelector('[data-profile-safe-score]').textContent = hasSafeScore ? `${boundedSafeScore.toFixed(0)} / 100` : '—';
+      profile.querySelector('[data-profile-safe-fill]').style.setProperty('--safe-value', `${boundedSafeScore}%`);
+      profile.querySelector('[data-profile-safe-meter]').setAttribute('aria-valuenow', String(Math.round(boundedSafeScore)));
+    }
     const awards = profile.querySelector('[data-profile-awards]');
     if (awards) {
       awards.replaceChildren();
