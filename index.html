@@ -3,27 +3,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ATX Racing | Événements simracing, classements et profils pilotes</title>
-  <meta name="description" content="ATX Racing organise des courses, Daily Races, championnats et endurances. Inscrivez-vous via SimGrid, rejoignez Discord et suivez vos résultats.">
+  <title>ATX Racing | Ligue ACC, courses et championnats simracing</title>
+  <meta name="description" content="ATX Racing est une nouvelle ligue ACC dédiée à la création et à l’organisation de courses, championnats et événements simracing pour tous.">
   <meta name="robots" content="index,follow,max-image-preview:large">
-  <meta name="theme-color" content="#050608">
+  <meta name="theme-color" content="#000000">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; connect-src https://twjpjzalyvbsdpbzhqln.supabase.co; img-src 'self' data: https://twjpjzalyvbsdpbzhqln.supabase.co https://community.fastly.steamstatic.com https://avatars.fastly.steamstatic.com https://avatars.cloudflare.steamstatic.com https://avatars.akamai.steamstatic.com; style-src 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; form-action 'self' https://steamcommunity.com; upgrade-insecure-requests">
   <link rel="canonical" href="https://athoxmotorsport-lab.github.io/atx-racing/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="fr_BE">
   <meta property="og:locale:alternate" content="en_GB">
   <meta property="og:site_name" content="ATX Racing">
   <meta property="og:title" content="ATX Racing | La compétition commence ici">
-  <meta property="og:description" content="Courses communautaires, classements officiels et profils pilotes connectés à Steam.">
+  <meta property="og:description" content="Une nouvelle ligue ACC dédiée à la création et à l’organisation de courses, championnats et événements pour tous.">
   <meta property="og:url" content="https://athoxmotorsport-lab.github.io/atx-racing/">
-  <meta property="og:image" content="https://athoxmotorsport-lab.github.io/atx-racing/assets/home/atx-racing-rain.jpg">
+  <meta property="og:image" content="https://athoxmotorsport-lab.github.io/atx-racing/assets/brand/atx-racing-social.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ATX Racing Ligue ACC — Passion, Respect, Performance">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="ATX Racing | Événements simracing ACC">
-  <meta name="twitter:description" content="Une ligue de pilotes propres, des courses régulières et un événement spécial chaque week-end.">
-  <meta name="twitter:image" content="https://athoxmotorsport-lab.github.io/atx-racing/assets/home/atx-racing-rain.jpg">
+  <meta name="twitter:description" content="Courses, championnats et événements Assetto Corsa Competizione pour tous.">
+  <meta name="twitter:image" content="https://athoxmotorsport-lab.github.io/atx-racing/assets/brand/atx-racing-social.jpg">
+  <meta name="twitter:image:alt" content="ATX Racing Ligue ACC — Passion, Respect, Performance">
+  <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/brand/apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="enhancements.css">
   <link rel="stylesheet" href="home-experience.css">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SportsOrganization","name":"ATX Racing","url":"https://athoxmotorsport-lab.github.io/atx-racing/","email":"athoxmotorsport@gmail.com","sport":"Sim racing","parentOrganization":{"@type":"SportsOrganization","name":"ATX Motorsport"},"sameAs":["https://discord.gg/dgyJJYTSsD","https://www.thesimgrid.com/communities/atxracing","https://www.twitch.tv/a_t_h_o_x","https://www.youtube.com/@AthoxMotorsport","https://www.tiktok.com/@athoxmotorsport"]}</script>
+  <link rel="stylesheet" href="premium-shell.css?v=20260918-brand" data-premium-shell>
+  <link rel="stylesheet" href="atx-experience.css?v=20260918-brand" data-atx-experience>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SportsOrganization","name":"ATX Racing","description":"ATX Racing est une nouvelle ligue ACC dédiée à la création et à l’organisation de courses, championnats et événements pour tous.","url":"https://athoxmotorsport-lab.github.io/atx-racing/","logo":"https://athoxmotorsport-lab.github.io/atx-racing/assets/brand/atx-racing-logo-512.png","image":"https://athoxmotorsport-lab.github.io/atx-racing/assets/brand/atx-racing-social.jpg","email":"athoxmotorsport@gmail.com","sport":"Sim racing","parentOrganization":{"@type":"SportsOrganization","name":"ATX Motorsport"},"sameAs":["https://discord.gg/dgyJJYTSsD","https://www.thesimgrid.com/communities/atxracing","https://www.twitch.tv/a_t_h_o_x","https://www.youtube.com/@AthoxMotorsport","https://www.tiktok.com/@athoxmotorsport"]}</script>
 </head>
 <body class="home-page">
   <aside class="side-nav" aria-label="Navigation principale">
@@ -45,10 +56,16 @@
 
     <section class="hero" id="top">
       <div class="wrap hero-grid">
+        <figure class="home-brand-banner">
+          <picture>
+            <source srcset="assets/brand/atx-racing-banner.webp" type="image/webp">
+            <img src="assets/brand/atx-racing-banner.jpg" width="2048" height="682" fetchpriority="high" alt="Bannière ATX Racing Ligue ACC : Passion, Respect, Performance, voiture GT3 et engagements Courses organisées, Communauté passionnée, Progression ensemble">
+          </picture>
+        </figure>
         <div>
           <div class="eyebrow" data-fr="La branche événementielle d'ATX Motorsport" data-en="The event division of ATX Motorsport">La branche événementielle d'ATX Motorsport</div>
           <h1>ATX <span>Racing</span></h1>
-          <p class="hero-copy" data-fr="Des courses organisées avec sérieux, accessibles aux passionnés et pensées pour offrir une compétition propre. Inscrivez-vous, prenez le départ et construisez votre profil pilote au fil des événements." data-en="Well-organized races built for passionate drivers and clean competition. Register, take the start and build your driver profile event after event.">Des courses organisées avec sérieux, accessibles aux passionnés et pensées pour offrir une compétition propre. Inscrivez-vous, prenez le départ et construisez votre profil pilote au fil des événements.</p>
+          <p class="hero-copy hero-positioning" data-fr="ATX Racing : une nouvelle ligue ACC dédiée à la création et à l’organisation de courses, championnats et événements pour tous." data-en="ATX Racing: a new ACC league dedicated to creating and organising races, championships and events for everyone.">ATX Racing : une nouvelle ligue ACC dédiée à la création et à l’organisation de courses, championnats et événements pour tous.</p>
           <div class="actions">
             <a class="btn primary" href="calendrier.html" data-fr="Voir les prochaines courses" data-en="View upcoming races">Voir les prochaines courses</a>
             <a class="btn" href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener" data-fr="Rejoindre Discord" data-en="Join Discord">Rejoindre Discord</a>
@@ -99,7 +116,9 @@
   </main>
 
   <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="https://www.twitch.tv/a_t_h_o_x" target="_blank" rel="noopener">Twitch</a><a href="https://www.youtube.com/@AthoxMotorsport" target="_blank" rel="noopener">YouTube</a><a href="https://www.tiktok.com/@athoxmotorsport" target="_blank" rel="noopener">TikTok</a><a href="reglement.html" data-fr="Règlement" data-en="Rules">Règlement</a><a href="confidentialite.html" data-fr="Confidentialité" data-en="Privacy">Confidentialité</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
-  <script src="main.js?v=20260918-premium-ux"></script>
-  <script src="home-experience.js?v=20260916-avatar-fix"></script>
+  <script src="main.js?v=20260918-brand" defer></script>
+  <script src="premium-shell.js?v=20260918-brand" data-premium-shell defer></script>
+  <script src="atx-experience.js?v=20260918-brand" data-atx-experience defer></script>
+  <script src="home-experience.js?v=20260918-brand" defer></script>
 </body>
 </html>

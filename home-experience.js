@@ -258,8 +258,16 @@
           'Assetto Corsa Competizione · GT3'
         ];
 
-    const makeSet = () => messages.map(message => `<span class="live-ticker-item">${message}</span>`).join('');
-    track.innerHTML = `${makeSet()}${makeSet()}`;
+    const fragment = document.createDocumentFragment();
+    for (let copy = 0; copy < 2; copy += 1) {
+      messages.forEach(message => {
+        const item = document.createElement('span');
+        item.className = 'live-ticker-item';
+        item.textContent = message;
+        fragment.append(item);
+      });
+    }
+    track.replaceChildren(fragment);
   };
 
   const refresh = () => {

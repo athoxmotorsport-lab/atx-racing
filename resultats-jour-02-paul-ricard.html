@@ -6,7 +6,10 @@
   <title>Résultats Jour 2 – Paul Ricard | ATX-RACING ACC</title>
   <meta name="description" content="Résultats officiels ATX-RACING du Jour 2 à Paul Ricard : classement du jour, classement général, chronos GT3, catégories et niveaux SAFE sur Assetto Corsa Competizione.">
   <meta name="robots" content="index, follow, max-image-preview:large">
-  <meta name="theme-color" content="#050608">
+  <meta name="theme-color" content="#000000">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; connect-src 'self'; img-src 'self' data: https://cdn.simpleicons.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self'; upgrade-insecure-requests">
+  <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
   <link rel="canonical" href="https://athoxmotorsport-lab.github.io/atx-racing/resultats-jour-02-paul-ricard.html">
   <meta property="og:type" content="article">
   <meta property="og:locale" content="fr_BE">
@@ -36,15 +39,15 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,800;1,900&family=Inter:wght@400;600;700&display=swap');
     :root{
-      --red:#ff2929;
-      --red-dark:#a70d15;
-      --bg:#050608;
-      --panel:rgba(8,11,15,.82);
-      --panel-strong:#090c10;
-      --line:#252b34;
-      --line-red:rgba(255,41,41,.42);
-      --text:#f4f6f8;
-      --muted:#8e98a6;
+      --red:#ff0000;
+      --red-dark:#c80000;
+      --bg:#000000;
+      --panel:rgba(5,5,5,.88);
+      --panel-strong:#0a0a0a;
+      --line:rgba(213,215,218,.22);
+      --line-red:rgba(255,0,0,.42);
+      --text:#ffffff;
+      --muted:#b7bcc1;
       --gold:#ffd53d;
       --silver:#cbd2dc;
       --bronze:#ca7638;
@@ -66,8 +69,8 @@
     .wrap{width:min(1420px,calc(100% - 40px));margin:auto}
     .topbar{position:sticky;z-index:30;top:0;background:rgba(5,6,8,.92);border-bottom:1px solid rgba(255,255,255,.09);backdrop-filter:blur(16px)}
     .topbar-inner{height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px}
-    .brand{font-size:27px;font-weight:900;letter-spacing:.8px}
-    .brand span{color:var(--red)}
+    .brand{display:inline-flex;align-items:center;font-size:0}
+    .brand img{display:block;width:54px;height:54px;border-radius:50%;object-fit:contain}
     .back{display:inline-flex;align-items:center;gap:10px;color:#b9c0ca;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
     .back:hover{color:#fff}
     .back i{font-style:normal;color:var(--red);font-size:21px}
@@ -146,7 +149,7 @@
 <body>
   <nav class="topbar">
     <div class="wrap topbar-inner">
-      <a class="brand" href="index.html">ATX<span>RACING</span></a>
+      <a class="brand" href="index.html" aria-label="ATX Racing — accueil"><img src="assets/brand/atx-racing-logo.webp" width="160" height="160" alt=""></a>
       <a class="back" href="index.html#calendar"><i>←</i><span>Retour au programme</span></a>
     </div>
   </nav>

@@ -1,37 +1,4 @@
 (() => {
-  const nested = /\/events\//.test(location.pathname);
-  const prefix = nested ? '../' : '';
-  if (!document.querySelector('link[data-premium-shell]')) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = `${prefix}premium-shell.css?v=20260918-premium-ux`;
-    link.dataset.premiumShell = '';
-    document.head.append(link);
-  }
-  if (!document.querySelector('link[data-atx-experience]')) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = `${prefix}atx-experience.css?v=20260918-premium-ux`;
-    link.dataset.atxExperience = '';
-    document.head.append(link);
-  }
-  if (!document.querySelector('script[data-premium-shell]')) {
-    const script = document.createElement('script');
-    script.src = `${prefix}premium-shell.js?v=20260918-premium-ux`;
-    script.defer = true;
-    script.dataset.premiumShell = '';
-    document.head.append(script);
-  }
-  if (!document.querySelector('script[data-atx-experience]')) {
-    const script = document.createElement('script');
-    script.src = `${prefix}atx-experience.js?v=20260918-premium-ux`;
-    script.defer = true;
-    script.dataset.atxExperience = '';
-    document.head.append(script);
-  }
-})();
-
-(() => {
   const assetPrefix = document.querySelector('script[src^="../"]') ? '../' : '';
   const sideActions = document.querySelector('.side-actions');
   if (sideActions) {
@@ -546,6 +513,8 @@
           const image = document.createElement('img');
           image.src = item.image_url.startsWith('/') ? item.image_url.slice(1) : item.image_url;
           image.alt = item.title_fr || item.title_en || 'ATX Racing event';
+          image.loading = 'lazy';
+          image.decoding = 'async';
           const badge = document.createElement('span');
           badge.className = 'badge';
           badge.dataset.fr = eventDate > new Date() ? 'À venir' : 'Terminé';
@@ -1194,11 +1163,18 @@
     }
 
     if (query.get('steam') === 'error') {
+      const reason = query.get('reason');
       query.delete('steam');
       query.delete('reason');
       const cleanQuery = query.toString();
       history.replaceState(null, '', `${location.pathname}${cleanQuery ? `?${cleanQuery}` : ''}`);
-      setStatus('La connexion Steam a échoué. Veuillez recommencer.', 'Steam sign-in failed. Please try again.', 'error');
+      const messages = {
+        user_cancelled: ['Connexion Steam annulée. Vous pouvez réessayer quand vous le souhaitez.', 'Steam sign-in was cancelled. You can try again whenever you are ready.'],
+        invalid_state: ['La demande de connexion a expiré. Veuillez recommencer.', 'The sign-in request expired. Please try again.'],
+        steam_verification_failed: ['Steam n’a pas pu confirmer votre identité. Veuillez recommencer.', 'Steam could not verify your identity. Please try again.'],
+      };
+      const message = messages[reason] || ['La connexion Steam a échoué. Veuillez recommencer.', 'Steam sign-in failed. Please try again.'];
+      setStatus(message[0], message[1], 'error');
     }
 
     const token = sessionStorage.getItem(sessionKey);

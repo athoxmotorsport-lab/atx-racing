@@ -159,8 +159,16 @@
       lang()==='en'?'Official results · Performance · SAFE':'Résultats officiels · Performance · SAFE',
       'Assetto Corsa Competizione · GT3'
     ];
-    const set = () => messages.map(m=>`<span class="live-ticker-item">${m}</span>`).join('');
-    track.innerHTML = `${set()}${set()}`;
+    const fragment = document.createDocumentFragment();
+    for (let copy = 0; copy < 2; copy += 1) {
+      messages.forEach(message => {
+        const item = document.createElement('span');
+        item.className = 'live-ticker-item';
+        item.textContent = message;
+        fragment.append(item);
+      });
+    }
+    track.replaceChildren(fragment);
   };
   if (track) fetch(`${apiBase}/public-event`,{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(p=>renderTicker(p.events||[])).catch(()=>renderTicker([]));
 

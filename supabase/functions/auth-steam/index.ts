@@ -236,6 +236,7 @@ Deno.serve(async (request) => {
   try {
     if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
     const url = new URL(request.url);
+    if (url.searchParams.get("openid.mode") === "cancel") return failureRedirect("user_cancelled");
     return url.searchParams.has("openid.mode") ? await finishLogin(url) : await startLogin();
   } catch (error) {
     console.error("Steam authentication failed", error instanceof Error ? error.message : "unknown error");

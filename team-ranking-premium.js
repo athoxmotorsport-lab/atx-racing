@@ -45,7 +45,7 @@
       const top = document.createElement('div'); top.className = 'team-member-top';
       const avatar = document.createElement('span'); avatar.className = 'team-member-avatar';
       const initials = String(driver.display_name || 'AT').slice(0,2).toUpperCase();
-      if (driver.avatar_url) { const img=document.createElement('img'); img.src=driver.avatar_url; img.alt=''; img.referrerPolicy='no-referrer'; img.addEventListener('error',()=>{ avatar.replaceChildren(document.createTextNode(initials)); },{ once:true }); avatar.append(img); }
+      if (driver.avatar_url) { const img=document.createElement('img'); img.src=driver.avatar_url; img.alt=''; img.loading='lazy'; img.decoding='async'; img.referrerPolicy='no-referrer'; img.addEventListener('error',()=>{ avatar.replaceChildren(document.createTextNode(initials)); },{ once:true }); avatar.append(img); }
       else avatar.textContent = initials;
       const identity = document.createElement('div'); identity.className = 'team-member-identity';
       const name = document.createElement(driver.profile_id ? 'a' : 'strong'); name.textContent = driver.display_name || 'ACC Driver';
@@ -99,5 +99,5 @@
   Promise.all([
     window.atxGlobalLeaderboardPromise||fetch(`${base}/public-leaderboard?category=ALL`,{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()),
     fetch(`${base}/public-driver-identities`,{cache:'no-store'}).then(r=>r.ok?r.json():{drivers:[]}),
-  ]).then(([ranking,identityData])=>{payload=ranking;identities=identityData.drivers||[];render();}).catch(()=>{});
+  ]).then(([ranking,identityData])=>{payload=ranking;identities=identityData.drivers||[];render();}).catch(()=>{body.replaceChildren();const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=8;cell.setAttribute('role','status');cell.textContent='Le classement des équipes est momentanément indisponible. Veuillez réessayer dans quelques instants.';row.append(cell);body.append(row)});
 })();
