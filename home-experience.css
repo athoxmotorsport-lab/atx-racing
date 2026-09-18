@@ -1,7 +1,7 @@
 /* Home page immersive experience */
 body.home-page{
   position:relative;
-  background:#05080c;
+  background:var(--brand-surface);
 }
 
 body.home-page:before{
@@ -10,8 +10,8 @@ body.home-page:before{
   z-index:-2;
   inset:0 0 0 210px;
   background-image:
-    linear-gradient(90deg,rgba(3,7,11,.92) 0%,rgba(3,7,11,.78) 40%,rgba(3,7,11,.54) 100%),
-    linear-gradient(180deg,rgba(2,5,8,.20),rgba(2,5,8,.72)),
+    linear-gradient(90deg,rgba(5,5,5,.92) 0%,rgba(5,5,5,.78) 40%,rgba(5,5,5,.54) 100%),
+    linear-gradient(180deg,rgba(5,5,5,.20),rgba(5,5,5,.72)),
     url("assets/home/atx-racing-rain.jpg"),
     url("atx-racing-background.webp");
   background-position:center;
@@ -25,7 +25,7 @@ body.home-page:after{
   position:fixed;
   z-index:-1;
   inset:0 0 0 210px;
-  background:linear-gradient(180deg,rgba(1,4,7,.02),rgba(1,4,7,.34) 48%,rgba(1,4,7,.68));
+  background:linear-gradient(180deg,rgba(5,5,5,.02),rgba(5,5,5,.34) 48%,rgba(5,5,5,.68));
   pointer-events:none;
 }
 
@@ -45,7 +45,7 @@ body.home-page:after{
   height:42px;
   overflow:hidden;
   border-bottom:1px solid rgba(255,41,41,.42);
-  background:rgba(5,8,12,.92);
+  background:rgba(5,5,5,.92);
   backdrop-filter:blur(14px);
 }
 
@@ -81,7 +81,7 @@ body.home-page:after{
   align-items:center;
   gap:28px;
   padding-right:28px;
-  color:#dfe4ea;
+  color:var(--brand-metal-light);
   font:800 12px "Barlow",Inter,sans-serif;
   letter-spacing:1.1px;
   text-transform:uppercase;
@@ -106,7 +106,7 @@ body.home-page:after{
   align-items:center;
   overflow:hidden;
   border-bottom:1px solid rgba(255,255,255,.09);
-  background:linear-gradient(90deg,rgba(4,8,12,.24),rgba(4,8,12,.05));
+  background:linear-gradient(90deg,rgba(5,5,5,.24),rgba(5,5,5,.05));
 }
 
 .home-page .hero:after{
@@ -114,7 +114,7 @@ body.home-page:after{
   position:absolute;
   inset:auto 0 0 0;
   height:35%;
-  background:linear-gradient(180deg,transparent,rgba(3,7,10,.84));
+  background:linear-gradient(180deg,transparent,rgba(5,5,5,.84));
   pointer-events:none;
 }
 
@@ -130,7 +130,7 @@ body.home-page:after{
 
 .home-page .hero-copy{
   max-width:650px;
-  color:#d3dae3;
+  color:var(--brand-metal-light);
   text-shadow:0 2px 20px rgba(0,0,0,.55);
 }
 
@@ -145,14 +145,14 @@ body.home-page:after{
   padding:24px;
   border:1px solid rgba(255,255,255,.18);
   border-top:3px solid var(--red);
-  background:rgba(5,9,13,.76);
+  background:rgba(5,5,5,.76);
   box-shadow:0 28px 80px rgba(0,0,0,.36);
   backdrop-filter:blur(16px);
 }
 
 .home-next-event small{
   display:block;
-  color:#8994a2;
+  color:var(--brand-metal);
   font:800 10px "Barlow",Inter,sans-serif;
   letter-spacing:1.4px;
   text-transform:uppercase;
@@ -172,7 +172,7 @@ body.home-page:after{
 
 .home-next-event-meta{
   margin-top:12px;
-  color:#9da8b6;
+  color:var(--brand-metal);
   font-size:13px;
   line-height:1.6;
 }
@@ -184,7 +184,7 @@ body.home-page:after{
 .home-page .trust-strip{
   position:relative;
   z-index:2;
-  background:rgba(6,10,14,.92);
+  background:rgba(5,5,5,.92);
   backdrop-filter:blur(14px);
 }
 
@@ -194,20 +194,20 @@ body.home-page:after{
 .home-page .leaderboard-callout,
 .home-page #archives{
   position:relative;
-  background:linear-gradient(110deg,rgba(5,9,13,.90),rgba(5,9,13,.76));
+  background:linear-gradient(110deg,rgba(5,5,5,.90),rgba(5,5,5,.76));
   backdrop-filter:blur(3px);
 }
 
 .home-page .mission-section{
-  background:linear-gradient(110deg,rgba(5,9,13,.84),rgba(5,9,13,.54));
+  background:linear-gradient(110deg,rgba(5,5,5,.84),rgba(5,5,5,.54));
 }
 
 .home-page #events{
-  background:linear-gradient(110deg,rgba(5,9,13,.94),rgba(5,9,13,.80));
+  background:linear-gradient(110deg,rgba(5,5,5,.94),rgba(5,5,5,.80));
 }
 
 .home-page .profile-section{
-  background:linear-gradient(120deg,rgba(79,8,13,.60),rgba(5,9,13,.84) 58%);
+  background:linear-gradient(120deg,rgba(79,8,13,.60),rgba(5,5,5,.84) 58%);
 }
 
 .home-page section{

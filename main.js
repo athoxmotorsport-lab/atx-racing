@@ -123,7 +123,10 @@
 
   const checkAdminSession = async () => {
     const token = sessionStorage.getItem(sessionKey);
-    if (!token) return null;
+    if (!token) {
+      revealAdminTools(null);
+      return null;
+    }
     try {
       const payload = await requestSession({ headers: { Authorization: `Bearer ${token}` } });
       revealAdminTools(payload.driver);
@@ -131,6 +134,7 @@
       return payload;
     } catch {
       sessionStorage.removeItem(sessionKey);
+      revealAdminTools(null);
       return null;
     }
   };
@@ -900,6 +904,7 @@
   };
 
   const resetProfile = () => {
+    revealAdminTools(null);
     const name = profile.querySelector('[data-profile-name]');
     name.dataset.fr = 'Votre profil';
     name.dataset.en = 'Your profile';

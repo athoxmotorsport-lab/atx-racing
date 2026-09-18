@@ -57,7 +57,7 @@
   border: 0;
   border-radius: 10px;
   background:
-    linear-gradient(180deg, rgba(10, 24, 36, .99), rgba(5, 13, 21, .995)) padding-box,
+    linear-gradient(180deg, rgba(10,10,10,.99), rgba(5,5,5,.995)) padding-box,
     linear-gradient(135deg, var(--flag-a), var(--flag-b) 50%, var(--flag-c)) border-box;
   box-shadow:
     0 14px 34px rgba(0, 0, 0, .28),
@@ -113,7 +113,7 @@
   height: 126px;
   overflow: hidden;
   border-radius: 9px 9px 0 0;
-  background: #07111a;
+  background: var(--brand-surface);
 }
 
 .circuit-card-media::after {
@@ -121,8 +121,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(3, 8, 13, .02) 10%, rgba(3, 8, 13, .10) 42%, rgba(3, 8, 13, .88) 100%),
-    linear-gradient(90deg, rgba(2, 7, 12, .24), transparent 42%, rgba(2, 7, 12, .14));
+    linear-gradient(180deg, rgba(5,5,5,.02) 10%, rgba(5,5,5,.10) 42%, rgba(5,5,5,.88) 100%),
+    linear-gradient(90deg, rgba(5,5,5,.24), transparent 42%, rgba(5,5,5,.14));
 }
 
 .circuit-card-media img {
@@ -174,7 +174,7 @@
   border-radius: 0 0 9px 9px;
   background:
     radial-gradient(circle at 82% 0%, color-mix(in srgb, var(--flag-a) 12%, transparent), transparent 34%),
-    linear-gradient(135deg, rgba(13, 31, 45, .985), rgba(6, 15, 24, .995));
+    linear-gradient(135deg, rgba(10,10,10,.985), rgba(5,5,5,.995));
 }
 
 .circuit-card-content::before {
@@ -204,7 +204,7 @@
   display: block;
   margin-top: 9px;
   overflow: hidden;
-  color: #c8d3dc;
+  color: var(--brand-metal-light);
   font-size: .74rem;
   font-weight: 800;
   line-height: 1.12;
@@ -237,7 +237,7 @@
   display: block;
   margin-top: auto;
   padding-top: 14px;
-  color: #718493;
+  color: var(--brand-metal);
   font-size: .7rem;
   font-weight: 800;
   letter-spacing: .06em;
