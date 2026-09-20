@@ -50,13 +50,13 @@
       <div class="wrap">
         <div class="section-label" data-fr="Classement officiel" data-en="Official standings">Classement officiel</div>
         <h1 data-event-title>Course ATX Racing · ACC</h1>
-        <div class="event-result-meta"><span data-event-circuit>—</span><span data-event-date>—</span></div>
-        <div class="public-event-overview" data-event-overview hidden>
+        <nav class="atx-journey" data-event-journey aria-label="Navigation de la course" hidden><a data-event-format href="gtworld.html">01 · WorldGT</a><span class="atx-journey-separator" aria-hidden="true">/</span><a data-event-calendar href="calendrier.html?type=WGT">02 · Calendrier</a><span class="atx-journey-separator" aria-hidden="true">/</span><a data-event-race href="#programme" aria-current="page">03 · Course</a><span class="atx-journey-separator" aria-hidden="true">/</span><a data-event-result-link href="#resultats">04 · Résultats</a><span class="atx-journey-separator" aria-hidden="true">/</span><a data-event-ranking href="classement.html?type=WGT#points">05 · Classement</a></nav><div class="event-result-meta"><span data-event-circuit>—</span><span data-event-date>—</span></div>
+        <div class="public-event-overview" id="programme" data-event-overview hidden>
           <div><h2 data-fr="Programme" data-en="Schedule">Programme</h2><div class="schedule public-event-schedule" data-event-schedule></div></div>
           <div><h2 data-fr="Paramètres de course" data-en="Race settings">Paramètres de course</h2><div class="schedule-grid-grid" data-event-settings></div></div>
           <div class="actions"><a class="btn primary" data-event-registration target="_blank" rel="noopener" data-fr="S’inscrire" data-en="Register">S’inscrire</a><a class="btn" href="reglement.html" data-fr="Lire le règlement" data-en="Read the rules">Lire le règlement</a></div>
         </div>
-        <h2 class="results-heading" data-fr="Résultats officiels" data-en="Official results">Résultats officiels</h2>
+        <h2 id="resultats" class="results-heading" data-fr="Résultats officiels" data-en="Official results">Résultats officiels</h2>
         <p class="empty-state" data-event-status data-fr="Chargement du classement…" data-en="Loading standings…">Chargement du classement…</p>
         <div class="event-honours" data-event-honours hidden>
           <article class="honour-card fast"><div class="honour-emblem">FD</div><div><small>Fast Driver</small><strong data-fast-driver>—</strong><span data-fast-detail>—</span></div></article>
