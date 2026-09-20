@@ -43,8 +43,9 @@
   actions.insertBefore(bell, actions.querySelector(".side-tools") || null);
   actions.append(panel);
   let today = [];
+  let notices = [];
   let loaded = false;
-  const unread = () => today.filter(event => !read(localStorage, SEEN)[eventKey(event)]).length;
+  const unread = () => notices.filter(notice => !read(localStorage, SEEN)[notice.id]).length;
   const renderCount = () => {
     const number = unread();
     count.hidden = number === 0;
@@ -53,7 +54,7 @@
   };
   const markSeen = () => {
     const seen = read(localStorage, SEEN);
-    today.forEach(event => { seen[eventKey(event)] = true; });
+    notices.forEach(notice => { seen[notice.id] = true; });
     try { localStorage.setItem(SEEN, JSON.stringify(seen)); } catch { /* private mode */ }
     renderCount();
   };
@@ -62,20 +63,23 @@
     const heading = document.createElement("strong");
     heading.textContent = label("Notifications", "Notifications");
     panel.append(heading);
-    if (!loaded || !today.length) {
+    if (!loaded || !notices.length) {
       const p = document.createElement("p");
-      p.textContent = loaded ? label("Aucune course annoncée aujourd’hui.", "No race announced today.") : label("Chargement…", "Loading…");
+      p.textContent = loaded ? label("Aucune notification pour le moment.", "No notifications yet.") : label("Chargement…", "Loading…");
       panel.append(p);
       return;
     }
-    today.slice(0,20).forEach(event => {
+    notices.slice(0,20).forEach(notice => {
       const link = document.createElement("a");
-      link.href = detailsHref(event);
+      const route = String(notice.related_link || "");
+      // La base n'autorise que les pages publiques ATX, jamais un lien extérieur injecté.
+      link.href = /^(?:course\.html\?event=[a-z0-9-]+|classement\.html#circuit)$/.test(route)
+        ? prefix + route : prefix + "calendrier.html";
       link.className = "atx-alert-item";
       const title = document.createElement("strong");
-      title.textContent = label("Course aujourd’hui · ", "Race today · ") + name(event);
+      title.textContent = label(notice.title_fr, notice.title_en);
       const meta = document.createElement("span");
-      meta.textContent = (event.circuit_name || "ACC") + " · " + scheduleLabel(event) + label(" (heure belge)", " (Belgium time)");
+      meta.textContent = label(notice.message_fr, notice.message_en);
       link.append(title,meta);
       panel.append(link);
     });
@@ -152,14 +156,22 @@
           && now < start + (Math.max(60, Number(event.duration_minutes) || 60) + 120) * 60000;
       });
       today = [...new Map(visible.map(event => [event.slug,event])).values()].sort((a,b) => startOf(a) - startOf(b));
+      notices = Array.isArray(data.notifications) ? data.notifications.filter(notice =>
+        notice && typeof notice.id === "string" && typeof notice.title_fr === "string"
+        && typeof notice.message_fr === "string"
+      ).slice(0,30) : [];
       loaded = true; renderCount();
-      if (!panel.hidden) renderPanel();
-      if (today.length) popup(today[0]);
+      if (!panel.hidden) { markSeen(); renderPanel(); }
+      const todayNotice = notices.find(notice => notice.type === "race_day"
+        && today.some(event => notice.related_link === "course.html?event=" + event.slug));
+      const announcedRace = today.find(event => todayNotice
+        && todayNotice.related_link === "course.html?event=" + event.slug);
+      if (announcedRace && !document.querySelector(".atx-race-overlay")) popup(announcedRace);
     } catch {
       loaded = true;
       if (!panel.hidden) renderPanel();
     }
   };
   refresh();
-  setInterval(refresh, 60000);
+  setInterval(refresh, 30000);
 })();
