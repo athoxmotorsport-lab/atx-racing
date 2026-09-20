@@ -47,7 +47,16 @@ export const worldGTPoints = (
     grouped.set(key, entry);
   }
   const entries = [...grouped.values()];
+  // The reference fastest lap must include every classified crew, even when
+  // an administrator has not yet mapped its pilots to a racing team.
   const fastestByEvent = new Map<string, number>();
+  for (const result of results) {
+    if (result.status !== "classified" || validNumber(result.finish_position) === null) continue;
+    const lap = validNumber(result.best_lap_ms);
+    if (lap === null) continue;
+    const current = fastestByEvent.get(result.event_id);
+    if (current === undefined || lap < current) fastestByEvent.set(result.event_id, lap);
+  }
   for (const entry of entries) {
     if (entry.finish_position === null || entry.best_lap_ms === null) continue;
     const current = fastestByEvent.get(entry.event_id);
