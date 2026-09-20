@@ -13,15 +13,17 @@ const htmlPaths = [
 assert.equal(htmlPaths.length, 16, "ATX expected 16 HTML pages");
 const requestedCSS = ["ranking-session-labels", "driver-ranking-premium", "team-ranking-premium", "profile-best-laps"];
 for (const file of requestedCSS) {
-  const original = await readFile(join(root, file + ".css"), "utf8");
   const minimized = await readFile(join(root, file + ".min.css"), "utf8");
-  assert(minimized.length > 100 && minimized.length < original.length, "CSS not minified: " + file);
+  assert(minimized.length > 100, "Missing minified CSS: " + file);
 }
+const removedSources = ["style.css","enhancements.css","premium-shell.css","atx-experience.css","home-experience.css","ranking-session-labels.css","driver-ranking-premium.css","team-ranking-premium.css","profile-best-laps.css","main.js","home-experience.js","premium-shell.js","atx-experience.js","gtworld.js","admin-gtworld.js","admin-events-manager.js","ranking-session-labels.js","driver-ranking-premium.js","team-ranking-premium.js","profile-identity-enhancements.js","race-alerts.css","race-alerts.js"];
+const rootFiles = await readdir(root);
+for (const file of removedSources) assert(!rootFiles.includes(file), "Old source still tracked: " + file);
 const minFiles = (await readdir(root)).filter(p => p.endsWith(".min.js"));
 assert(minFiles.includes("main.min.js"));
 for (const file of minFiles) execFileSync(process.execPath, ["--check", file]);
-const jsSource = (await readdir(root)).filter(p => p.endsWith(".js") && !p.endsWith(".min.js"));
-for (const file of jsSource) assert(minFiles.includes(file.replace(/\.js$/, ".min.js")), "missing minified " + file);
+const expectedJS = ["main","home-experience","premium-shell","atx-experience","gtworld","admin-gtworld","admin-events-manager","ranking-session-labels","driver-ranking-premium","team-ranking-premium","profile-identity-enhancements","race-alerts"];
+for (const name of expectedJS) assert(minFiles.includes(name + ".min.js"), "Missing JS: " + name);
 for (const path of htmlPaths) {
   const html = await readFile(join(root, path), "utf8");
   const isLegacy = path.startsWith("resultats-jour-");
@@ -38,7 +40,8 @@ for (const path of htmlPaths) {
     }
   }
   for (const [, quote, src] of html.matchAll(/<script\b[^>]*\bsrc=(["'])(.*?)\1[^>]*><\/script>/gi)) {
-    if (jsSource.some(name => src.split("?")[0].endsWith("/" + name) || src.split("?")[0] === name)) {
+    const localName = src.split("?")[0].split("/").at(-1);
+    if (localName?.endsWith(".js") && !localName.endsWith(".min.js")) {
       throw Error("original unminified script referenced in " + path + ": " + src);
     }
   }
