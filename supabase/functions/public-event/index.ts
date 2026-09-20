@@ -87,7 +87,7 @@ Deno.serve(async (request) => {
     || (["sprint","endurance"].includes(String(event.event_type)) && /\\b(SPRINT|ENDU)\\b/i.test(wgtTitle));
   let teamResults: Array<{
     team_name: string; finish_position: number | null; best_lap_ms: number | null;
-    points: number; fastest_lap_bonus: number; members: string[]; car_model_name: string | null;
+    points: number; fastest_lap_bonus: number; members: string[]; car_model_name: string | null; laps_completed: number;
   }> = [];
   let teamAssignmentsComplete = true;
   if (isWorldGT && (results ?? []).length) {
@@ -115,6 +115,7 @@ Deno.serve(async (request) => {
           return driver?.display_name || "ACC Driver";
         }),
         car_model_name: memberRows.find((row) => row.car_model_name)?.car_model_name ?? null,
+        laps_completed: Math.max(0, ...memberRows.map((row) => Number(row.laps_completed ?? 0))),
       };
     }).sort((first, second) => (first.finish_position ?? 999) - (second.finish_position ?? 999)
       || first.team_name.localeCompare(second.team_name));
