@@ -1,4 +1,5 @@
 import { adminClient } from "../_shared/auth.ts";
+import { worldGTPoints } from "../_shared/worldgt-scoring.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "https://athoxmotorsport-lab.github.io",
@@ -236,25 +237,27 @@ Deno.serve(async (request) => {
       if (!data || data.length < 1000) break;
     }
     const generalResults = results.filter((result) => category === "ALL" || raceCategory(result.event) === category);
-    const wgtPoints = new Map([[1, 50], [2, 36], [3, 30], [4, 24], [5, 20], [6, 16], [7, 12], [8, 8], [9, 4], [10, 2]]);
-    const fastestByEvent = new Map<string, number>();
-    if (category === "WGT" || category === "ALL") {
-      for (const result of generalResults) {
-        if (raceCategory(result.event) !== "WGT") continue;
-        const eventId = String(eventRow(result.event)?.id ?? "");
-        const lap = Number(result.best_lap_ms);
-        if (!eventId || !Number.isFinite(lap) || lap <= 0) continue;
-        const current = fastestByEvent.get(eventId);
-        if (current === undefined || lap < current) fastestByEvent.set(eventId, lap);
-      }
+    const wgtRawResults = generalResults.filter((result) => raceCategory(result.event) === "WGT");
+    const wgtEventIds = [...new Set(wgtRawResults.map((result) => String(eventRow(result.event)?.id ?? "")).filter(Boolean))];
+    let wgtRegistrations: Array<{event_id:string; driver_id:string; team_name:string|null}> = [];
+    if (wgtEventIds.length) {
+      const { data, error } = await supabase.from("registrations")
+        .select("event_id, driver_id, team_name").in("event_id", wgtEventIds);
+      if (error) throw error;
+      wgtRegistrations = data ?? [];
     }
+    const wgtScore = worldGTPoints(wgtRawResults.map((result) => ({
+      event_id: String(eventRow(result.event)?.id ?? ""),
+      driver_id: String(result.driver_id),
+      status: String(result.status ?? ""),
+      finish_position: result.finish_position as number | null,
+      best_lap_ms: result.best_lap_ms as number | null,
+    })), wgtRegistrations);
+    const wgtEntryForResult = (result: Record<string, unknown>) =>
+      wgtScore.driverPoints.get(String(eventRow(result.event)?.id ?? "") + "|" + String(result.driver_id));
     const pointsForResult = (result: Record<string, unknown>): number => {
       if (raceCategory(result.event) !== "WGT") return Number(result.points ?? 0);
-      const position = Number(result.finish_position);
-      const base = result.status === "classified" ? wgtPoints.get(position) ?? 0 : 0;
-      const eventId = String(eventRow(result.event)?.id ?? "");
-      const lap = Number(result.best_lap_ms);
-      return base + (eventId && lap > 0 && fastestByEvent.get(eventId) === lap ? 2 : 0);
+      return wgtEntryForResult(result)?.points ?? 0;
     };
 
     const sessionResults: Array<Record<string, unknown>> = [];
@@ -361,8 +364,8 @@ Deno.serve(async (request) => {
         primary_car: carsUsed[0] ?? null,
         cars_used: carsUsed,
         races: driverResults.length,
-        wins: driverResults.filter((result) => result.status === "classified" && result.finish_position === 1).length,
-        podiums: driverResults.filter((result) => result.status === "classified" && Number(result.finish_position) <= 3).length,
+        wins: driverResults.filter((result) => result.status === "classified" && (raceCategory(result.event) === "WGT" ? wgtEntryForResult(result)?.finish_position === 1 : result.finish_position === 1)).length,
+        podiums: driverResults.filter((result) => result.status === "classified" && (raceCategory(result.event) === "WGT" ? (wgtEntryForResult(result)?.finish_position ?? 999) <= 3 : Number(result.finish_position) <= 3)).length,
         points: driverResults.reduce((total, result) => total + pointsForResult(result), 0),
         points_per_race: driverResults.length ? driverResults.reduce((total, result) => total + pointsForResult(result), 0) / driverResults.length : 0,
         circuits: circuitPaces.length,
@@ -408,7 +411,27 @@ Deno.serve(async (request) => {
     });
 
     const teamGroups = new Map<string, { team_name: string; points: number; races: number; wins: number; podiums: number; member_ids: Set<string>; pace_scores: number[] }>();
-    for (const driver of rows) {
+    if (category === "WGT") {
+      // One line per racing team; a two-driver crew contributes its points once.
+      const paceByDriver = new Map(rows.map((driver) => [driver.driver_id, driver.performance_score]));
+      for (const entry of wgtScore.entries) {
+        const key = entry.team_name.toLocaleLowerCase("fr");
+        const team = teamGroups.get(key) ?? {
+          team_name: entry.team_name, points: 0, races: 0, wins: 0,
+          podiums: 0, member_ids: new Set<string>(), pace_scores: [],
+        };
+        team.points += entry.points;
+        team.races += 1;
+        if (entry.finish_position === 1) team.wins += 1;
+        if (entry.finish_position !== null && entry.finish_position <= 3) team.podiums += 1;
+        for (const driverId of entry.driver_ids) {
+          team.member_ids.add(driverId);
+          const pace = paceByDriver.get(driverId);
+          if (pace !== null && pace !== undefined) team.pace_scores.push(Number(pace));
+        }
+        teamGroups.set(key, team);
+      }
+    } else for (const driver of rows) {
       const teamName = String(driver.team_name ?? "").trim();
       if (!teamName) continue;
       const key = teamName.toLocaleLowerCase("fr");
