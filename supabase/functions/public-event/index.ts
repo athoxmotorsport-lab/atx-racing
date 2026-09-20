@@ -9,7 +9,7 @@ const cors = {
 
 const json = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), {
   status,
-  headers: { ...cors, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=30" },
+  headers: { ...cors, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
 });
 
 Deno.serve(async (request) => {
@@ -54,7 +54,11 @@ Deno.serve(async (request) => {
         && now < Date.parse(event.starts_at) + (Number(event.duration_minutes) + 120) * 60000)
       .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
     const archives = publicEvents.filter((event) => Date.parse(event.starts_at) >= archiveStart && Date.parse(event.starts_at) <= now && event.result_count > 0);
-    return json({ events: calendar, today, archives });
+    const { data: notifications, error: noticesError } = await supabase.from("notifications")
+      .select("id, type, title_fr, title_en, message_fr, message_en, related_link, circuit_key, driver_id, best_lap_ms, created_at")
+      .order("created_at", { ascending: false }).limit(30);
+    if (noticesError) return json({ error: "notifications_unavailable" }, 500);
+    return json({ events: calendar, today, archives, notifications: notifications ?? [] });
   }
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return json({ error: "invalid_slug" }, 400);
 
