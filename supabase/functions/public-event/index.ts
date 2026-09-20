@@ -38,9 +38,23 @@ Deno.serve(async (request) => {
     const archiveStart = Date.parse("2026-09-08T22:00:00Z");
     const now = Date.now();
     const publicEvents = (events ?? []).map(({ id, ...event }) => ({ ...event, result_count: resultCounts.get(id) ?? 0 }));
-    const calendar = publicEvents.filter((event) => event.image_url && event.simgrid_url).slice(0, 24);
+    // Le calendrier est prospectif : aucune course terminée n'y revient après un import ACC.
+    const calendar = publicEvents
+      .filter((event) => event.status !== "cancelled" && event.status !== "draft"
+        && Date.parse(event.starts_at) >= now && event.image_url && event.simgrid_url)
+      .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).slice(0, 24);
+    const localDay = (instant: number) => new Intl.DateTimeFormat("en-CA", {
+      year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Europe/Brussels",
+    }).format(new Date(instant));
+    const todayKey = localDay(now);
+    const today = publicEvents
+      .filter((event) => event.status !== "cancelled" && event.status !== "draft"
+        && Boolean(event.simgrid_url) && Boolean(event.image_url)
+        && localDay(Date.parse(event.starts_at)) === todayKey
+        && now < Date.parse(event.starts_at) + (Number(event.duration_minutes) + 120) * 60000)
+      .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
     const archives = publicEvents.filter((event) => Date.parse(event.starts_at) >= archiveStart && Date.parse(event.starts_at) <= now && event.result_count > 0);
-    return json({ events: calendar, archives });
+    return json({ events: calendar, today, archives });
   }
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return json({ error: "invalid_slug" }, 400);
 
