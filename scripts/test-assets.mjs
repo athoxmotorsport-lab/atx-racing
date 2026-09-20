@@ -153,8 +153,8 @@ try {
   await page.locator("[data-event-journey]:not([hidden])").waitFor({timeout:15000});
   await page.locator("[data-event-results] tr").first().waitFor({timeout:15000});
   assert.equal(await page.locator("[data-event-results] tr").count(),1,"WorldGT result must be one row per crew, not per driver");
-  const rowText=await page.locator("[data-event-results] tr").first().innerText();console.log("WORLDGT DEBUG:",JSON.stringify({rowText,title:await page.locator("[data-event-title]").innerText(),category:await page.locator("[data-public-event]").getAttribute("data-event-category"),html:await page.locator("[data-event-results] tr").first().innerHTML()}));
-  assert(rowText.includes("Dylan")&&rowText.includes("Tim")&&rowText.includes("52"),"Crew points and drivers not visible");
+  const rowText=await page.locator("[data-event-results] tr").first().innerText();
+  assert(rowText.toLowerCase().includes("dylan")&&rowText.toLowerCase().includes("tim")&&rowText.includes("52"),"Crew points and drivers not visible");
   assert(!rowText.includes("25"),"Raw ACC points must never be presented as WorldGT points");
   assert.equal(await page.locator("[data-event-calendar]").getAttribute("href"),"calendrier.html?type=WGT");
   assert.equal(await page.locator("[data-event-ranking]").getAttribute("href"),"gtworld.html#classement-equipes");
@@ -168,7 +168,7 @@ try {
   assert((await page.locator("[data-recent-category=CALENDAR] .atx-recent-list a").first().getAttribute("href")).includes("archive-ol#resultats"),"Open Lobby published results link wrong");
   await page.goto(origin+"/gtworld.html#classement-equipes",{waitUntil:"domcontentloaded"});
   await page.locator("#wgt-points-exemple").waitFor();
-  assert((await page.locator(".atx-scoring-example").innerText()).includes("Dylan"),"WorldGT points example missing");
+  assert((await page.locator(".atx-scoring-example").innerText()).toLowerCase().includes("dylan"),"WorldGT points example missing");
   console.log("BROWSER: WorldGT → calendar → race → crew results → team standings and Open Lobby archives OK");
 
   await page.goto(origin+"/classement.html",{waitUntil:"domcontentloaded"});
