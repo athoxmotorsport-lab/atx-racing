@@ -78,3 +78,21 @@ h2{font-size:clamp(34px,4.4vw,56px);font-style:normal;line-height:1;letter-spaci
   }
   .result-awards{justify-self:start;justify-content:flex-start}
 }
+
+/* 2026-09-20: normalisation des éléments du header et des images des pilotes. */
+.utility-actions .language-options{display:flex;align-items:center;gap:7px;flex:0 0 auto}
+.utility-actions .language-option{box-sizing:border-box;display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;min-width:44px;min-height:44px;padding:6px}
+.utility-actions .language-option img{display:block;box-sizing:border-box;width:30px!important;height:21px!important;max-width:30px;max-height:21px;object-fit:contain;aspect-ratio:10/7}
+.utility-actions .header-profile{align-items:center;min-height:42px;max-width:min(190px,30vw)}
+.utility-actions .header-profile>span{box-sizing:border-box;display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;min-width:34px;min-height:34px;max-width:34px;max-height:34px;overflow:hidden;border-radius:50%}
+.utility-actions .header-profile>span img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;aspect-ratio:1;object-fit:cover}
+[data-driver-profile] .panini-photo{display:grid;place-items:center;min-height:165px}
+[data-driver-profile] .panini-photo .avatar{box-sizing:border-box;display:grid;place-items:center;flex:0 0 100px;width:100px;height:100px;min-width:100px;min-height:100px;max-width:100px;max-height:100px;border:1px solid var(--brand-metal);border-radius:50%;overflow:hidden;font-size:32px}
+[data-driver-profile] .panini-photo .avatar img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;aspect-ratio:1;object-fit:cover;object-position:center}
+[data-ranking-circuits].circuits-grid{align-items:stretch}
+[data-ranking-circuits] .ranking-circuit-card.circuit-visual-card{height:100%;min-height:250px}
+[data-ranking-circuits] .ranking-circuit-card .circuit-card-media{box-sizing:border-box;display:block;flex:0 0 132px;width:100%;height:132px;min-height:132px;max-height:132px;overflow:hidden}
+[data-ranking-circuits] .ranking-circuit-card .circuit-card-media img{display:block;width:100%;height:100%;min-height:0;max-height:100%;object-fit:cover;object-position:center}
+.driver-track-row .driver-track-media{min-height:112px;height:100%}
+.driver-track-row .driver-track-media img{display:block;width:100%;height:100%;min-height:0;max-height:100%;object-fit:cover;object-position:center}
+@media(max-width:620px){.utility-actions .header-profile{max-width:42px}.utility-actions .header-profile>span{flex-basis:32px;width:32px;height:32px;min-width:32px;min-height:32px}.utility-actions .language-option{flex-basis:40px;width:40px;min-width:40px}}
