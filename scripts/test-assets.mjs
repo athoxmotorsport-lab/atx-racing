@@ -86,7 +86,7 @@ try {
   const steam = await page.locator('[data-steam-login]').first().getAttribute("href");
   assert(steam && steam.includes("/functions/v1/auth-steam"),"Steam login link missing");
   await page.locator(".atx-alert-bell").click();
-  await page.locator(".atx-alert-panel .atx-alert-item").first.waitFor();
+  await page.locator(".atx-alert-panel .atx-alert-item").first().waitFor();
   assert((await page.locator(".atx-alert-panel").innerText()).includes("Record"),"bell fails to display notification");
   const toggle=page.locator(".side-nav-group-toggle").first();
   await toggle.click();
