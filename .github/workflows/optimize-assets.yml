@@ -1,0 +1,47 @@
+name: Optimize ATX Racing assets
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/build-assets.mjs
+      - scripts/test-assets.mjs
+      - .github/workflows/optimize-assets.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atx-assets-build-main
+  cancel-in-progress: true
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned build and browser test tools
+        run: npm install --no-save --no-package-lock terser@5.36.0 clean-css@5.3.3 playwright@1.55.0
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+      - name: Build minified files and preserve original load order
+        run: node scripts/build-assets.mjs
+      - name: Check all pages, links, navigation, rankings, bell and Steam link
+        run: node scripts/test-assets.mjs
+      - name: Publish only validated assets and HTML
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- atx-core.min.css atx-home.min.css race-alerts.min.css *.min.js *.html events/*.html
+          if git diff --cached --quiet; then
+            echo "No generated changes."
+          else
+            git commit -m "Build minified ATX assets (Chromium smoke tests passed) [skip ci]"
+            git push origin HEAD:main
+          fi
