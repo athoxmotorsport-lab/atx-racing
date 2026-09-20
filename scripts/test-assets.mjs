@@ -83,7 +83,7 @@ try {
   await page.goto(origin+"/index.html",{waitUntil:"domcontentloaded"});
   await page.locator(".atx-alert-bell").waitFor();
   assert(await page.locator(".utility-bar").count(),"header missing");
-  const steam = await page.locator('[data-steam-login]').first.getAttribute("href");
+  const steam = await page.locator('[data-steam-login]').first().getAttribute("href");
   assert(steam && steam.includes("/functions/v1/auth-steam"),"Steam login link missing");
   await page.locator(".atx-alert-bell").click();
   await page.locator(".atx-alert-panel .atx-alert-item").first.waitFor();
