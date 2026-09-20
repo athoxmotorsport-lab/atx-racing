@@ -21,7 +21,7 @@
 
   const scheduleLabel = event => {
     const race = (Array.isArray(event.event_schedule) ? event.event_schedule : []).find(slot => slot && slot.key === "race");
-    const start = race && typeof race.start === "string" && /^\\d{1,2}:\\d{2}$/.test(race.start) ? race.start.replace(":", "h") : "";
+    const start = race && typeof race.start === "string" && /^[0-9]{1,2}:[0-9]{2}$/.test(race.start) ? race.start.replace(":", "h") : "";
     return start ? label("Course à ", "Race at ") + start + " · " + label("Essais dès ", "Practice from ") + timeLabel(event)
       : label("Début de l’événement : ", "Event starts: ") + timeLabel(event);
   };
