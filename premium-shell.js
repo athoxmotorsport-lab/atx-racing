@@ -134,7 +134,7 @@
     stylesheet.dataset.atxRaceAlerts = '';
     document.head.append(stylesheet);
     const script = document.createElement('script');
-    script.src = prefix + 'race-alerts.js?v=20260920';
+    script.src = prefix + 'race-alerts.js?v=20260920-notifs2';
     script.defer = true;
     document.head.append(script);
   }
