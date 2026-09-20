@@ -1,4 +1,5 @@
 import { adminClient } from "../_shared/auth.ts";
+import { worldGTPoints } from "../_shared/worldgt-scoring.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "https://athoxmotorsport-lab.github.io",
@@ -64,7 +65,7 @@ Deno.serve(async (request) => {
 
   const supabase = adminClient();
   const { data: event, error } = await supabase.from("events")
-    .select("id, slug, title_fr, title_en, circuit_name, starts_at, duration_minutes, max_drivers, simgrid_url, image_url, server_name, is_official, car_class, schedule_timezone_label, event_schedule, mandatory_pit_stop, mandatory_tyre_change, mandatory_refuelling, fixed_refuelling_seconds, time_multiplier")
+    .select("id, slug, title_fr, title_en, event_type, status, circuit_name, starts_at, duration_minutes, max_drivers, simgrid_url, image_url, server_name, is_official, car_class, schedule_timezone_label, event_schedule, mandatory_pit_stop, mandatory_tyre_change, mandatory_refuelling, fixed_refuelling_seconds, time_multiplier")
     .eq("slug", slug).eq("is_public", true).maybeSingle();
   if (error) return json({ error: "server_error" }, 500);
   if (!event) return json({ error: "event_not_found" }, 404);
@@ -81,5 +82,46 @@ Deno.serve(async (request) => {
     const driver = Array.isArray(result.driver) ? result.driver[0] : result.driver;
     return [result.driver_id, driver];
   }));
-  return json({ event, results: results ?? [], honours: (honours ?? []).map((honour) => ({ ...honour, driver: driverById.get(honour.driver_id) ?? null })) });
+  const wgtTitle = [event.server_name, event.title_fr, event.title_en].join(" | ");
+  const isWorldGT = /(?:^|[^a-z0-9])WGT(?=$|[^a-z0-9])|WORLD\\s*GT/i.test(wgtTitle)
+    || (["sprint","endurance"].includes(String(event.event_type)) && /\\b(SPRINT|ENDU)\\b/i.test(wgtTitle));
+  let teamResults: Array<{
+    team_name: string; finish_position: number | null; best_lap_ms: number | null;
+    points: number; fastest_lap_bonus: number; members: string[]; car_model_name: string | null;
+  }> = [];
+  let teamAssignmentsComplete = true;
+  if (isWorldGT && (results ?? []).length) {
+    const { data: registrations, error: regError } = await supabase.from("registrations")
+      .select("event_id, driver_id, team_name").eq("event_id", event.id);
+    if (regError) return json({ error: "server_error" }, 500);
+    const { entries, driverPoints } = worldGTPoints(
+      (results ?? []).map((result) => ({
+        event_id: event.id, driver_id: result.driver_id, status: result.status,
+        finish_position: result.finish_position, best_lap_ms: result.best_lap_ms,
+      })),
+      registrations ?? [],
+    );
+    teamAssignmentsComplete = (results ?? []).filter((row) =>
+      row.status !== "dns" && row.status !== "dsq"
+    ).every((row) => driverPoints.has(event.id + "|" + row.driver_id));
+    teamResults = entries.map((entry) => {
+      const memberRows = (results ?? []).filter((result) => entry.driver_ids.includes(result.driver_id));
+      return {
+        team_name: entry.team_name, finish_position: entry.finish_position,
+        best_lap_ms: entry.best_lap_ms, points: entry.points,
+        fastest_lap_bonus: entry.fastest_lap_bonus,
+        members: memberRows.map((row) => {
+          const driver = Array.isArray(row.driver) ? row.driver[0] : row.driver;
+          return driver?.display_name || "ACC Driver";
+        }),
+        car_model_name: memberRows.find((row) => row.car_model_name)?.car_model_name ?? null,
+      };
+    }).sort((first, second) => (first.finish_position ?? 999) - (second.finish_position ?? 999)
+      || first.team_name.localeCompare(second.team_name));
+  }
+  return json({
+    event, results: results ?? [], team_results: teamResults,
+    is_worldgt: isWorldGT, team_assignments_complete: teamAssignmentsComplete,
+    honours: (honours ?? []).map((honour) => ({ ...honour, driver: driverById.get(honour.driver_id) ?? null })),
+  });
 });
