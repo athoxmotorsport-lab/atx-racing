@@ -18,6 +18,13 @@
     {timeZone:"Europe/Brussels",hour:"2-digit",minute:"2-digit"}
   ).format(new Date(startOf(event)));
   const name = event => (document.documentElement.lang === "en" ? event.title_en || event.title_fr : event.title_fr || event.title_en) || event.circuit_name || "ATX Racing";
+
+  const scheduleLabel = event => {
+    const race = (Array.isArray(event.event_schedule) ? event.event_schedule : []).find(slot => slot && slot.key === "race");
+    const start = race && typeof race.start === "string" && /^\\d{1,2}:\\d{2}$/.test(race.start) ? race.start.replace(":", "h") : "";
+    return start ? label("Course à ", "Race at ") + start + " · " + label("Essais dès ", "Practice from ") + timeLabel(event)
+      : label("Début de l’événement : ", "Event starts: ") + timeLabel(event);
+  };
   const read = (storage, key) => { try { return JSON.parse(storage.getItem(key) || "{}"); } catch { return {}; } };
   const SEEN = "atx-race-notifications-seen-v1";
   const DISMISSED = "atx-race-popup-seen-v1";
@@ -68,7 +75,7 @@
       const title = document.createElement("strong");
       title.textContent = label("Course aujourd’hui · ", "Race today · ") + name(event);
       const meta = document.createElement("span");
-      meta.textContent = (event.circuit_name || "ACC") + " · " + timeLabel(event) + label(" (heure belge)", " (Belgium time)");
+      meta.textContent = (event.circuit_name || "ACC") + " · " + scheduleLabel(event) + label(" (heure belge)", " (Belgium time)");
       link.append(title,meta);
       panel.append(link);
     });
@@ -104,7 +111,7 @@
     const title = document.createElement("h2");
     title.id = "atx-race-popup-title"; title.textContent = name(event);
     const description = document.createElement("p");
-    description.textContent = (event.circuit_name || "ACC") + " · " + timeLabel(event) + label(" (heure belge)", " (Belgium time)");
+    description.textContent = (event.circuit_name || "ACC") + " · " + scheduleLabel(event) + label(" (heure belge)", " (Belgium time)");
     const actions = document.createElement("div");
     actions.className = "atx-race-buttons";
     const detail = document.createElement("a");
@@ -137,8 +144,9 @@
       const data = await response.json();
       const now = Date.now();
       const visible = [...(data.today || []),...(data.events || [])].filter(event => {
+        if (!event || typeof event !== "object") return false;
         const start = startOf(event);
-        return event && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(event.slug || "")
+        return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(event.slug || "")
           && event.status !== "cancelled" && event.status !== "draft" && event.simgrid_url
           && Number.isFinite(start) && parts(start) === parts(now)
           && now < start + (Math.max(60, Number(event.duration_minutes) || 60) + 120) * 60000;
