@@ -1,4 +1,4 @@
-(() => {
+document.addEventListener('DOMContentLoaded', () => {
   "use strict";
   const base = "https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/public-event";
   const prefix = location.pathname.includes("/events/") ? "../" : "";
@@ -174,4 +174,4 @@
   };
   refresh();
   setInterval(refresh, 30000);
-})();
+}, { once: true });
