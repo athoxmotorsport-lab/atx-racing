@@ -153,7 +153,7 @@ try {
   await page.locator("[data-event-journey]:not([hidden])").waitFor({timeout:15000});
   await page.locator("[data-event-results] tr").first().waitFor({timeout:15000});
   assert.equal(await page.locator("[data-event-results] tr").count(),1,"WorldGT result must be one row per crew, not per driver");
-  const rowText=await page.locator("[data-event-results] tr").first().innerText();
+  const rowText=await page.locator("[data-event-results] tr").first().innerText();console.log("WORLDGT DEBUG:",JSON.stringify({rowText,title:await page.locator("[data-event-title]").innerText(),category:await page.locator("[data-public-event]").getAttribute("data-event-category"),html:await page.locator("[data-event-results] tr").first().innerHTML()}));
   assert(rowText.includes("Dylan")&&rowText.includes("Tim")&&rowText.includes("52"),"Crew points and drivers not visible");
   assert(!rowText.includes("25"),"Raw ACC points must never be presented as WorldGT points");
   assert.equal(await page.locator("[data-event-calendar]").getAttribute("href"),"calendrier.html?type=WGT");
