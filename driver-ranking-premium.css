@@ -8,6 +8,7 @@
 @media(max-width:1050px){.driver-premium-control{grid-template-columns:1fr}.driver-premium-select-slot{min-height:auto}.driver-track-row{grid-template-columns:150px 1fr 1fr}.driver-track-sectors{grid-column:1/-1;border-top:1px solid rgba(213,215,218,.14)}}@media(max-width:760px){.driver-premium-identity{align-items:flex-start}.driver-premium-avatar{flex-basis:82px;width:82px;height:82px}.driver-name-head>strong{font-size:23px}.driver-mini-crest{min-width:125px}.driver-track-row{grid-template-columns:120px 1fr}.driver-track-time{grid-column:1/-1;border-top:1px solid rgba(213,215,218,.14)}.driver-track-sectors{grid-column:1/-1}.driver-track-media img{min-height:100px}.driver-premium-hero{padding:28px 22px}}@media(max-width:520px){.driver-premium-identity{display:grid}.driver-compact-stats{flex-wrap:wrap;gap:8px}.driver-compact-stats span{border:0;padding:0 8px 0 0}.driver-track-row{grid-template-columns:1fr}.driver-track-media{height:120px}.driver-track-name{border-top:1px solid rgba(213,215,218,.14)}.driver-track-sectors b{font-size:14px}}
 
 /* Dimensions de vignette identiques pour chaque circuit sur la vue par pilote. */
-.driver-track-row .driver-track-media{min-height:112px;height:100%}
-.driver-track-row .driver-track-media img{display:block;width:100%;height:100%;min-height:0;max-height:100%;object-fit:cover;object-position:center}
-@media(max-width:520px){.driver-track-row .driver-track-media{height:120px;min-height:120px}}
+/* Une vignette de hauteur fixe par ligne, indépendamment du texte/secteurs. */
+.driver-track-row .driver-track-media{position:relative;align-self:start;box-sizing:border-box;min-height:112px;height:112px;max-height:112px;overflow:hidden}
+.driver-track-row .driver-track-media img{position:absolute;inset:0;display:block;width:100%;height:100%;min-height:0;max-height:100%;object-fit:cover;object-position:center}
+@media(max-width:520px){.driver-track-row .driver-track-media{min-height:120px;height:120px;max-height:120px}}
