@@ -33,6 +33,20 @@ if (alertResult.errors.length || !alertResult.styles) throw new Error(alertResul
 await write("race-alerts.min.css", alertResult.styles);
 console.log("CSS race-alerts.min.css", alertCSS.length, "->", alertResult.styles.length);
 
+// Page-specific CSS: keep the current cascade order and minify separately.
+const pageStyles = ["ranking-session-labels.css", "driver-ranking-premium.css", "team-ranking-premium.css", "profile-best-laps.css"];
+for (const source of pageStyles) {
+  const css = await read(source);
+  const result = minCSS.minify(css);
+  if (result.errors.length || !result.styles || result.styles.length >= css.length) {
+    throw new Error("Page CSS minification failed for " + source + ": " + result.errors.join("; "));
+  }
+  const dest = source.replace(/\.css$/, ".min.css");
+  if (dest === source) throw new Error("Unexpected CSS filename: " + source);
+  await write(dest, result.styles);
+  console.log("CSS", dest, css.length, "->", result.styles.length);
+}
+
 // Each script remains a separate deferred script to preserve its own IIFE and
 // the DOMContentLoaded order of main, premium shell and race alerts.
 const javaScriptFiles = (await readdir(root))
@@ -92,6 +106,13 @@ for (const path of allHTML) {
     throw new Error("Unexpected number of CSS files in " + path + ": " + baseParts);
   }
   if (hasBaseCSS !== replacedBase) throw new Error("Missing bundled CSS in " + path);
+  html = html.replace(/<link\b[^>]*\brel=["']stylesheet["'][^>]*>/gi, tag => {
+    const href = tag.match(/\bhref=(["'])(.*?)\1/i)?.[2];
+    if (!href) return tag;
+    const source = decodeAsset(href);
+    if (!pageStyles.includes(source)) return tag;
+    return tag.replace(href, prefix + source.replace(/\.css$/, ".min.css") + "?v=" + version);
+  });
 
   html = html.replace(/<script\b[^>]*\bsrc=(["'])(.*?)\1[^>]*><\/script>/gi, tag => {
     const match = tag.match(/\bsrc=(["'])(.*?)\1/i);
