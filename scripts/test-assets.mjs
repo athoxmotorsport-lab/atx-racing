@@ -93,13 +93,35 @@ const fixtureSectors = [
  {driver_id:fixtureDriverId,circuit_key:"monza",best_lap_ms:109321,best_lap_session_type:"FP",best_sector_1_ms:33011,best_sector_2_ms:35011,best_sector_3_ms:41300},
  {driver_id:fixtureDriverId,circuit_key:"barcelona",best_lap_ms:104501,best_lap_session_type:"Q",best_sector_1_ms:31011,best_sector_2_ms:35000,best_sector_3_ms:38490}
 ];
+const fixtureEvents = ["WGT","DR","OL"].map((category,index)=>({
+ slug:"fixture-"+category.toLowerCase(), event_type:category==="WGT"?"sprint":category==="DR"?"daily_race":"special_event",
+ status:"registration_open", title_fr:category+" · Monza", title_en:category+" · Monza",
+ server_name:"ATXRACING | "+category+" | Monza", circuit_name:"Monza",
+ starts_at:new Date(Date.now()+(index+1)*86400000).toISOString(),
+ duration_minutes:60,max_drivers:30,simgrid_url:"https://www.thesimgrid.com/communities/atxracing",
+ image_url:"assets/brand/atx-racing-banner.webp",result_count:0
+}));
+const fixtureArchives = ["WGT","DR","OL"].map((category,index)=>({
+ ...fixtureEvents[index],slug:"archive-"+category.toLowerCase(),
+ status:"completed", starts_at:new Date(Date.now()-(index+1)*86400000).toISOString(), result_count:2
+}));
+const fixtureCourse = {
+ event:{...fixtureEvents[0],event_schedule:[],car_class:"GT3",time_multiplier:1,
+ mandatory_pit_stop:true,mandatory_tyre_change:false,mandatory_refuelling:false},
+ is_worldgt:true,team_assignments_complete:true,
+ results:[{driver_id:"dylan",driver:{display_name:"Dylan"},status:"classified",finish_position:1,points:25,laps_completed:30,best_lap_ms:100000},
+ {driver_id:"tim",driver:{display_name:"Tim"},status:"classified",finish_position:1,points:25,laps_completed:30,best_lap_ms:101000}],
+ team_results:[{team_name:"ATX Motorsport Team 1",members:["Dylan","Tim"],finish_position:1,
+ best_lap_ms:100000,points:52,fastest_lap_bonus:2,laps_completed:30,car_model_name:"Ferrari 296 GT3"}],
+ honours:[]
+};
 const page = await browser.newPage();
 page.on("pageerror", err => errors.push(err.message));
 page.on("response", r => { if (r.url().startsWith(origin) && r.status() >= 400) errors.push("Local asset " + r.status() + ": " + r.url()); });
 await page.route("https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/**", async route => {
   const url=route.request().url();
   const body = url.includes("/public-event")
-    ? {events:[],today:[],archives:[],notifications:[{id:"smoke-record-1",type:"circuit_record",title_fr:"Record de test",title_en:"Test record",message_fr:"Temps de référence amélioré",message_en:"Reference lap improved",related_link:"classement.html#circuit"}]}
+    ? (url.includes("slug=")?fixtureCourse:{events:fixtureEvents,today:[],archives:fixtureArchives,notifications:[{id:"smoke-record-1",type:"circuit_record",title_fr:"Record de test",title_en:"Test record",message_fr:"Temps de référence amélioré",message_en:"Reference lap improved",related_link:"classement.html#circuit"}]})
     : url.includes("/public-leaderboard")
     ? {drivers:[fixtureDriver],circuits:fixtureCircuits,teams:[],honours:[]}
     : url.includes("/public-driver-sectors") ? {sectors:fixtureSectors}
@@ -121,6 +143,34 @@ try {
   await toggle.click();
   assert.equal(await toggle.getAttribute("aria-expanded"),"true","navigation toggle");
   console.log("BROWSER: homepage navigation, bell, notification content and Steam entry point OK");
+  await page.goto(origin+"/calendrier.html?type=WGT",{waitUntil:"domcontentloaded"});
+  await page.locator(".event-card").first().waitFor({timeout:15000});
+  assert.equal(await page.locator(".event-card").count(),1,"WorldGT calendar must exclude DR and OL cards");
+  assert.equal(await page.locator('[data-calendar-category="WGT"]').getAttribute("aria-current"),"page");
+  assert.equal(await page.locator('[data-calendar-journey] [data-calendar-results]').getAttribute("href"),"gtworld.html#classement-equipes");
+  assert((await page.locator(".event-card .btn.primary").getAttribute("href")).includes("course.html?event=fixture-wgt"),"Calendar course link missing");
+  await page.locator(".event-card .btn.primary").click();
+  await page.locator("[data-event-journey]:not([hidden])").waitFor({timeout:15000});
+  await page.locator("[data-event-results] tr").first().waitFor({timeout:15000});
+  assert.equal(await page.locator("[data-event-results] tr").count(),1,"WorldGT result must be one row per crew, not per driver");
+  const rowText=await page.locator("[data-event-results] tr").first().innerText();
+  assert(rowText.toLowerCase().includes("dylan")&&rowText.toLowerCase().includes("tim")&&rowText.includes("52"),"Crew points and drivers not visible");
+  assert(!rowText.includes("25"),"Raw ACC points must never be presented as WorldGT points");
+  assert.equal(await page.locator("[data-event-calendar]").getAttribute("href"),"calendrier.html?type=WGT");
+  assert.equal(await page.locator("[data-event-ranking]").getAttribute("href"),"gtworld.html#classement-equipes");
+  assert.equal(await page.locator(".side-nav-group[data-group=courses]").locator(".side-nav-group-toggle").getAttribute("aria-expanded"),"true");
+  await page.locator("[data-event-calendar]").click();
+  await page.locator(".event-card").first().waitFor({timeout:15000});
+  await page.goto(origin+"/calendrier.html?type=OL",{waitUntil:"domcontentloaded"});
+  await page.locator("[data-calendar-open-lobby]:not([hidden])").waitFor({timeout:15000});
+  await page.locator("[data-recent-category=CALENDAR] .atx-recent-list a").first().waitFor({timeout:15000});
+  assert.equal(await page.locator("[data-recent-category=CALENDAR] .atx-recent-list a").count(),1,"Open Lobby archive filter wrong");
+  assert((await page.locator("[data-recent-category=CALENDAR] .atx-recent-list a").first().getAttribute("href")).includes("archive-ol#resultats"),"Open Lobby published results link wrong");
+  await page.goto(origin+"/gtworld.html#classement-equipes",{waitUntil:"domcontentloaded"});
+  await page.locator("#wgt-points-exemple").waitFor();
+  assert((await page.locator(".atx-scoring-example").innerText()).toLowerCase().includes("dylan"),"WorldGT points example missing");
+  console.log("BROWSER: WorldGT → calendar → race → crew results → team standings and Open Lobby archives OK");
+
   await page.goto(origin+"/classement.html",{waitUntil:"domcontentloaded"});
   await page.locator(".atx-alert-bell").waitFor();
   await page.locator('[data-alltime-leaderboard]:not([hidden])').waitFor({timeout:15000});

@@ -21,7 +21,7 @@
   <meta property="og:title" content="Classement officiel de course | ATX Racing">
   <meta property="og:description" content="Classement complet, points, tours et meilleurs chronos d’une course ATX Racing.">
   <link rel="preconnect" href="https://twjpjzalyvbsdpbzhqln.supabase.co" crossorigin>
-  <link rel="stylesheet" href="atx-core.min.css?v=20260920-polish1">
+  <link rel="stylesheet" href="atx-core.min.css?v=20260920-worldgt-nav2">
   
   <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
   <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
@@ -49,22 +49,22 @@
     <section>
       <div class="wrap">
         <div class="section-label" data-fr="Classement officiel" data-en="Official standings">Classement officiel</div>
-        <h1 data-event-title>Daily Race · ACC</h1>
-        <div class="event-result-meta"><span data-event-circuit>—</span><span data-event-date>—</span></div>
-        <div class="public-event-overview" data-event-overview hidden>
+        <h1 data-event-title>Course ATX Racing · ACC</h1>
+        <nav class="atx-journey" data-event-journey aria-label="Navigation de la course" hidden><a data-event-format href="gtworld.html">01 · WorldGT</a><span class="atx-journey-separator" aria-hidden="true">/</span><a data-event-calendar href="calendrier.html?type=WGT">02 · Calendrier</a><span class="atx-journey-separator" aria-hidden="true">/</span><a data-event-race href="#programme" aria-current="page">03 · Course</a><span class="atx-journey-separator" aria-hidden="true">/</span><a data-event-result-link href="#resultats">04 · Résultats</a><span class="atx-journey-separator" aria-hidden="true">/</span><a data-event-ranking href="classement.html?type=WGT#points">05 · Classement</a></nav><div class="event-result-meta"><span data-event-circuit>—</span><span data-event-date>—</span></div>
+        <div class="public-event-overview" id="programme" data-event-overview hidden>
           <div><h2 data-fr="Programme" data-en="Schedule">Programme</h2><div class="schedule public-event-schedule" data-event-schedule></div></div>
           <div><h2 data-fr="Paramètres de course" data-en="Race settings">Paramètres de course</h2><div class="schedule-grid-grid" data-event-settings></div></div>
           <div class="actions"><a class="btn primary" data-event-registration target="_blank" rel="noopener" data-fr="S’inscrire" data-en="Register">S’inscrire</a><a class="btn" href="reglement.html" data-fr="Lire le règlement" data-en="Read the rules">Lire le règlement</a></div>
         </div>
-        <h2 class="results-heading" data-fr="Résultats officiels" data-en="Official results">Résultats officiels</h2>
+        <h2 id="resultats" class="results-heading" data-fr="Résultats officiels" data-en="Official results">Résultats officiels</h2>
         <p class="empty-state" data-event-status data-fr="Chargement du classement…" data-en="Loading standings…">Chargement du classement…</p>
         <div class="event-honours" data-event-honours hidden>
           <article class="honour-card fast"><div class="honour-emblem">FD</div><div><small>Fast Driver</small><strong data-fast-driver>—</strong><span data-fast-detail>—</span></div></article>
           <article class="honour-card gentleman"><div class="honour-emblem">GD</div><div><small>Gentleman Driver</small><strong data-gentleman-driver>—</strong><span data-gentleman-detail>—</span></div></article>
         </div>
-        <div class="results-table-wrap" data-event-results-wrap hidden>
+        <p class="atx-scoring-example" data-event-points-note hidden><strong>Points WorldGT :</strong> pour chaque équipe engagée, le résultat officiel de son équipage détermine ses points et ceux de chacun de ses pilotes participants, bonus du meilleur tour compris. Les points individuels bruts de l’import ACC ne constituent pas les points WorldGT. Les points de chaque équipage ne sont publiés qu’après association des pilotes à leur équipe pour cette manche. <a href="gtworld.html#wgt-points-exemple">Consulter le barème et l’exemple</a>.</p><div class="results-table-wrap" data-event-results-wrap hidden>
           <table class="results-table">
-            <thead><tr><th data-fr="Place" data-en="Pos.">Place</th><th data-fr="Pilote" data-en="Driver">Pilote</th><th data-fr="Voiture" data-en="Car">Voiture</th><th data-fr="Tours" data-en="Laps">Tours</th><th data-fr="Meilleur tour" data-en="Best lap">Meilleur tour</th><th>Points</th></tr></thead>
+            <thead><tr><th data-fr="Place" data-en="Pos.">Place</th><th data-event-driver-label data-fr="Pilote" data-en="Driver">Pilote</th><th data-fr="Voiture" data-en="Car">Voiture</th><th data-fr="Tours" data-en="Laps">Tours</th><th data-fr="Meilleur tour" data-en="Best lap">Meilleur tour</th><th>Points</th></tr></thead>
             <tbody data-event-results></tbody>
           </table>
         </div>
@@ -72,8 +72,8 @@
     </section>
   </main>
   <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="reglement.html" data-fr="Règlement" data-en="Rules">Règlement</a><a href="confidentialite.html" data-fr="Confidentialité" data-en="Privacy">Confidentialité</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
-  <script src="main.min.js?v=20260920-polish1" defer></script>
-  <script src="premium-shell.min.js?v=20260920-polish1" data-premium-shell defer></script>
+  <script src="main.min.js?v=20260920-worldgt-nav2" defer></script>
+  <script src="premium-shell.min.js?v=20260920-worldgt-nav2" data-premium-shell defer></script>
   <script src="atx-experience.min.js?v=20260920-polish1" data-atx-experience defer></script>
 </body>
 </html>
