@@ -25,16 +25,18 @@ Deno.serve(async (request) => {
   try {
     const supabase = adminClient();
     const { data: events, error: eventsError } = await supabase.from("events")
-      .select("id, slug, title_fr, title_en, circuit_name, starts_at, status, is_public")
+      .select("id, slug, title_fr, title_en, circuit_name, starts_at, status, is_public, server_name, event_type")
       .eq("is_public", true).order("starts_at", { ascending: true });
     if (eventsError) throw eventsError;
 
     const gtEvents = (events ?? []).flatMap((event) => {
-      const format = formatFromTitle(event.title_fr) ?? formatFromTitle(event.title_en);
+      const labelledWorldGT = /(?:^|[^a-z0-9])WGT(?=$|[^a-z0-9])|WORLD\s*GT/i.test([event.server_name, event.title_fr, event.title_en].join(" | "));
+      const format = formatFromTitle(event.title_fr) ?? formatFromTitle(event.title_en)
+        ?? (labelledWorldGT && event.event_type === "sprint" ? "SPRINT" : labelledWorldGT && event.event_type === "endurance" ? "ENDU" : null);
       return format ? [{ ...event, format }] : [];
     });
     const ids = gtEvents.map((event) => event.id);
-    if (!ids.length) return json({ season: "GT World Saison 1", points_system: { positions: Object.fromEntries(pointsByPosition), fastest_lap: 2 }, standings: [], events: [] });
+    if (!ids.length) return json({ season: "WorldGT Saison 1", points_system: { positions: Object.fromEntries(pointsByPosition), fastest_lap: 2 }, standings: [], events: [] });
 
     const { data: results, error: resultsError } = await supabase.from("results")
       .select("event_id, driver_id, status, finish_position, best_lap_ms, driver:drivers!inner(display_name)")
@@ -93,13 +95,13 @@ Deno.serve(async (request) => {
 
     return json({
       generated_at: new Date().toISOString(),
-      season: "GT World Saison 1",
+      season: "WorldGT Saison 1",
       points_system: { positions: Object.fromEntries(pointsByPosition), fastest_lap: 2 },
       standings,
       events: eventPayload,
     });
   } catch (error) {
-    console.error("GT World leaderboard failed", error instanceof Error ? error.message : "unknown error");
+    console.error("WorldGT leaderboard failed", error instanceof Error ? error.message : "unknown error");
     return json({ error: "server_error" }, 500);
   }
 });
