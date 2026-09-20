@@ -126,19 +126,6 @@
   syncNavActive();
   window.addEventListener('hashchange', syncNavActive);
 
-  // Les alertes sont chargées depuis le shell partagé pour toutes les pages.
-  if (!document.querySelector('[data-atx-race-alerts]')) {
-    const stylesheet = document.createElement('link');
-    stylesheet.rel = 'stylesheet';
-    stylesheet.href = prefix + 'race-alerts.css?v=20260920';
-    stylesheet.dataset.atxRaceAlerts = '';
-    document.head.append(stylesheet);
-    const script = document.createElement('script');
-    script.src = prefix + 'race-alerts.js?v=20260920-notifs2';
-    script.defer = true;
-    document.head.append(script);
-  }
-
   const footer = document.querySelector('.site-footer');
   if (footer) {
     footer.innerHTML = `<div class="wrap"><div class="premium-footer-grid"><div><a class="brand" href="${prefix}index.html">ATX <span>Racing</span></a><p class="premium-footer-copy" data-fr="Compétition ACC, événements, classements et progression pilote — une identité ATX Motorsport." data-en="ACC competition, events, standings and driver progression — an ATX Motorsport identity.">Compétition ACC, événements, classements et progression pilote — une identité ATX Motorsport.</p></div><nav class="premium-footer-links" aria-label="Footer"><a href="${prefix}index.html">Accueil</a><a href="${prefix}gtworld.html">World GT</a><a href="${prefix}daily-race.html">Daily Race</a><a href="${prefix}open-lobby.html">Open Lobby</a><a href="${prefix}calendrier.html">Calendrier</a><a href="${prefix}classement.html">Classements</a><a href="${prefix}archives.html">Archives</a><a href="${prefix}reglement.html">Règlement</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="${prefix}confidentialite.html">Confidentialité</a></nav></div><div class="premium-footer-legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div>`;
