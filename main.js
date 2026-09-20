@@ -501,7 +501,7 @@
         eventLoader?.remove();
         if (eventList) {
           const existingKeys = new Set([...eventList.querySelectorAll('[data-event-key]')].map(card => card.dataset.eventKey));
-          (payload.events || []).slice().sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).forEach(item => {
+          (payload.events || []).filter(item => { const start = Date.parse(item.starts_at); return Number.isFinite(start) && start >= Date.now() && !['cancelled','draft'].includes(item.status); }).slice().sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).forEach(item => {
           const key = eventKey(item.starts_at, item.circuit_name);
           if (!item.simgrid_url || !item.image_url || existingKeys.has(key)) return;
           existingKeys.add(key);
