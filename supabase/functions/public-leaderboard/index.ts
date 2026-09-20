@@ -163,7 +163,7 @@ const raceCategory = (event: unknown): RaceCategory => {
   const source = [row?.server_name, row?.title_fr, row?.title_en].filter(Boolean).join(" | ");
   const code = source.match(/(?:^|[^a-z0-9])(WGT|DR|OL)(?=$|[^a-z0-9])/i)?.[1]?.toUpperCase();
   if (code === "WGT" || code === "DR" || code === "OL") return code;
-  if (/\b(SPRINT|ENDU)\b/i.test(source)) return "WGT";
+  if (/\b(SPRINT|ENDU|WORLD\s*GT)\b/i.test(source)) return "WGT";
   if (/\bDAILY\s+RACE\b/i.test(source)) return "DR";
   const date = String(row?.starts_at ?? "").slice(0, 10);
   if (["2026-09-09", "2026-09-11", "2026-09-13"].includes(date)) return "DR";
