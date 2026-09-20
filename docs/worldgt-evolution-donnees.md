@@ -12,6 +12,8 @@ Pour chaque manche, identifier l'équipe engagée (nom/identifiant d'équipe de 
 
 Les deux courses Sprint d'une soirée sont deux manches scorées distinctement. Les meilleurs temps de référence continuent à intégrer les sessions FP/Q/R sans changement de leurs données ni de leur affichage.
 
-## Déploiement
+## Réalisation et exploitation
 
-La règle ci-dessus remplace intégralement les anciennes hypothèses de regroupement d'équipes et les anciennes questions de bonus. Avant la mise en production, adapter et tester la correspondance équipe-pilotes et les deux endpoints de classement, conserver l'historique et les autorisations, puis déployer les fonctions et le site de concert. Aucune migration destructive et aucune modification de production ne découlent de ce document.
+La règle ci-dessus remplace intégralement les anciennes hypothèses de regroupement d'équipes et les anciennes questions de bonus. Le calcul WorldGT a été centralisé dans `supabase/functions/_shared/worldgt-scoring.ts` et réutilisé par les fonctions `public-gtworld`, `public-leaderboard` et `public-event`. La gestion administrateur `manage-gtworld` permet d'associer à chaque manche les pilotes importés à leur **équipe de course exacte**. Les quatre fonctions Edge ont été déployées le 20 septembre 2026, sans DDL ni suppression de données. Les tests du barème et du parcours navigateur sont exécutés sur la pull request GitHub.
+
+**Limite des données existantes :** tant que les pilotes d'une manche n'ont pas été associés à Team 1, Team 2, etc. dans l'administration après l'import des résultats ACC, les points de cette manche restent en attente ; l'application n'invente ni nom d'équipe, ni équipage, ni points sur la base du seul profil des pilotes. Après l'association, chaque équipe apparaît indépendamment au classement et chacun de ses pilotes participants reçoit le même total, bonus compris. Le système ACC Collector et ses tables, les profils Steam, les meilleurs temps FP/Q/R et les classements DR/OL restent en place. Aucune migration destructive n'a été nécessaire pour ce changement.
