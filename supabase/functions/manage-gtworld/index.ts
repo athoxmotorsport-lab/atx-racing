@@ -1,7 +1,7 @@
 import { adminClient, assertAllowedOrigin, bearerToken, corsHeaders, hmacHex, jsonResponse } from "../_shared/auth.ts";
 
 const clean = (value: unknown, max = 96): string => typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, max) : "";
-const isGtWorld = (title: unknown): boolean => /^(SPRINT|ENDU)\b/i.test(String(title ?? "").trim());
+const isGtWorld = (event: {title_fr?:string|null;title_en?:string|null;server_name?:string|null;event_type?:string|null}): boolean => /^(SPRINT|ENDU)\b/i.test(String(event.title_fr ?? "").trim()) || /^(SPRINT|ENDU)\b/i.test(String(event.title_en ?? "").trim()) || ((event.event_type === "sprint" || event.event_type === "endurance") && /(?:^|[^a-z0-9])WGT(?=$|[^a-z0-9])|WORLD\s*GT/i.test([event.server_name,event.title_fr,event.title_en].join(" | ")));
 
 const requireAdmin = async (request: Request): Promise<void> => {
   const token = bearerToken(request);
@@ -25,10 +25,10 @@ Deno.serve(async (request) => {
     const supabase = adminClient();
 
     const { data: allEvents, error: eventError } = await supabase.from("events")
-      .select("id, slug, title_fr, title_en, circuit_name, starts_at, status")
+      .select("id, slug, title_fr, title_en, server_name, event_type, circuit_name, starts_at, status")
       .order("starts_at", { ascending: false });
     if (eventError) throw eventError;
-    const events = (allEvents ?? []).filter((event) => isGtWorld(event.title_fr) || isGtWorld(event.title_en));
+    const events = (allEvents ?? []).filter((event) => isGtWorld(event));
 
     if (request.method === "GET") {
       const ids = events.map((event) => event.id);
@@ -91,7 +91,7 @@ Deno.serve(async (request) => {
     if (message === "ORIGIN_NOT_ALLOWED") return jsonResponse(request, { error: "origin_not_allowed" }, 403);
     if (message === "UNAUTHORIZED") return jsonResponse(request, { error: "unauthorized" }, 401);
     if (message === "FORBIDDEN") return jsonResponse(request, { error: "forbidden" }, 403);
-    console.error("GT World management failed", message || "unknown error");
+    console.error("WorldGT management failed", message || "unknown error");
     return jsonResponse(request, { error: "server_error" }, 500);
   }
 });
