@@ -71,9 +71,9 @@ const worldApi=await readFile("supabase/functions/public-gtworld/index.ts","utf8
 for(const marker of ["atx:eventcategory","data-event-ranking","data-calendar-results","data-recent-category","data-ranking-journey","team_results"]){
   assert(main.includes(marker),"Main route missing "+marker);
 }
-for(const marker of ["gtworld.html#classement-equipes","id:\"courses\"","id:\"calendar\"","id:\"ranking\"","id:\"laps\"","atx:rankingcategory"]){
+for(const marker of ["gtworld.html#classement-equipes","courses.html","calendriers.html","classements.html","classement.html#circuit","fx-context-tabs","atx:rankingcategory"]){
   assert(shell.includes(marker),"Side navigation missing "+marker);
 }
 for(const [name,source] of [["detail",detailApi],["standings",standingsApi],["WorldGT",worldApi]])
   assert(source.includes('worldGTPoints'),"Scoring helper not shared by "+name+" endpoint");
-console.log("ROUTES: format → calendar → course → result → team standings and best-lap isolation markers OK");
+console.log("ROUTES: three category hubs, local tabs, format → calendar → course → results and team standings markers OK");
