@@ -52,9 +52,9 @@ assert(allSix.entries[0].driver_ids.every(driver=>allSix.driverPoints.get(event1
 console.log("WORLDGT: crew results, identical driver awards, bonus, unmapped teams, DSQ and six-driver endurance OK");
 
 const pages={
-  "gtworld.html":["data-journey-category=\"WGT\"","wgt-points-exemple","ATX Motorsport Team 1"],
-  "daily-race.html":["data-journey-category=\"DR\"","data-recent-category=\"DR\""],
-  "open-lobby.html":["data-journey-category=\"OL\"","data-recent-category=\"OL\"","lundis, mercredis et vendredis"],
+  "gtworld.html":["data-course-page=\"WGT\"","wgt-points-exemple","ATX Motorsport Team 1","id=\"calendrier\"","id=\"classement\""],
+  "daily-race.html":["data-course-page=\"DR\"","data-cat-recent"],
+  "open-lobby.html":["data-course-page=\"OL\"","data-cat-recent","lundis, mercredis et vendredis"],
   "calendrier.html":["data-calendar-journey","data-calendar-category=\"WGT\"","data-recent-category=\"CALENDAR\""],
   "classement.html":["data-ranking-journey","data-race-category=\"WGT\""],
   "course.html":["data-event-journey","data-event-results","id=\"resultats\"","data-event-points-note"],
