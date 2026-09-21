@@ -149,6 +149,8 @@ try {
   assert.equal(await page.locator(".fx-hub-card[data-category=WGT] .fx-hub-actions a").count(),3,"Every category needs presentation, calendar, ranking");
   await page.locator('.fx-hub-card[data-category=OL] .fx-primary').click();
   await page.waitForURL(/open-lobby\.html/);
+  await page.locator(".fx-open-lobby-poster img").waitFor();
+  assert(await page.locator(".fx-open-lobby-poster img").evaluate(img=>img.complete&&img.naturalWidth>=640),"Attached Open Lobby poster is missing or invalid");
   assert.equal(await page.locator(".fx-context-tabs a").count(),3,"Open Lobby must show three local navigation tabs");
   assert.equal(await page.locator(".fx-context-tabs a.active").first().innerText(),"PRÉSENTATION");
   await page.locator('.fx-context-tabs a[data-fx-tab=calendar]').click();
