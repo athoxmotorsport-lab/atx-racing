@@ -168,7 +168,7 @@ try {
   assert.equal(await page.locator('[data-calendar-journey] [data-calendar-results]').getAttribute("href"),"gtworld.html#classement-equipes");
   assert((await page.locator(".event-card .btn.primary").getAttribute("href")).includes("course.html?event=fixture-wgt"),"Calendar course link missing");
   await page.locator(".event-card .btn.primary").click();
-  await page.locator("[data-event-journey]:not([hidden])").waitFor({timeout:15000});
+  await page.locator(".fx-context-tabs:not([hidden])").waitFor({timeout:15000});
   await page.locator("[data-event-results] tr").first().waitFor({timeout:15000});
   assert.equal(await page.locator("[data-event-results] tr").count(),1,"WorldGT result must be one row per crew, not per driver");
   const rowText=await page.locator("[data-event-results] tr").first().innerText();
