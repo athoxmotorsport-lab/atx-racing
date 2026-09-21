@@ -115,6 +115,8 @@ const fixtureCourse = {
  best_lap_ms:100000,points:52,fastest_lap_bonus:2,laps_completed:30,car_model_name:"Ferrari 296 GT3"}],
  honours:[]
 };
+const premiumTeamFixture={team_name:"ATX Motorsport Team 1",rank:1,points:52,races:1,events:1,wins:1,podiums:1,drivers:2,performance_score:101.5};
+const officialWorldGTFixture={standings:[{...premiumTeamFixture,sprint:1,endurance:0,fastest_laps:1}],events:[]};
 const page = await browser.newPage();
 page.on("pageerror", err => errors.push(err.message));
 page.on("response", r => { if (r.url().startsWith(origin) && r.status() >= 400) errors.push("Local asset " + r.status() + ": " + r.url()); });
@@ -122,8 +124,10 @@ await page.route("https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/**", asy
   const url=route.request().url();
   const body = url.includes("/public-event")
     ? (url.includes("slug=")?fixtureCourse:{events:fixtureEvents,today:[],archives:fixtureArchives,notifications:[{id:"smoke-record-1",type:"circuit_record",title_fr:"Record de test",title_en:"Test record",message_fr:"Temps de référence amélioré",message_en:"Reference lap improved",related_link:"classement.html#circuit"}]})
+    : url.includes("/public-gtworld")
+    ? officialWorldGTFixture
     : url.includes("/public-leaderboard")
-    ? {drivers:[fixtureDriver],circuits:fixtureCircuits,teams:[],honours:[]}
+    ? {drivers:[fixtureDriver],circuits:fixtureCircuits,teams:[premiumTeamFixture],honours:[]}
     : url.includes("/public-driver-sectors") ? {sectors:fixtureSectors}
     : url.includes("/public-driver-identities") ? {drivers:[fixtureDriver]}
     : url.includes("/public-driver?") ? {driver:fixtureDriver}
@@ -160,7 +164,7 @@ try {
     assert.equal(await root.locator('[data-cat-drivers] .safe-meter[role="progressbar"]').count(),1,"Premium SAFE gauge must remain");
     assert.equal(await root.locator('[data-cat-drivers] .tier-pill[data-tier="gold"]').count(),1,"Gold SAFE badge must remain");
     assert.equal(await root.locator(".fx-category-tier-legend [data-tier=alien]").count(),1,"The colour-coded tier legend must remain");
-    if(category!=="WGT")assert.equal(await root.locator(".fx-premium-teams").count(),1,"The premium team table must remain");
+    if(category==="WGT"){await root.locator('[data-gtw-standings] tr.fx-premium-wgt-row').first().waitFor({timeout:15000});assert.equal(await root.locator('[data-gtw-standings] tr .tier-pill[data-tier="alien"]').count(),1,"WorldGT team must retain coloured Alien tier");assert.equal(await root.locator('[data-gtw-standings] tr .fx-inline-pace[role="progressbar"]').count(),1,"WorldGT team pace gauge missing");assert((await root.locator('[data-gtw-standings] tr').first().innerText()).includes("52"),"Official WorldGT team points must not change")}else{assert.equal(await root.locator(".fx-premium-teams thead th").count(),8,"Full premium team standings must remain");assert.equal(await root.locator(".fx-premium-team-row .tier-pill[data-tier=alien]").count(),1,"Team pace badge missing");assert.equal(await root.locator(".fx-team-pace .pace-progress[role=progressbar]").count(),1,"Team pace gauge missing")}
 
     await root.locator('.fx-course-tabs>a[href="#classement"]').click();
     assert(new URL(page.url()).pathname.endsWith("/"+file)&&page.url().endsWith("#classement"),"Inline standings must not navigate away");
