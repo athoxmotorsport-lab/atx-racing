@@ -10,7 +10,7 @@ const htmlPaths = [
   ...(await readdir(root)).filter(p => p.endsWith(".html")),
   ...(await readdir(join(root, "events"))).filter(p => p.endsWith(".html")).map(p => "events/" + p)
 ].sort();
-assert.equal(htmlPaths.length, 16, "ATX expected 16 HTML pages");
+assert.equal(htmlPaths.length, 19, "ATX expected 19 HTML pages including category navigation hubs");
 const requestedCSS = ["ranking-session-labels", "driver-ranking-premium", "team-ranking-premium", "profile-best-laps"];
 for (const file of requestedCSS) {
   const minimized = await readFile(join(root, file + ".min.css"), "utf8");
@@ -63,7 +63,7 @@ for (const css of ["atx-core.min.css", "atx-home.min.css", "race-alerts.min.css"
 }
 const shell = await readFile(join(root, "premium-shell.min.js"), "utf8");
 assert(!shell.includes("race-alerts.css") && !shell.includes("race-alerts.js"), "old dynamic alert injection remains");
-console.log("STATIC: 16 HTML pages, bundles, local assets, script references and JS syntax OK");
+console.log("STATIC: 19 HTML pages, bundles, local assets, script references and JS syntax OK");
 
 // Real Chromium against the built HTML, with API fixture, no changes to Supabase.
 const mime = {".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".svg":"image/svg+xml",".webp":"image/webp",".jpg":"image/jpeg",".png":"image/png",".ico":"image/x-icon",".json":"application/json"};
@@ -139,9 +139,25 @@ try {
   await page.locator(".atx-alert-bell").click();
   await page.locator(".atx-alert-panel .atx-alert-item").first().waitFor();
   assert((await page.locator(".atx-alert-panel").innerText()).includes("Record"),"bell fails to display notification");
-  const toggle=page.locator(".side-nav-group-toggle").first();
-  await toggle.click();
-  assert.equal(await toggle.getAttribute("aria-expanded"),"true","navigation toggle");
+  const links=page.locator(".fx-primary-nav>a");
+  assert.equal(await links.count(),7,"Seven direct navigation entries expected");
+  assert.equal(await page.locator(".side-nav-group-toggle").count(),0,"Old arrow submenus must be removed");
+  await page.locator('.fx-primary-nav>a[data-fx-section="courses"]').click();
+  await page.waitForURL(/courses\.html/);
+  await page.locator(".fx-hub-card").first().waitFor();
+  assert.equal(await page.locator(".fx-hub-card").count(),3,"Each course type must have its own card");
+  assert.equal(await page.locator(".fx-hub-card[data-category=WGT] .fx-hub-actions a").count(),3,"Every category needs presentation, calendar, ranking");
+  await page.locator('.fx-hub-card[data-category=OL] .fx-primary').click();
+  await page.waitForURL(/open-lobby\.html/);
+  assert.equal(await page.locator(".fx-context-tabs a").count(),3,"Open Lobby must show three local navigation tabs");
+  assert.equal(await page.locator(".fx-context-tabs a.active").first().innerText(),"PRÉSENTATION");
+  await page.locator('.fx-context-tabs a[data-fx-tab=calendar]').click();
+  await page.waitForURL(/calendrier\.html\?type=OL/);
+  assert.equal(await page.locator(".fx-context-tabs a.active").getAttribute("data-fx-tab"),"calendar");
+  await page.locator('.fx-context-tabs a[data-fx-tab=ranking]').click();
+  await page.waitForURL(/classement\.html\?type=OL/);
+  assert.equal(await page.locator(".fx-context-tabs a.active").getAttribute("data-fx-tab"),"ranking");
+  await page.goto(origin+"/index.html",{waitUntil:"domcontentloaded"});
   console.log("BROWSER: homepage navigation, bell, notification content and Steam entry point OK");
   await page.goto(origin+"/calendrier.html?type=WGT",{waitUntil:"domcontentloaded"});
   await page.locator(".event-card").first().waitFor({timeout:15000});
@@ -158,7 +174,7 @@ try {
   assert(!rowText.includes("25"),"Raw ACC points must never be presented as WorldGT points");
   assert.equal(await page.locator("[data-event-calendar]").getAttribute("href"),"calendrier.html?type=WGT");
   assert.equal(await page.locator("[data-event-ranking]").getAttribute("href"),"gtworld.html#classement-equipes");
-  assert.equal(await page.locator(".side-nav-group[data-group=courses]").locator(".side-nav-group-toggle").getAttribute("aria-expanded"),"true");
+  assert.equal(await page.locator(".fx-primary-nav>a.active").getAttribute("data-fx-section"),"courses");
   await page.locator("[data-event-calendar]").click();
   await page.locator(".event-card").first().waitFor({timeout:15000});
   await page.goto(origin+"/calendrier.html?type=OL",{waitUntil:"domcontentloaded"});
@@ -171,6 +187,18 @@ try {
   assert((await page.locator(".atx-scoring-example").innerText()).toLowerCase().includes("dylan"),"WorldGT points example missing");
   console.log("BROWSER: WorldGT → calendar → race → crew results → team standings and Open Lobby archives OK");
 
+  await page.goto(origin+"/calendriers.html",{waitUntil:"domcontentloaded"});
+  assert.equal(await page.locator(".fx-hub-card").count(),3,"Calendars hub must show three separate categories");
+  await page.locator(".fx-hub-card[data-category=WGT] a.fx-primary").click();
+  await page.waitForURL(/calendrier\.html\?type=WGT/);
+  assert.equal(await page.locator(".fx-context-tabs a.active").getAttribute("data-fx-tab"),"calendar");
+  await page.goto(origin+"/classements.html",{waitUntil:"domcontentloaded"});
+  assert.equal(await page.locator(".fx-hub-card").count(),3,"Standings hub must show three categories");
+  assert.equal(await page.locator(".fx-hub-card[data-category=WGT] a.fx-primary").getAttribute("href"),"gtworld.html#classement-equipes");
+  await page.goto(origin+"/classement.html#circuit",{waitUntil:"domcontentloaded"});
+  assert.equal(await page.locator(".fx-primary-nav>a.active").getAttribute("data-fx-section"),"laps");
+  assert(await page.locator(".fx-context-tabs").isHidden(),"Global best-laps must not show category navigation");
+  console.log("BROWSER: category-first navigation, hub cards and direct category tabs OK");
   await page.goto(origin+"/classement.html",{waitUntil:"domcontentloaded"});
   await page.locator(".atx-alert-bell").waitFor();
   await page.locator('[data-alltime-leaderboard]:not([hidden])').waitFor({timeout:15000});
@@ -200,7 +228,7 @@ try {
     if (!path.startsWith("resultats-jour-")) await page.locator(".atx-alert-bell").waitFor({timeout:10000});
   }
   assert.equal(errors.length,0,"Browser errors: "+errors.join("; "));
-  console.log("BROWSER: all 16 HTML pages opened, no uncaught errors or missing local assets");
+  console.log("BROWSER: all 19 HTML pages opened, no uncaught errors or missing local assets");
 } finally {
   await browser.close();
   await new Promise(resolve=>server.close(resolve));
