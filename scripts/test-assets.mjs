@@ -177,7 +177,7 @@ try {
   assert.equal(await page.locator("[data-event-calendar]").getAttribute("href"),"calendrier.html?type=WGT");
   assert.equal(await page.locator("[data-event-ranking]").getAttribute("href"),"gtworld.html#classement-equipes");
   assert.equal(await page.locator(".fx-primary-nav>a.active").getAttribute("data-fx-section"),"courses");
-  await page.locator("[data-event-calendar]").click();
+  await page.locator(".fx-context-tabs [data-fx-tab=calendar]").click();
   await page.locator(".event-card").first().waitFor({timeout:15000});
   await page.goto(origin+"/calendrier.html?type=OL",{waitUntil:"domcontentloaded"});
   await page.locator("[data-calendar-open-lobby]:not([hidden])").waitFor({timeout:15000});
