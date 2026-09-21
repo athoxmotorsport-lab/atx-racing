@@ -83,7 +83,7 @@ const browser = await chromium.launch({headless:true,args:["--no-sandbox"]});
 const errors=[];
 const fixtureDriverId = "11111111-1111-4111-8111-111111111111";
 const avatarPath = "/assets/brand/atx-racing-logo.webp";
-const fixtureDriver = { driver_id: fixtureDriverId, id: fixtureDriverId, profile_id: fixtureDriverId, display_name:"ATX Test Pilot", avatar_url: avatarPath, performance_class:"pro", safety_class:"safe", performance_score:104.2, best_lap_ms:109321, points:10, rank:1, races:2, podiums:1, wins:1, team_name:"ATX Racing" };
+const fixtureDriver = { driver_id: fixtureDriverId, id: fixtureDriverId, profile_id: fixtureDriverId, display_name:"ATX Test Pilot", avatar_url: avatarPath, performance_class:"alien", safety_class:"gold", safety_score:87, performance_score:101.5, progression:0.42, best_lap_ms:109321, points:10, rank:1, races:2, podiums:1, wins:1, team_name:"ATX Racing" };
 const lapFor = (key, time, session) => ({ ...fixtureDriver, best_lap_ms:time, session_type:session, best_lap_session_type:session, car_model_name:"Ferrari 296 GT3", pace_percent:101.2 });
 const fixtureCircuits = [
  {circuit_key:"monza",circuit_name:"Monza",reference_lap_ms:109321,reference_driver:"ATX Test Pilot",reference_session_type:"FP",drivers:[lapFor("monza",109321,"FP")]},
@@ -115,6 +115,8 @@ const fixtureCourse = {
  best_lap_ms:100000,points:52,fastest_lap_bonus:2,laps_completed:30,car_model_name:"Ferrari 296 GT3"}],
  honours:[]
 };
+const premiumTeamFixture={team_name:"ATX Motorsport Team 1",rank:1,points:52,races:1,events:1,wins:1,podiums:1,drivers:2,performance_score:101.5};
+const officialWorldGTFixture={standings:[{...premiumTeamFixture,sprint:1,endurance:0,fastest_laps:1}],events:[]};
 const page = await browser.newPage();
 page.on("pageerror", err => errors.push(err.message));
 page.on("response", r => { if (r.url().startsWith(origin) && r.status() >= 400) errors.push("Local asset " + r.status() + ": " + r.url()); });
@@ -122,8 +124,10 @@ await page.route("https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/**", asy
   const url=route.request().url();
   const body = url.includes("/public-event")
     ? (url.includes("slug=")?fixtureCourse:{events:fixtureEvents,today:[],archives:fixtureArchives,notifications:[{id:"smoke-record-1",type:"circuit_record",title_fr:"Record de test",title_en:"Test record",message_fr:"Temps de référence amélioré",message_en:"Reference lap improved",related_link:"classement.html#circuit"}]})
+    : url.includes("/public-gtworld")
+    ? officialWorldGTFixture
     : url.includes("/public-leaderboard")
-    ? {drivers:[fixtureDriver],circuits:fixtureCircuits,teams:[],honours:[]}
+    ? {drivers:[fixtureDriver],circuits:fixtureCircuits,teams:[premiumTeamFixture],honours:[]}
     : url.includes("/public-driver-sectors") ? {sectors:fixtureSectors}
     : url.includes("/public-driver-identities") ? {drivers:[fixtureDriver]}
     : url.includes("/public-driver?") ? {driver:fixtureDriver}
@@ -154,6 +158,14 @@ try {
     assert(firstLink.includes("fixture-"+category.toLowerCase()),"Calendar event should be from its own category");
     await root.locator('[data-cat-drivers] tr').first().waitFor({timeout:15000});
     assert((await root.locator('[data-cat-drivers] tr').first().innerText()).includes("ATX"),"Category's own driver standings must render");
+    assert.equal(await root.locator('.fx-premium-drivers thead th').count(),8,"The premium eight-column driver layout must remain");
+    assert.equal(await root.locator('[data-cat-drivers] tr[data-tier="alien"] .tier-pill[data-tier="alien"]').count(),1,"Alien tier badge and colour must remain");
+    assert.equal(await root.locator('[data-cat-drivers] .pace-progress[role="progressbar"]').count(),1,"Premium pace gauge must remain");
+    assert.equal(await root.locator('[data-cat-drivers] .safe-meter[role="progressbar"]').count(),1,"Premium SAFE gauge must remain");
+    assert.equal(await root.locator('[data-cat-drivers] .tier-pill[data-tier="gold"]').count(),1,"Gold SAFE badge must remain");
+    assert.equal(await root.locator(".fx-category-tier-legend [data-tier=alien]").count(),1,"The colour-coded tier legend must remain");
+    if(category==="WGT"){await root.locator('[data-gtw-standings] tr.fx-premium-wgt-row').first().waitFor({timeout:15000});assert.equal(await root.locator('[data-gtw-standings] tr .tier-pill[data-tier="alien"]').count(),1,"WorldGT team must retain coloured Alien tier");assert.equal(await root.locator('[data-gtw-standings] tr .fx-inline-pace[role="progressbar"]').count(),1,"WorldGT team pace gauge missing");assert((await root.locator('[data-gtw-standings] tr').first().innerText()).includes("52"),"Official WorldGT team points must not change")}else{assert.equal(await root.locator(".fx-premium-teams thead th").count(),8,"Full premium team standings must remain");assert.equal(await root.locator(".fx-premium-team-row .tier-pill[data-tier=alien]").count(),1,"Team pace badge missing");assert.equal(await root.locator(".fx-team-pace .pace-progress[role=progressbar]").count(),1,"Team pace gauge missing")}
+
     await root.locator('.fx-course-tabs>a[href="#classement"]').click();
     assert(new URL(page.url()).pathname.endsWith("/"+file)&&page.url().endsWith("#classement"),"Inline standings must not navigate away");
     assert.equal(await page.locator('.fx-primary-nav>a.active').getAttribute("data-fx-section"),category,"Current race category not highlighted");
