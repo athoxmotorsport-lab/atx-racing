@@ -83,7 +83,7 @@ const browser = await chromium.launch({headless:true,args:["--no-sandbox"]});
 const errors=[];
 const fixtureDriverId = "11111111-1111-4111-8111-111111111111";
 const avatarPath = "/assets/brand/atx-racing-logo.webp";
-const fixtureDriver = { driver_id: fixtureDriverId, id: fixtureDriverId, profile_id: fixtureDriverId, display_name:"ATX Test Pilot", avatar_url: avatarPath, performance_class:"pro", safety_class:"safe", performance_score:104.2, best_lap_ms:109321, points:10, rank:1, races:2, podiums:1, wins:1, team_name:"ATX Racing" };
+const fixtureDriver = { driver_id: fixtureDriverId, id: fixtureDriverId, profile_id: fixtureDriverId, display_name:"ATX Test Pilot", avatar_url: avatarPath, performance_class:"alien", safety_class:"gold", safety_score:87, performance_score:101.5, progression:0.42, best_lap_ms:109321, points:10, rank:1, races:2, podiums:1, wins:1, team_name:"ATX Racing" };
 const lapFor = (key, time, session) => ({ ...fixtureDriver, best_lap_ms:time, session_type:session, best_lap_session_type:session, car_model_name:"Ferrari 296 GT3", pace_percent:101.2 });
 const fixtureCircuits = [
  {circuit_key:"monza",circuit_name:"Monza",reference_lap_ms:109321,reference_driver:"ATX Test Pilot",reference_session_type:"FP",drivers:[lapFor("monza",109321,"FP")]},
@@ -154,6 +154,14 @@ try {
     assert(firstLink.includes("fixture-"+category.toLowerCase()),"Calendar event should be from its own category");
     await root.locator('[data-cat-drivers] tr').first().waitFor({timeout:15000});
     assert((await root.locator('[data-cat-drivers] tr').first().innerText()).includes("ATX"),"Category's own driver standings must render");
+    assert.equal(await root.locator('.fx-premium-drivers thead th').count(),8,"The premium eight-column driver layout must remain");
+    assert.equal(await root.locator('[data-cat-drivers] tr[data-tier="alien"] .tier-pill[data-tier="alien"]').count(),1,"Alien tier badge and colour must remain");
+    assert.equal(await root.locator('[data-cat-drivers] .pace-progress[role="progressbar"]').count(),1,"Premium pace gauge must remain");
+    assert.equal(await root.locator('[data-cat-drivers] .safe-meter[role="progressbar"]').count(),1,"Premium SAFE gauge must remain");
+    assert.equal(await root.locator('[data-cat-drivers] .tier-pill[data-tier="gold"]').count(),1,"Gold SAFE badge must remain");
+    assert.equal(await root.locator(".fx-category-tier-legend [data-tier=alien]").count(),1,"The colour-coded tier legend must remain");
+    if(category!=="WGT")assert.equal(await root.locator(".fx-premium-teams").count(),1,"The premium team table must remain");
+
     await root.locator('.fx-course-tabs>a[href="#classement"]').click();
     assert(new URL(page.url()).pathname.endsWith("/"+file)&&page.url().endsWith("#classement"),"Inline standings must not navigate away");
     assert.equal(await page.locator('.fx-primary-nav>a.active').getAttribute("data-fx-section"),category,"Current race category not highlighted");
