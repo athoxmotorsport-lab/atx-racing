@@ -71,9 +71,9 @@ const worldApi=await readFile("supabase/functions/public-gtworld/index.ts","utf8
 for(const marker of ["atx:eventcategory","data-event-ranking","data-calendar-results","data-recent-category","data-ranking-journey","team_results"]){
   assert(main.includes(marker),"Main route missing "+marker);
 }
-for(const marker of ["gtworld.html#classement-equipes","courses.html","calendriers.html","classements.html","classement.html#circuit","fx-context-tabs","atx:rankingcategory"]){
+for(const marker of ["gtworld.html","daily-race.html","open-lobby.html","classement.html#circuit","classement.html#driver","fx-course-tabs","atx:rankingcategory"]){
   assert(shell.includes(marker),"Side navigation missing "+marker);
 }
 for(const [name,source] of [["detail",detailApi],["standings",standingsApi],["WorldGT",worldApi]])
   assert(source.includes('worldGTPoints'),"Scoring helper not shared by "+name+" endpoint");
-console.log("ROUTES: three category hubs, local tabs, format → calendar → course → results and team standings markers OK");
+const categoryScript=await readFile("category-sections.min.js","utf8");for(const marker of ["public-event","public-leaderboard?category=","[data-cat-calendar]","[data-cat-drivers]","[data-cat-teams]"]){assert(categoryScript.includes(marker),"Inline category sections missing "+marker)}console.log("ROUTES: three pages with concept / calendar / standings; global circuit and pilot best laps preserved");
