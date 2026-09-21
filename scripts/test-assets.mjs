@@ -10,7 +10,7 @@ const htmlPaths = [
   ...(await readdir(root)).filter(p => p.endsWith(".html")),
   ...(await readdir(join(root, "events"))).filter(p => p.endsWith(".html")).map(p => "events/" + p)
 ].sort();
-assert.equal(htmlPaths.length, 19, "ATX expected 19 HTML pages including category navigation hubs");
+assert.equal(htmlPaths.length, 16, "ATX expected the 16 existing HTML pages, without redundant category hubs");
 const requestedCSS = ["ranking-session-labels", "driver-ranking-premium", "team-ranking-premium", "profile-best-laps"];
 for (const file of requestedCSS) {
   const minimized = await readFile(join(root, file + ".min.css"), "utf8");
@@ -22,7 +22,7 @@ for (const file of removedSources) assert(!rootFiles.includes(file), "Old source
 const minFiles = (await readdir(root)).filter(p => p.endsWith(".min.js"));
 assert(minFiles.includes("main.min.js"));
 for (const file of minFiles) execFileSync(process.execPath, ["--check", file]);
-const expectedJS = ["main","home-experience","premium-shell","atx-experience","gtworld","admin-gtworld","admin-events-manager","ranking-session-labels","driver-ranking-premium","team-ranking-premium","profile-identity-enhancements","race-alerts"];
+const expectedJS = ["category-sections","main","home-experience","premium-shell","atx-experience","gtworld","admin-gtworld","admin-events-manager","ranking-session-labels","driver-ranking-premium","team-ranking-premium","profile-identity-enhancements","race-alerts"];
 for (const name of expectedJS) assert(minFiles.includes(name + ".min.js"), "Missing JS: " + name);
 for (const path of htmlPaths) {
   const html = await readFile(join(root, path), "utf8");
@@ -63,7 +63,7 @@ for (const css of ["atx-core.min.css", "atx-home.min.css", "race-alerts.min.css"
 }
 const shell = await readFile(join(root, "premium-shell.min.js"), "utf8");
 assert(!shell.includes("race-alerts.css") && !shell.includes("race-alerts.js"), "old dynamic alert injection remains");
-console.log("STATIC: 19 HTML pages, bundles, local assets, script references and JS syntax OK");
+console.log("STATIC: 16 HTML pages, bundles, local assets, script references and JS syntax OK");
 
 // Real Chromium against the built HTML, with API fixture, no changes to Supabase.
 const mime = {".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".svg":"image/svg+xml",".webp":"image/webp",".jpg":"image/jpeg",".png":"image/png",".ico":"image/x-icon",".json":"application/json"};
@@ -139,68 +139,47 @@ try {
   await page.locator(".atx-alert-bell").click();
   await page.locator(".atx-alert-panel .atx-alert-item").first().waitFor();
   assert((await page.locator(".atx-alert-panel").innerText()).includes("Record"),"bell fails to display notification");
-  const links=page.locator(".fx-primary-nav>a");
-  assert.equal(await links.count(),7,"Seven direct navigation entries expected");
-  assert.equal(await page.locator(".side-nav-group-toggle").count(),0,"Old arrow submenus must be removed");
-  await page.locator('.fx-primary-nav>a[data-fx-section="courses"]').click();
-  await page.waitForURL(/courses\.html/);
-  await page.locator(".fx-hub-card").first().waitFor();
-  assert.equal(await page.locator(".fx-hub-card").count(),3,"Each course type must have its own card");
-  assert.equal(await page.locator(".fx-hub-card[data-category=WGT] .fx-hub-actions a").count(),3,"Every category needs presentation, calendar, ranking");
-  await page.locator('.fx-hub-card[data-category=OL] .fx-primary').click();
-  await page.waitForURL(/open-lobby\.html/);
+  const links=page.locator(".fx-primary-nav>a");assert.equal(await links.count(),6,"Navigation must have home, three course pages, archives, rules");assert.equal(await page.locator(".fx-times-nav>a").count(),2,"Best laps must retain circuit and driver navigation");assert.equal(await page.locator(".side-nav-group-toggle").count(),0,"No old dropdown arrows");
+  for(const [category,file] of [["WGT","gtworld.html"],["DR","daily-race.html"],["OL","open-lobby.html"]]){
+    await page.goto(origin+"/"+file,{waitUntil:"domcontentloaded"});
+    const root=page.locator('[data-course-page="'+category+'"]');
+    await root.waitFor();
+    assert.equal(await root.locator(".fx-course-tabs>a").count(),3,"Each course needs three inline tabs");
+    assert.equal(await root.locator("#concept").count(),1,"Concept section missing on "+file);
+    assert.equal(await root.locator("#calendrier").count(),1,"Calendar section missing on "+file);
+    assert.equal(await root.locator("#classement").count(),1,"Standings section missing on "+file);
+    await root.locator(".fx-race-card").first().waitFor({timeout:15000});
+    assert.equal(await root.locator("#calendrier .fx-race-card").count(),1,"Calendar must include only "+category+" events");
+    const firstLink=await root.locator("#calendrier .fx-race-link").first().getAttribute("href");
+    assert(firstLink.includes("fixture-"+category.toLowerCase()),"Calendar event should be from its own category");
+    await root.locator('[data-cat-drivers] tr').first().waitFor({timeout:15000});
+    assert((await root.locator('[data-cat-drivers] tr').first().innerText()).includes("ATX"),"Category's own driver standings must render");
+    await root.locator('.fx-course-tabs>a[href="#classement"]').click();
+    assert(new URL(page.url()).pathname.endsWith("/"+file)&&page.url().endsWith("#classement"),"Inline standings must not navigate away");
+    assert.equal(await page.locator('.fx-primary-nav>a.active').getAttribute("data-fx-section"),category,"Current race category not highlighted");
+  }
+  await page.goto(origin+"/open-lobby.html",{waitUntil:"domcontentloaded"});
   await page.locator(".fx-open-lobby-poster img").waitFor();
   assert(await page.locator(".fx-open-lobby-poster img").evaluate(img=>img.complete&&img.naturalWidth>=640),"Attached Open Lobby poster is missing or invalid");
-  assert.equal(await page.locator(".fx-context-tabs a").count(),3,"Open Lobby must show three local navigation tabs");
-  assert.equal(await page.locator(".fx-context-tabs a.active").first().innerText(),"PRÉSENTATION");
-  await page.locator('.fx-context-tabs a[data-fx-tab=calendar]').click();
-  await page.waitForURL(/calendrier\.html\?type=OL/);
-  assert.equal(await page.locator(".fx-context-tabs a.active").getAttribute("data-fx-tab"),"calendar");
-  await page.locator('.fx-context-tabs a[data-fx-tab=ranking]').click();
-  await page.waitForURL(/classement\.html\?type=OL/);
-  assert.equal(await page.locator(".fx-context-tabs a.active").getAttribute("data-fx-tab"),"ranking");
-  await page.goto(origin+"/index.html",{waitUntil:"domcontentloaded"});
-  console.log("BROWSER: homepage navigation, bell, notification content and Steam entry point OK");
-  await page.goto(origin+"/calendrier.html?type=WGT",{waitUntil:"domcontentloaded"});
-  await page.locator(".event-card").first().waitFor({timeout:15000});
-  assert.equal(await page.locator(".event-card").count(),1,"WorldGT calendar must exclude DR and OL cards");
-  assert.equal(await page.locator('[data-calendar-category="WGT"]').getAttribute("aria-current"),"page");
-  assert.equal(await page.locator('[data-calendar-journey] [data-calendar-results]').getAttribute("href"),"gtworld.html#classement-equipes");
-  assert((await page.locator(".event-card .btn.primary").getAttribute("href")).includes("course.html?event=fixture-wgt"),"Calendar course link missing");
-  await page.locator(".event-card .btn.primary").click();
-  await page.locator(".fx-context-tabs:not([hidden])").waitFor({timeout:15000});
+  assert((await page.locator("#concept").innerText()).includes("lundis, mercredis et vendredis"),"Open Lobby opening days missing");
+  await page.goto(origin+"/gtworld.html",{waitUntil:"domcontentloaded"});
+  assert((await page.locator(".atx-scoring-example").innerText()).toLowerCase().includes("dylan"),"WorldGT official scoring example missing");
+  await page.locator("#calendrier .fx-race-link").first().click();
+  await page.waitForURL(/course\.html\?event=fixture-wgt/);
   await page.locator("[data-event-results] tr").first().waitFor({timeout:15000});
-  assert.equal(await page.locator("[data-event-results] tr").count(),1,"WorldGT result must be one row per crew, not per driver");
-  const rowText=await page.locator("[data-event-results] tr").first().innerText();
-  assert(rowText.toLowerCase().includes("dylan")&&rowText.toLowerCase().includes("tim")&&rowText.includes("52"),"Crew points and drivers not visible");
-  assert(!rowText.includes("25"),"Raw ACC points must never be presented as WorldGT points");
-  assert.equal(await page.locator("[data-event-calendar]").getAttribute("href"),"calendrier.html?type=WGT");
-  assert.equal(await page.locator("[data-event-ranking]").getAttribute("href"),"gtworld.html#classement-equipes");
-  assert.equal(await page.locator(".fx-primary-nav>a.active").getAttribute("data-fx-section"),"courses");
-  await page.locator(".fx-context-tabs [data-fx-tab=calendar]").click();
-  await page.locator(".event-card").first().waitFor({timeout:15000});
-  await page.goto(origin+"/calendrier.html?type=OL",{waitUntil:"domcontentloaded"});
-  await page.locator("[data-calendar-open-lobby]:not([hidden])").waitFor({timeout:15000});
-  await page.locator("[data-recent-category=CALENDAR] .atx-recent-list a").first().waitFor({timeout:15000});
-  assert.equal(await page.locator("[data-recent-category=CALENDAR] .atx-recent-list a").count(),1,"Open Lobby archive filter wrong");
-  assert((await page.locator("[data-recent-category=CALENDAR] .atx-recent-list a").first().getAttribute("href")).includes("archive-ol#resultats"),"Open Lobby published results link wrong");
-  await page.goto(origin+"/gtworld.html#classement-equipes",{waitUntil:"domcontentloaded"});
-  await page.locator("#wgt-points-exemple").waitFor();
-  assert((await page.locator(".atx-scoring-example").innerText()).toLowerCase().includes("dylan"),"WorldGT points example missing");
-  console.log("BROWSER: WorldGT → calendar → race → crew results → team standings and Open Lobby archives OK");
-
-  await page.goto(origin+"/calendriers.html",{waitUntil:"domcontentloaded"});
-  assert.equal(await page.locator(".fx-hub-card").count(),3,"Calendars hub must show three separate categories");
-  await page.locator(".fx-hub-card[data-category=WGT] a.fx-primary").click();
-  await page.waitForURL(/calendrier\.html\?type=WGT/);
-  assert.equal(await page.locator(".fx-context-tabs a.active").getAttribute("data-fx-tab"),"calendar");
-  await page.goto(origin+"/classements.html",{waitUntil:"domcontentloaded"});
-  assert.equal(await page.locator(".fx-hub-card").count(),3,"Standings hub must show three categories");
-  assert.equal(await page.locator(".fx-hub-card[data-category=WGT] a.fx-primary").getAttribute("href"),"gtworld.html#classement-equipes");
+  assert.equal(await page.locator("[data-event-results] tr").count(),1,"WorldGT must display one row per crew");
+  const rowText=(await page.locator("[data-event-results] tr").first().innerText()).toLowerCase();
+  assert(rowText.includes("dylan")&&rowText.includes("tim")&&rowText.includes("52")&&!rowText.includes("25"),"The two drivers must share the crew's official points");
+  await page.locator(".fx-event-backlinks a").first().waitFor();
+  assert.equal(await page.locator(".fx-event-backlinks a").nth(1).getAttribute("href"),"gtworld.html#calendrier");
+  await page.locator(".fx-event-backlinks a").nth(2).click();
+  await page.waitForURL(/gtworld\.html#classement$/);
+  await page.locator("#classement [data-gtw-standings] tr").first().waitFor();
   await page.goto(origin+"/classement.html#circuit",{waitUntil:"domcontentloaded"});
-  assert.equal(await page.locator(".fx-primary-nav>a.active").getAttribute("data-fx-section"),"laps");
-  assert(await page.locator(".fx-context-tabs").isHidden(),"Global best-laps must not show category navigation");
-  console.log("BROWSER: category-first navigation, hub cards and direct category tabs OK");
+  assert.equal(await page.locator(".fx-times-nav>a.active").getAttribute("data-fx-section"),"circuit","Best laps by circuit navigation must remain");
+  await page.goto(origin+"/classement.html#driver",{waitUntil:"domcontentloaded"});
+  assert.equal(await page.locator(".fx-times-nav>a.active").getAttribute("data-fx-section"),"driver","Best laps by pilot navigation must remain");
+  console.log("BROWSER: three race pages contain own concept, calendar and standings; WorldGT crew results and global circuit/pilot best laps OK");
   await page.goto(origin+"/classement.html",{waitUntil:"domcontentloaded"});
   await page.locator(".atx-alert-bell").waitFor();
   await page.locator('[data-alltime-leaderboard]:not([hidden])').waitFor({timeout:15000});
@@ -230,7 +209,7 @@ try {
     if (!path.startsWith("resultats-jour-")) await page.locator(".atx-alert-bell").waitFor({timeout:10000});
   }
   assert.equal(errors.length,0,"Browser errors: "+errors.join("; "));
-  console.log("BROWSER: all 19 HTML pages opened, no uncaught errors or missing local assets");
+  console.log("BROWSER: all 16 HTML pages opened, no uncaught errors or missing local assets");
 } finally {
   await browser.close();
   await new Promise(resolve=>server.close(resolve));
