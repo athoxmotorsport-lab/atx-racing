@@ -143,7 +143,7 @@ try {
   await page.locator(".atx-alert-bell").click();
   await page.locator(".atx-alert-panel .atx-alert-item").first().waitFor();
   assert((await page.locator(".atx-alert-panel").innerText()).includes("Record"),"bell fails to display notification");
-  const links=page.locator(".fx-primary-nav>a");assert.equal(await links.count(),6,"Navigation must have home, three course pages, archives, rules");assert.equal(await page.locator(".fx-times-nav>a").count(),2,"Best laps must retain circuit and driver navigation");assert.equal(await page.locator(".side-nav-group-toggle").count(),0,"No old dropdown arrows");
+  const links=page.locator(".fx-primary-nav>a");assert.equal(await links.count(),7,"Navigation must include home, three race pages, the full calendar, archives and rules");assert.equal(await page.locator('.fx-primary-nav>a[data-fx-section="calendar"]').getAttribute("href"),"calendrier.html","General calendar must be directly accessible");assert.equal(await page.locator(".fx-times-nav>a").count(),2,"Best laps must retain circuit and driver navigation");assert.equal(await page.locator(".side-nav-group-toggle").count(),0,"No old dropdown arrows");
   for(const [category,file] of [["WGT","gtworld.html"],["DR","daily-race.html"],["OL","open-lobby.html"]]){
     await page.goto(origin+"/"+file,{waitUntil:"domcontentloaded"});
     const root=page.locator('[data-course-page="'+category+'"]');
@@ -152,9 +152,9 @@ try {
     assert.equal(await root.locator("#concept").count(),1,"Concept section missing on "+file);
     assert.equal(await root.locator("#calendrier").count(),1,"Calendar section missing on "+file);
     assert.equal(await root.locator("#classement").count(),1,"Standings section missing on "+file);
-    await root.locator(".fx-race-card").first().waitFor({timeout:15000});
-    assert.equal(await root.locator("#calendrier .fx-race-card").count(),1,"Calendar must include only "+category+" events");
-    const firstLink=await root.locator("#calendrier .fx-race-link").first().getAttribute("href");
+    await root.locator("#calendrier .event-card.fx-encoded-event").first().waitFor({timeout:15000});
+    assert.equal(await root.locator("#calendrier .event-card").count(),1,"Calendar must include only "+category+" events");assert.equal(await root.locator("#calendrier .event-card").first().getAttribute("data-event-code"),category,"Encoded DR/WGT/OL category must be preserved");assert(await root.locator("#calendrier .event-image img").first().evaluate(img=>img.complete&&img.naturalWidth>0),"Existing original event poster must load");assert.equal(await root.locator("#calendrier .event-image").first().getAttribute("href"),"https://www.thesimgrid.com/communities/atxracing","Existing SimGrid link must remain");
+    const firstLink=await root.locator("#calendrier .event-body .btn.primary").first().getAttribute("href");
     assert(firstLink.includes("fixture-"+category.toLowerCase()),"Calendar event should be from its own category");
     await root.locator('[data-cat-drivers] tr').first().waitFor({timeout:15000});
     assert((await root.locator('[data-cat-drivers] tr').first().innerText()).includes("ATX"),"Category's own driver standings must render");
@@ -170,13 +170,14 @@ try {
     assert(new URL(page.url()).pathname.endsWith("/"+file)&&page.url().endsWith("#classement"),"Inline standings must not navigate away");
     assert.equal(await page.locator('.fx-primary-nav>a.active').getAttribute("data-fx-section"),category,"Current race category not highlighted");
   }
+  await page.goto(origin+"/calendrier.html",{waitUntil:"domcontentloaded"});await page.locator(".events-grid .event-card").first().waitFor({timeout:15000});assert.equal(await page.locator(".events-grid .event-card").count(),3,"General calendar must show WGT + DR + OL");assert.equal(await page.locator('[data-calendar-category="ALL"]').getAttribute("aria-current"),"page","General calendar must default to ALL");assert.equal(await page.locator(".events-grid .fx-calendar-code").count(),3,"All calendar cards must show WGT/DR/OL");assert.equal(await page.locator('.fx-primary-nav>a.active').getAttribute("data-fx-section"),"calendar","General calendar nav must be highlighted");await page.goto(origin+"/calendrier.html?type=DR",{waitUntil:"domcontentloaded"});await page.locator(".events-grid .event-card").first().waitFor({timeout:15000});assert.equal(await page.locator(".events-grid .event-card").count(),1,"DR filter must include only Daily Race");assert.equal(await page.locator(".events-grid .event-card").first().getAttribute("data-event-code"),"DR");await page.goto(origin+"/calendrier.html",{waitUntil:"domcontentloaded"});assert.equal(await page.locator(".fx-times-nav>a").count(),2,"Best laps Circuit/Driver must remain intact");
   await page.goto(origin+"/open-lobby.html",{waitUntil:"domcontentloaded"});
   await page.locator(".fx-open-lobby-poster img").waitFor();
   assert(await page.locator(".fx-open-lobby-poster img").evaluate(img=>img.complete&&img.naturalWidth>=640),"Attached Open Lobby poster is missing or invalid");
   assert((await page.locator("#concept").innerText()).includes("lundis, mercredis et vendredis"),"Open Lobby opening days missing");
   await page.goto(origin+"/gtworld.html",{waitUntil:"domcontentloaded"});
   assert((await page.locator(".atx-scoring-example").innerText()).toLowerCase().includes("dylan"),"WorldGT official scoring example missing");
-  await page.locator("#calendrier .fx-race-link").first().click();
+  await page.locator("#calendrier .event-body .btn.primary").first().click();
   await page.waitForURL(/course\.html\?event=fixture-wgt/);
   await page.locator("[data-event-results] tr").first().waitFor({timeout:15000});
   assert.equal(await page.locator("[data-event-results] tr").count(),1,"WorldGT must display one row per crew");
