@@ -37,7 +37,7 @@
   }
   </script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,800;1,900&family=Inter:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,800;1,900&family=Inter:wght@400;600;700&family=Rajdhani:wght@600;700&display=swap');
     :root{
       --red:#ff0000;
       --red-dark:#c80000;
@@ -144,6 +144,16 @@
     @media(max-width:1050px){.metrics{grid-template-columns:repeat(3,1fr)}.hero-grid{grid-template-columns:1fr}.winner{max-width:430px}.section-head{align-items:start;flex-direction:column}.section-head p{text-align:left}}
     @media(max-width:720px){.wrap{width:min(100% - 24px,1420px)}.topbar-inner{height:62px}.brand{font-size:22px}.back span{display:none}.hero{padding-top:50px}.metrics{grid-template-columns:1fr 1fr}.metric{min-height:90px}.metric strong{font-size:29px}.tabs{overflow-x:auto}.tab{flex:0 0 auto;padding:14px 13px;font-size:16px}.note{grid-template-columns:1fr}.next{align-items:flex-start;flex-direction:column}.footer-inner{flex-direction:column}.lead{font-size:16px}}
     @media(max-width:420px){.metrics{grid-template-columns:1fr}.winner{padding:18px}.winner-time{font-size:37px}}
+    /* ATX skin 2026-09-22: uniquement typographie, survol et alignement, structure inchangée. */
+    h1,h2,h3,.section-head .kicker,.next strong{font-family:Rajdhani,"Arial Narrow",sans-serif!important;font-style:oblique 7deg;text-transform:uppercase}
+    .section-head h2{background-image:repeating-linear-gradient(112deg,transparent 0 9px,rgba(255,255,255,.065) 9px 11px,transparent 11px 20px);background-repeat:no-repeat;background-position:right center;background-size:34px 100%;padding-right:42px}
+    .winner-time,.metric strong,#panel-points td:first-child,#panel-overall td:first-child,#panel-chronos td:first-child,#panel-points td:nth-child(n+3),#panel-overall td:nth-child(n+3),#panel-chronos td:nth-child(4),#panel-chronos td:nth-child(5),#panel-chronos td:nth-child(6){font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace!important;font-variant-numeric:tabular-nums}
+    :is(#panel-points,#panel-overall) :is(th,td):nth-child(n+3),#panel-chronos :is(th,td):nth-child(4),#panel-chronos :is(th,td):nth-child(5),#panel-chronos :is(th,td):nth-child(6),table :is(th,td):first-child{text-align:right}
+    .btn,table tbody tr{transition:background-color .2s ease,border-color .2s ease,color .2s ease}
+    table tbody tr:hover{background-color:rgba(255,0,0,.075)}
+    @keyframes atxSkinEnter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+    .hero h1{animation:atxSkinEnter .48s ease-out .07s both}.hero .lead,.hero .winner{animation:atxSkinEnter .48s ease-out .18s both}
+    @media(prefers-reduced-motion:reduce){.hero h1,.hero .lead,.hero .winner{animation:none!important}.btn,table tbody tr{transition:none!important}}
   </style>
 </head>
 <body>
