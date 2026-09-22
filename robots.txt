@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /preview-fxui/
+Disallow: /atx-racing/preview-fxui/
 
 Sitemap: https://athoxmotorsport-lab.github.io/atx-racing/sitemap.xml
