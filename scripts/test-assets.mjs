@@ -66,9 +66,24 @@ assert(!shell.includes("race-alerts.css") && !shell.includes("race-alerts.js"), 
 const homeMarkup = await readFile(join(root, "index.html"), "utf8");
 assert(homeMarkup.includes('srcset="assets/brand/atx-racing-banner.webp"'), "Original hero WebP banner must remain");
 assert(homeMarkup.includes('class="home-brand-mark" src="assets/brand/atx-racing-logo.webp"'), "Explicit hero logo missing");
+
+const mirroredHome=await readFile(join(root,"preview-fxui/index.html"),"utf8");
+for(const [file,html] of [["index.html",homeMarkup],["preview-fxui/index.html",mirroredHome]]){
+  assert.equal((html.match(/<nav class="race-category-switch"/g)||[]).length,1,"Three race links must reuse the existing card grid on "+file);
+  assert(!html.includes("fx-home-"+"race-nav"),"Legacy unstyled race navigation remains in "+file);
+  const block=html.match(/<nav class="race-category-switch"[^>]*>([\s\S]*?)<\/nav>/);
+  assert(block && (block[1].match(/<a\b/g)||[]).length===3,"The existing three race-category links must be preserved in "+file);
+}
+for(const file of ["atx-core.min.css","atx-home.min.css"]){
+  const css=await readFile(join(root,file),"utf8");
+  assert(!css.includes(".fx-home-"+"race-nav strong"),"Unused race-nav CSS must be removed from "+file);
+  assert(css.includes('.race-category-switch strong{font:900 21px Rajdhani,"Arial Narrow",sans-serif;letter-spacing:.08em}'),"Race-category cards must use Rajdhani in "+file);
+  assert(css.includes(".race-category-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))"),"Existing three-column grid must remain in "+file);
+}
+
 for (const path of htmlPaths.filter(p => !p.startsWith("resultats-jour-"))) {
   const html = await readFile(join(root, path), "utf8");
-  assert(/atx-(?:core|home)\.min\.css\?v=20260922-navfont1/.test(html), "Skin cache version missing: " + path);
+  assert(/atx-(?:core|home)\.min\.css\?v=20260922-(?:navfont1|racecards1)/.test(html), "Skin cache version missing: " + path);
 }
 for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
   const css = await readFile(join(root, file), "utf8");
@@ -188,6 +203,17 @@ try {
     const element=page.locator(selector).first();
     if(await element.count()) assert((await element.evaluate(el=>getComputedStyle(el).fontFamily)).includes("Rajdhani"),"Global Rajdhani not applied to "+selector);
   }
+  const raceCards=page.locator(".race-category-switch");
+  assert.equal(await raceCards.count(),1,"Homepage must have one three-category card grid");
+  assert.equal(await raceCards.evaluate(el=>getComputedStyle(el).display),"grid","Race-category cards must be laid out in a grid");
+  const cards=raceCards.locator(":scope > a");
+  assert.equal(await cards.count(),3,"WorldGT, Daily Race and Ballade ATX must remain separate cards");
+  assert.deepEqual(await cards.evaluateAll(items=>items.map(el=>el.getAttribute("href"))),["gtworld.html","daily-race.html","open-lobby.html"],"Category links must remain unchanged");
+  const rectangles=await cards.evaluateAll(items=>items.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,right:r.right,y:r.y,width:r.width,height:r.height}}));
+  assert(rectangles.every(r=>r.width>60&&r.height>40),"Race-category cards must have visible dimensions");
+  assert(rectangles[0].right<=rectangles[1].x&&rectangles[1].right<=rectangles[2].x,"The category cards must form separate columns");
+  assert(rectangles.every(r=>Math.abs(r.y-rectangles[0].y)<2),"The three cards must share the same row");
+  assert((await cards.first().locator("strong").evaluate(el=>getComputedStyle(el).fontFamily)).includes("Rajdhani"),"Race-category card title must use Rajdhani");
   const inactiveBallade=page.locator('.fx-primary-nav>a[data-fx-section="BA"]');
   await inactiveBallade.waitFor({timeout:10000});
   assert(!await inactiveBallade.evaluate(el=>el.classList.contains("active")),"Ballade ATX must not be marked active on the homepage");
