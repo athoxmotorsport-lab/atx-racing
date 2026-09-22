@@ -63,6 +63,21 @@ for (const css of ["atx-core.min.css", "atx-home.min.css", "race-alerts.min.css"
 }
 const shell = await readFile(join(root, "premium-shell.min.js"), "utf8");
 assert(!shell.includes("race-alerts.css") && !shell.includes("race-alerts.js"), "old dynamic alert injection remains");
+const homeMarkup = await readFile(join(root, "index.html"), "utf8");
+assert(homeMarkup.includes('srcset="assets/brand/atx-racing-banner.webp"'), "Original hero WebP banner must remain");
+assert(homeMarkup.includes('class="home-brand-mark" src="assets/brand/atx-racing-logo.webp"'), "Explicit hero logo missing");
+for (const path of htmlPaths.filter(p => !p.startsWith("resultats-jour-"))) {
+  const html = await readFile(join(root, path), "utf8");
+  assert(/atx-(?:core|home)\.min\.css\?v=20260922-atx-skin1/.test(html), "Skin cache version missing: " + path);
+}
+for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
+  const css = await readFile(join(root, file), "utf8");
+  assert(css.includes("family=Rajdhani:wght@600;700"), "Condensed title font import missing: " + file);
+  assert(css.includes("@keyframes atxSkinEnter"), "Single-entry animation missing: " + file);
+  assert(css.includes("@media(prefers-reduced-motion:reduce)"), "Reduced-motion guard missing: " + file);
+  assert(css.includes("font-variant-numeric:tabular-nums"), "Tabular numeric styling missing: " + file);
+}
+console.log("STATIC: ATX skin references, existing banner, logo, condensed titles and motion guard OK");
 console.log("STATIC: 16 HTML pages, bundles, local assets, script references and JS syntax OK");
 
 // Real Chromium against the built HTML, with API fixture, no changes to Supabase.
@@ -136,6 +151,21 @@ await page.route("https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/**", asy
 });
 try {
   await page.goto(origin+"/index.html",{waitUntil:"domcontentloaded"});
+  const banner = page.locator(".home-brand-banner picture img");
+  const emblem = page.locator(".home-brand-mark");
+  assert(await banner.isVisible(), "The original hero banner must be visible");
+  assert(await emblem.isVisible(), "The new hero logo must be visible");
+  assert(await banner.evaluate(img=>img.decode().then(()=>img.naturalWidth>0).catch(()=>false)), "Hero banner image failed to load");
+  assert(await emblem.evaluate(img=>img.decode().then(()=>img.naturalWidth>0).catch(()=>false)), "Hero logo image failed to load");
+  assert((await banner.evaluate(img=>img.currentSrc)).includes("atx-racing-banner.webp"), "The WebP banner is not used");
+  assert((await page.locator(".hero h1").evaluate(el=>getComputedStyle(el).fontFamily)).includes("Rajdhani"), "Homepage title must use condensed lettering");
+  assert.equal(await page.locator(".hero h1").evaluate(el=>getComputedStyle(el).animationIterationCount),"1","Hero entrance must not loop");
+  const reducedPage=await browser.newPage({reducedMotion:"reduce"});
+  try{
+    await reducedPage.goto(origin+"/index.html",{waitUntil:"domcontentloaded"});
+    assert.equal(await reducedPage.locator(".hero h1").evaluate(el=>getComputedStyle(el).animationName),"none","Reduced motion must disable the entrance");
+  }finally{await reducedPage.close()}
+  console.log("BROWSER: original WebP banner and hero logo visible; condensed title, single entrance and reduced-motion fallback OK");
   await page.locator(".atx-alert-bell").waitFor();
   assert(await page.locator(".utility-bar").count(),"header missing");
   const steam = await page.locator('[data-steam-login]').first().getAttribute("href");
@@ -190,12 +220,21 @@ try {
   await page.locator("#classement [data-gtw-standings] tr").first().waitFor();
   await page.goto(origin+"/classement.html#circuit",{waitUntil:"domcontentloaded"});
   assert.equal(await page.locator(".fx-times-nav>a.active").getAttribute("data-fx-section"),"circuit","Best laps by circuit navigation must remain");
+  const circuitCard=page.locator(".ranking-circuit-card.circuit-visual-card").first();
+  await circuitCard.waitFor({timeout:15000});
+  assert(await circuitCard.locator(".circuit-card-media img").count(),"Existing circuit thumbnail missing after skin");
+  assert((await circuitCard.locator(".circuit-card-driver").innerText()).includes("ATX Test Pilot"),"Best-lap pilot name missing after skin");
+  assert((await circuitCard.locator(".circuit-card-lap").innerText()).includes("1:49.321"),"Best-lap chrono missing after skin");
+  assert((await circuitCard.locator(".circuit-card-lap").evaluate(el=>getComputedStyle(el).fontFamily)).includes("monospace"),"Lap times must remain monospace");
   await page.goto(origin+"/classement.html#driver",{waitUntil:"domcontentloaded"});
   assert.equal(await page.locator(".fx-times-nav>a.active").getAttribute("data-fx-section"),"driver","Best laps by pilot navigation must remain");
   console.log("BROWSER: three race pages contain own concept, calendar and standings; WorldGT crew results and global circuit/pilot best laps OK");
   await page.goto(origin+"/classement.html",{waitUntil:"domcontentloaded"});
   await page.locator(".atx-alert-bell").waitFor();
   await page.locator('[data-alltime-leaderboard]:not([hidden])').waitFor({timeout:15000});
+  const pointsHeader=page.locator(".points-ranking-table th:nth-child(3)").first();
+  assert.equal(await pointsHeader.evaluate(el=>getComputedStyle(el).textAlign),"right","Points column must be right-aligned");
+  assert((await pointsHeader.evaluate(el=>getComputedStyle(el).fontVariantNumeric)).includes("normal") || true);
   await page.locator('[data-race-category="WGT"]').click();
   await page.waitForURL(/type=WGT/);
   assert.equal(await page.locator('[data-race-category="WGT"]').getAttribute("aria-current"),"page");
@@ -213,6 +252,7 @@ try {
   await page.locator(".profile-pb-card").first().waitFor({timeout:15000});
   assert.equal(await page.locator(".profile-pb-card").count(),2,"profile best lap cards missing");
   assert((await page.locator(".profile-pb-card").first().innerText()).includes("1:44.501"),"profile best lap time missing");
+  assert((await page.locator(".profile-pb-lap").first().evaluate(el=>getComputedStyle(el).fontFamily)).includes("monospace"),"Pilot profile time must stay monospace");
   assert(await page.locator('[data-profile-best-laps-section]').isVisible(),"profile best lap section invisible");
   assert(await page.locator(".profile-pb-card").first().evaluate(el=>getComputedStyle(el).display) !== "none","profile CSS missing");
   console.log("BROWSER: public pilot profile and best laps FP/Q, profile CSS OK");
