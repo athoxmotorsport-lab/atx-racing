@@ -68,7 +68,7 @@ assert(homeMarkup.includes('srcset="assets/brand/atx-racing-banner.webp"'), "Ori
 assert(homeMarkup.includes('class="home-brand-mark" src="assets/brand/atx-racing-logo.webp"'), "Explicit hero logo missing");
 for (const path of htmlPaths.filter(p => !p.startsWith("resultats-jour-"))) {
   const html = await readFile(join(root, path), "utf8");
-  assert(/atx-(?:core|home)\.min\.css\?v=20260922-threeaxes1/.test(html), "Skin cache version missing: " + path);
+  assert(/atx-(?:core|home)\.min\.css\?v=20260922-navfont1/.test(html), "Skin cache version missing: " + path);
 }
 for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
   const css = await readFile(join(root, file), "utf8");
@@ -77,6 +77,31 @@ for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
   assert(css.includes("@media(prefers-reduced-motion:reduce)"), "Reduced-motion guard missing: " + file);
   assert(css.includes("font-variant-numeric:tabular-nums"), "Tabular numeric styling missing: " + file);
 }
+const uiFontRule = 'h1,h2,h3,.brand,.nav-links,.side-links a,.eyebrow,.section-label,.event-date,.event-card h3,.btn{font-family:Rajdhani,"Arial Narrow",sans-serif!important}';
+for (const path of ["atx-core.min.css", "atx-home.min.css"]) {
+  const css = await readFile(join(root, path), "utf8");
+  assert.equal(css.split(uiFontRule).length-1, 1, "All global identity fonts must have one authoritative Rajdhani rule in " + path);
+  assert(!css.includes('.fx-primary-nav a[data-fx-section="BA"]'), "Ballade ATX must not have an unconditional navigation border in " + path);
+  assert.equal((css.match(/\binfinite\b/g) || []).length, 1, "Only the news ticker may loop in " + path);
+  assert(css.includes("animation:premiumTicker 38s linear infinite"), "News ticker animation must remain in " + path);
+  assert(css.includes("font-family:ui-monospace"), "Timing and ranking figures must remain monospace in " + path);
+}
+const robotRules = await readFile(join(root, "robots.txt"), "utf8");
+assert(robotRules.includes("Disallow: /preview-fxui/"), "Preview mirror must be disallowed in robots.txt");
+assert(robotRules.includes("Disallow: /atx-racing/preview-fxui/"), "Actual GitHub Pages preview path must be included");
+const previewPages = (await readdir(join(root,"preview-fxui"))).filter(file=>file.endsWith(".html"));
+assert.equal(previewPages.length,14,"Preview HTML inventory changed; re-check noindex coverage");
+for(const file of previewPages){
+  const html=await readFile(join(root,"preview-fxui",file),"utf8");
+  assert(/<meta\s+name="robots"\s+content="noindex(?:,follow|,nofollow)?">/i.test(html),"Preview file must have noindex: "+file);
+}
+for(const path of ["index.html","gtworld.html","daily-race.html","open-lobby.html","calendrier.html","classement.html","archives.html","reglement.html"]){
+  const html=await readFile(join(root,path),"utf8");
+  const canonical=html.match(/<link rel="canonical" href="([^"]+)">/);
+  assert(canonical,"Canonical URL missing on "+path);
+  for(const lang of ["fr","en"]) assert(html.includes('<link rel="alternate" hreflang="'+lang+'" href="'+canonical[1]+'">'),"Single-URL bilingual hreflang missing on "+path+" "+lang);
+}
+console.log("STATIC: one Rajdhani authority, active-only Ballade border, ticker-only loop, preview noindex and FR/EN markup OK");
 console.log("STATIC: ATX skin references, existing banner, logo, condensed titles and motion guard OK");
 console.log("STATIC: 16 HTML pages, bundles, local assets, script references and JS syntax OK");
 
@@ -159,6 +184,15 @@ try {
   assert(await emblem.evaluate(img=>img.decode().then(()=>img.naturalWidth>0).catch(()=>false)), "Hero logo image failed to load");
   assert((await banner.evaluate(img=>img.currentSrc)).includes("atx-racing-banner.webp"), "The WebP banner is not used");
   assert((await page.locator(".hero h1").evaluate(el=>getComputedStyle(el).fontFamily)).includes("Rajdhani"), "Homepage title must use condensed lettering");
+  for(const selector of [".hero h1",".side-links a[data-fx-section=home]",".home-next-event .event-date",".hero .btn"]){
+    const element=page.locator(selector).first();
+    if(await element.count()) assert((await element.evaluate(el=>getComputedStyle(el).fontFamily)).includes("Rajdhani"),"Global Rajdhani not applied to "+selector);
+  }
+  const inactiveBallade=page.locator('.fx-primary-nav>a[data-fx-section="BA"]');
+  await inactiveBallade.waitFor({timeout:10000});
+  assert(!await inactiveBallade.evaluate(el=>el.classList.contains("active")),"Ballade ATX must not be marked active on the homepage");
+  assert((await inactiveBallade.evaluate(el=>getComputedStyle(el).borderTopColor)).includes(", 0)"),"Ballade ATX has a red border when another page is selected");
+
   assert.equal(await page.locator(".hero h1").evaluate(el=>getComputedStyle(el).animationIterationCount),"1","Hero entrance must not loop");
   const reducedPage=await browser.newPage({reducedMotion:"reduce"});
   try{
@@ -177,6 +211,10 @@ try {
   const links=page.locator(".fx-primary-nav>a");assert.equal(await links.count(),7,"Navigation must include home, three race pages, the full calendar, archives and rules");assert.equal(await page.locator('.fx-primary-nav>a[data-fx-section="calendar"]').getAttribute("href"),"calendrier.html","General calendar must be directly accessible");assert.equal(await page.locator(".fx-times-nav>a").count(),2,"Best laps must retain circuit and driver navigation");assert.equal(await page.locator(".side-nav-group-toggle").count(),0,"No old dropdown arrows");
   for(const [category,file] of [["WGT","gtworld.html"],["DR","daily-race.html"],["BA","open-lobby.html"]]){
     await page.goto(origin+"/"+file,{waitUntil:"domcontentloaded"});
+    const navBA=page.locator('.fx-primary-nav>a[data-fx-section="BA"]');
+    await navBA.waitFor({timeout:10000});
+    assert.equal(await navBA.evaluate(el=>el.classList.contains("active")),category==="BA","Ballade ATX active state is incorrect on "+file);
+    if(category!=="BA")assert((await navBA.evaluate(el=>getComputedStyle(el).borderTopColor)).includes(", 0)"),"Unselected Ballade ATX must not display its highlighted border on "+file);
     const root=page.locator('[data-course-page="'+category+'"]');
     await root.waitFor();
     assert.equal(await root.locator(".fx-course-tabs>a").count(),3,"Each course needs three inline tabs");
