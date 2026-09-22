@@ -68,7 +68,7 @@ assert(homeMarkup.includes('srcset="assets/brand/atx-racing-banner.webp"'), "Ori
 assert(homeMarkup.includes('class="home-brand-mark" src="assets/brand/atx-racing-logo.webp"'), "Explicit hero logo missing");
 for (const path of htmlPaths.filter(p => !p.startsWith("resultats-jour-"))) {
   const html = await readFile(join(root, path), "utf8");
-  assert(/atx-(?:core|home)\.min\.css\?v=20260922-navfont1/.test(html), "Skin cache version missing: " + path);
+  assert(path === "index.html" ? /atx-home\.min\.css\?v=20260922-homecards1/.test(html) : /atx-core\.min\.css\?v=20260922-navfont1/.test(html), "Skin cache version missing: " + path);
 }
 for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
   const css = await readFile(join(root, file), "utf8");
@@ -77,6 +77,15 @@ for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
   assert(css.includes("@media(prefers-reduced-motion:reduce)"), "Reduced-motion guard missing: " + file);
   assert(css.includes("font-variant-numeric:tabular-nums"), "Tabular numeric styling missing: " + file);
 }
+for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
+  const css = await readFile(join(root,file),"utf8");
+  assert(!css.includes("fx-home-race-nav"),"Dead homepage component selector remains: "+file);
+  assert(css.includes('.race-category-switch strong{font:900 21px Rajdhani,"Arial Narrow",sans-serif;letter-spacing:.08em}'),"Card titles must use Rajdhani: "+file);
+}
+assert(homeMarkup.includes('<nav class="race-category-switch"'),"Home categories must reuse the existing three-card grid");
+assert(!homeMarkup.includes("fx-home-race-nav"),"Old broken homepage class remains");
+const mirrorHome=await readFile(join(root,"preview-fxui/index.html"),"utf8");
+assert(!mirrorHome.includes("fx-home-race-nav"),"Preview mirror still uses the unstyled category navigation");
 const uiFontRule = 'h1,h2,h3,.brand,.nav-links,.side-links a,.eyebrow,.section-label,.event-date,.event-card h3,.btn{font-family:Rajdhani,"Arial Narrow",sans-serif!important}';
 for (const path of ["atx-core.min.css", "atx-home.min.css"]) {
   const css = await readFile(join(root, path), "utf8");
@@ -176,6 +185,19 @@ await page.route("https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/**", asy
 });
 try {
   await page.goto(origin+"/index.html",{waitUntil:"domcontentloaded"});
+  const categoryCards = page.locator(".race-category-switch > a");
+  assert.equal(await categoryCards.count(),3,"Home must have three category cards");
+  const cardGeometry = await page.locator(".race-category-switch").evaluate(nav=>{
+    const computed=getComputedStyle(nav);
+    const cards=[...nav.querySelectorAll(":scope > a")].map(a=>{
+      const box=a.getBoundingClientRect();
+      return {x:box.left,y:box.top,width:box.width,height:box.height,border:getComputedStyle(a).borderTopWidth,font:getComputedStyle(a.querySelector("strong")).fontFamily};
+    });
+    return {display:computed.display,columns:computed.gridTemplateColumns,cards};
+  });
+  assert.equal(cardGeometry.display,"grid","Home category switch must use a CSS grid");
+  assert(cardGeometry.cards.every(card=>card.width>80&&card.height>40&&card.border!=="0px"&&card.font.includes("Rajdhani")),"Home cards must be visible, bordered and use Rajdhani");
+  assert(cardGeometry.cards[0].x<cardGeometry.cards[1].x&&cardGeometry.cards[1].x<cardGeometry.cards[2].x,"Desktop categories must appear in three separate columns");
   const banner = page.locator(".home-brand-banner picture img");
   const emblem = page.locator(".home-brand-mark");
   assert(await banner.isVisible(), "The original hero banner must be visible");
