@@ -68,7 +68,7 @@ assert(homeMarkup.includes('srcset="assets/brand/atx-racing-banner.webp"'), "Ori
 assert(homeMarkup.includes('class="home-brand-mark" src="assets/brand/atx-racing-logo.webp"'), "Explicit hero logo missing");
 for (const path of htmlPaths.filter(p => !p.startsWith("resultats-jour-"))) {
   const html = await readFile(join(root, path), "utf8");
-  assert(path === "index.html" ? /atx-home\.min\.css\?v=20260922-homecards1/.test(html) : /atx-core\.min\.css\?v=20260922-navfont1/.test(html), "Skin cache version missing: " + path);
+  assert(path === "index.html" ? /atx-home\.min\.css\?v=20260922-rajweights1/.test(html) : /atx-core\.min\.css\?v=20260922-rajweights1/.test(html), "Skin cache version missing: " + path);
 }
 for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
   const css = await readFile(join(root, file), "utf8");
@@ -80,7 +80,7 @@ for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
 for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
   const css = await readFile(join(root,file),"utf8");
   assert(!css.includes("fx-home-race-nav"),"Dead homepage component selector remains: "+file);
-  assert(css.includes('.race-category-switch strong{font:900 21px Rajdhani,"Arial Narrow",sans-serif;letter-spacing:.08em}'),"Card titles must use Rajdhani: "+file);
+  assert(css.includes('.race-category-switch strong{font:700 21px Rajdhani,"Arial Narrow",sans-serif;letter-spacing:.08em}'),"Card titles must use Rajdhani: "+file);
 }
 assert(homeMarkup.includes('<nav class="race-category-switch"'),"Home categories must reuse the existing three-card grid");
 assert(!homeMarkup.includes("fx-home-race-nav"),"Old broken homepage class remains");
@@ -111,6 +111,7 @@ for(const path of ["index.html","gtworld.html","daily-race.html","open-lobby.htm
   for(const lang of ["fr","en"]) assert(html.includes('<link rel="alternate" hreflang="'+lang+'" href="'+canonical[1]+'">'),"Single-URL bilingual hreflang missing on "+path+" "+lang);
 }
 console.log("STATIC: one Rajdhani authority, active-only Ballade border, ticker-only loop, preview noindex and FR/EN markup OK");
+for(const file of ["atx-core.min.css","atx-home.min.css"]){const css=await readFile(join(root,file),"utf8");assert(css.includes('h1,h2,h3,h4,h5,h6,.brand,.nav-links,.side-links a,.eyebrow,.section-label,.event-date,.event-card h3,.btn,.fx-section-eyebrow,.driver-premium-title{font-weight:700!important}'),"Rajdhani headings must have supported weight 700: "+file);for(const rule of ['.race-category-switch strong{font:700 21px Rajdhani','.atx-points-position small{color:var(--brand-red);font:700 14px Rajdhani','.atx-points-position strong{font:700 clamp(20px,2.9vw,37px)/1 Rajdhani','.atx-points-bonus strong{color:var(--brand-red);font:700 24px Rajdhani'])assert(css.includes(rule),"Rajdhani 700 missing: "+file+" "+rule);assert(css.includes('.atx-format-poster figcaption{padding:11px 14px;color:var(--brand-white);font:700 14px Rajdhani'),"Poster caption weight must remain 700");}
 console.log("STATIC: ATX skin references, existing banner, logo, condensed titles and motion guard OK");
 console.log("STATIC: 16 HTML pages, bundles, local assets, script references and JS syntax OK");
 
