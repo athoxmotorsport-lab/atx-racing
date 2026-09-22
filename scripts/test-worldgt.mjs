@@ -54,7 +54,7 @@ console.log("WORLDGT: crew results, identical driver awards, bonus, unmapped tea
 const pages={
   "gtworld.html":["data-course-page=\"WGT\"","atx-points-grid","calendrier-complet-wgt.webp","stands ouverts toute la course","id=\"calendrier\"","id=\"classement\""],
   "daily-race.html":["data-course-page=\"DR\"","data-cat-recent"],
-  "open-lobby.html":["data-course-page=\"BA\"","data-cat-recent","ballade-atx.webp","2 arrêts obligatoires"],
+  "open-lobby.html":["data-course-page=\"BA\"","data-cat-recent","ballade-atx.webp","Deux arrêts aux stands sont obligatoires"],
   "calendrier.html":["data-calendar-journey","data-calendar-category=\"WGT\"","data-recent-category=\"CALENDAR\""],
   "classement.html":["data-ranking-journey","data-race-category=\"WGT\"","data-race-category=\"BA\""],
   "course.html":["data-event-journey","data-event-results","id=\"resultats\"","data-event-points-note"],
