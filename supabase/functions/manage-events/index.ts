@@ -121,7 +121,7 @@ Deno.serve(async (request) => {
     }
     if (isEdit && !requestedSlug) return jsonResponse(request, { error: "invalid_slug" }, 400);
     if (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 1440 ||
-      !Number.isInteger(maxDrivers) || maxDrivers < 1 || maxDrivers > 100 || Number.isNaN(startsAt.getTime()) ||
+      !Number.isInteger(maxDrivers) || maxDrivers < 1 || maxDrivers > 28 || Number.isNaN(startsAt.getTime()) ||
       (fixedRefuellingSeconds !== null && (!Number.isInteger(fixedRefuellingSeconds) || fixedRefuellingSeconds < 0)) ||
       !Number.isFinite(timeMultiplier) || timeMultiplier < 1 || timeMultiplier > 24) {
       return jsonResponse(request, { error: "invalid_fields" }, 400);

@@ -37,7 +37,7 @@ const normaliseSessionType = (value: unknown): "FP" | "Q" | "R" | null => {
   return type === "FP" || type === "Q" || type === "R" ? type : null;
 };
 
-type RaceCategory = "WGT" | "DR" | "OL";
+type RaceCategory = "WGT" | "DR" | "BA" | "OL";
 type RankingScope = RaceCategory | "ALL";
 type SteamIdentity = {
   driver_id: string;
@@ -162,6 +162,7 @@ const eventRow = (event: unknown): Record<string, unknown> | null => {
 const raceCategory = (event: unknown): RaceCategory => {
   const row = eventRow(event);
   const source = [row?.server_name, row?.title_fr, row?.title_en].filter(Boolean).join(" | ");
+  if (/(?:^|[^a-z0-9])BALLADE\s+ATX(?=$|[^a-z0-9])/i.test(source)) return "BA";
   const code = source.match(/(?:^|[^a-z0-9])(WGT|DR|OL)(?=$|[^a-z0-9])/i)?.[1]?.toUpperCase();
   if (code === "WGT" || code === "DR" || code === "OL") return code;
   if (/\b(SPRINT|ENDU|WORLD\s*GT)\b/i.test(source)) return "WGT";
@@ -204,7 +205,7 @@ Deno.serve(async (request) => {
   try {
     const supabase = adminClient();
     const requestedCategory = new URL(request.url).searchParams.get("category")?.toUpperCase();
-    const category: RankingScope = requestedCategory === "WGT" || requestedCategory === "OL" || requestedCategory === "ALL" ? requestedCategory : "DR";
+    const category: RankingScope = requestedCategory === "WGT" || requestedCategory === "BA" || requestedCategory === "OL" || requestedCategory === "ALL" ? requestedCategory : "DR";
 
     // Circuit rankings are based on imported ACC timing data, not on whether a
     // driver has made their profile public. Privacy only controls profile links.

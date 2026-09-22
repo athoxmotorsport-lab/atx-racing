@@ -63,6 +63,21 @@ for (const css of ["atx-core.min.css", "atx-home.min.css", "race-alerts.min.css"
 }
 const shell = await readFile(join(root, "premium-shell.min.js"), "utf8");
 assert(!shell.includes("race-alerts.css") && !shell.includes("race-alerts.js"), "old dynamic alert injection remains");
+const homeMarkup = await readFile(join(root, "index.html"), "utf8");
+assert(homeMarkup.includes('srcset="assets/brand/atx-racing-banner.webp"'), "Original hero WebP banner must remain");
+assert(homeMarkup.includes('class="home-brand-mark" src="assets/brand/atx-racing-logo.webp"'), "Explicit hero logo missing");
+for (const path of htmlPaths.filter(p => !p.startsWith("resultats-jour-"))) {
+  const html = await readFile(join(root, path), "utf8");
+  assert(/atx-(?:core|home)\.min\.css\?v=20260922-threeaxes1/.test(html), "Skin cache version missing: " + path);
+}
+for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
+  const css = await readFile(join(root, file), "utf8");
+  assert(css.includes("family=Rajdhani:wght@600;700"), "Condensed title font import missing: " + file);
+  assert(css.includes("@keyframes atxSkinEnter"), "Single-entry animation missing: " + file);
+  assert(css.includes("@media(prefers-reduced-motion:reduce)"), "Reduced-motion guard missing: " + file);
+  assert(css.includes("font-variant-numeric:tabular-nums"), "Tabular numeric styling missing: " + file);
+}
+console.log("STATIC: ATX skin references, existing banner, logo, condensed titles and motion guard OK");
 console.log("STATIC: 16 HTML pages, bundles, local assets, script references and JS syntax OK");
 
 // Real Chromium against the built HTML, with API fixture, no changes to Supabase.
@@ -93,15 +108,15 @@ const fixtureSectors = [
  {driver_id:fixtureDriverId,circuit_key:"monza",best_lap_ms:109321,best_lap_session_type:"FP",best_sector_1_ms:33011,best_sector_2_ms:35011,best_sector_3_ms:41300},
  {driver_id:fixtureDriverId,circuit_key:"barcelona",best_lap_ms:104501,best_lap_session_type:"Q",best_sector_1_ms:31011,best_sector_2_ms:35000,best_sector_3_ms:38490}
 ];
-const fixtureEvents = ["WGT","DR","OL"].map((category,index)=>({
+const fixtureEvents = ["WGT","DR","BA"].map((category,index)=>({
  slug:"fixture-"+category.toLowerCase(), event_type:category==="WGT"?"sprint":category==="DR"?"daily_race":"special_event",
  status:"registration_open", title_fr:category+" · Monza", title_en:category+" · Monza",
- server_name:"ATXRACING | "+category+" | Monza", circuit_name:"Monza",
+ server_name:category==="BA"?"BALLADE ATX | Monza":"ATXRACING | "+category+" | Monza", circuit_name:"Monza",
  starts_at:new Date(Date.now()+(index+1)*86400000).toISOString(),
  duration_minutes:60,max_drivers:30,simgrid_url:"https://www.thesimgrid.com/communities/atxracing",
  image_url:"assets/brand/atx-racing-banner.webp",result_count:0
 }));
-const fixtureArchives = ["WGT","DR","OL"].map((category,index)=>({
+const fixtureArchives = ["WGT","DR","BA"].map((category,index)=>({
  ...fixtureEvents[index],slug:"archive-"+category.toLowerCase(),
  status:"completed", starts_at:new Date(Date.now()-(index+1)*86400000).toISOString(), result_count:2
 }));
@@ -136,7 +151,23 @@ await page.route("https://twjpjzalyvbsdpbzhqln.supabase.co/functions/v1/**", asy
 });
 try {
   await page.goto(origin+"/index.html",{waitUntil:"domcontentloaded"});
+  const banner = page.locator(".home-brand-banner picture img");
+  const emblem = page.locator(".home-brand-mark");
+  assert(await banner.isVisible(), "The original hero banner must be visible");
+  assert(await emblem.isVisible(), "The new hero logo must be visible");
+  assert(await banner.evaluate(img=>img.decode().then(()=>img.naturalWidth>0).catch(()=>false)), "Hero banner image failed to load");
+  assert(await emblem.evaluate(img=>img.decode().then(()=>img.naturalWidth>0).catch(()=>false)), "Hero logo image failed to load");
+  assert((await banner.evaluate(img=>img.currentSrc)).includes("atx-racing-banner.webp"), "The WebP banner is not used");
+  assert((await page.locator(".hero h1").evaluate(el=>getComputedStyle(el).fontFamily)).includes("Rajdhani"), "Homepage title must use condensed lettering");
+  assert.equal(await page.locator(".hero h1").evaluate(el=>getComputedStyle(el).animationIterationCount),"1","Hero entrance must not loop");
+  const reducedPage=await browser.newPage({reducedMotion:"reduce"});
+  try{
+    await reducedPage.goto(origin+"/index.html",{waitUntil:"domcontentloaded"});
+    assert.equal(await reducedPage.locator(".hero h1").evaluate(el=>getComputedStyle(el).animationName),"none","Reduced motion must disable the entrance");
+  }finally{await reducedPage.close()}
+  console.log("BROWSER: original WebP banner and hero logo visible; condensed title, single entrance and reduced-motion fallback OK");
   await page.locator(".atx-alert-bell").waitFor();
+  await page.locator("[data-home-next-poster]:not([hidden]) img").waitFor({timeout:15000});assert(await page.locator("[data-home-next-poster] img").evaluate(img=>img.complete&&img.naturalWidth>0),"Next event must show original calendar poster");
   assert(await page.locator(".utility-bar").count(),"header missing");
   const steam = await page.locator('[data-steam-login]').first().getAttribute("href");
   assert(steam && steam.includes("/functions/v1/auth-steam"),"Steam login link missing");
@@ -144,7 +175,7 @@ try {
   await page.locator(".atx-alert-panel .atx-alert-item").first().waitFor();
   assert((await page.locator(".atx-alert-panel").innerText()).includes("Record"),"bell fails to display notification");
   const links=page.locator(".fx-primary-nav>a");assert.equal(await links.count(),7,"Navigation must include home, three race pages, the full calendar, archives and rules");assert.equal(await page.locator('.fx-primary-nav>a[data-fx-section="calendar"]').getAttribute("href"),"calendrier.html","General calendar must be directly accessible");assert.equal(await page.locator(".fx-times-nav>a").count(),2,"Best laps must retain circuit and driver navigation");assert.equal(await page.locator(".side-nav-group-toggle").count(),0,"No old dropdown arrows");
-  for(const [category,file] of [["WGT","gtworld.html"],["DR","daily-race.html"],["OL","open-lobby.html"]]){
+  for(const [category,file] of [["WGT","gtworld.html"],["DR","daily-race.html"],["BA","open-lobby.html"]]){
     await page.goto(origin+"/"+file,{waitUntil:"domcontentloaded"});
     const root=page.locator('[data-course-page="'+category+'"]');
     await root.waitFor();
@@ -153,7 +184,7 @@ try {
     assert.equal(await root.locator("#calendrier").count(),1,"Calendar section missing on "+file);
     assert.equal(await root.locator("#classement").count(),1,"Standings section missing on "+file);
     await root.locator("#calendrier .event-card.fx-encoded-event").first().waitFor({timeout:15000});
-    assert.equal(await root.locator("#calendrier .event-card").count(),1,"Calendar must include only "+category+" events");assert.equal(await root.locator("#calendrier .event-card").first().getAttribute("data-event-code"),category,"Encoded DR/WGT/OL category must be preserved");assert(await root.locator("#calendrier .event-image img").first().evaluate(img=>img.complete&&img.naturalWidth>0),"Existing original event poster must load");assert.equal(await root.locator("#calendrier .event-image").first().getAttribute("href"),"https://www.thesimgrid.com/communities/atxracing","Existing SimGrid link must remain");
+    assert.equal(await root.locator("#calendrier .event-card").count(),1,"Calendar must include only "+category+" events");assert.equal(await root.locator("#calendrier .event-card").first().getAttribute("data-event-code"),category,"Encoded DR/WGT/BA category must be preserved");assert(await root.locator("#calendrier .event-image img").first().evaluate(img=>img.complete&&img.naturalWidth>0),"Existing original event poster must load");assert.equal(await root.locator("#calendrier .event-image").first().getAttribute("href"),"https://www.thesimgrid.com/communities/atxracing","Existing SimGrid link must remain");
     const firstLink=await root.locator("#calendrier .event-body .btn.primary").first().getAttribute("href");
     assert(firstLink.includes("fixture-"+category.toLowerCase()),"Calendar event should be from its own category");
     await root.locator('[data-cat-drivers] tr').first().waitFor({timeout:15000});
@@ -170,13 +201,14 @@ try {
     assert(new URL(page.url()).pathname.endsWith("/"+file)&&page.url().endsWith("#classement"),"Inline standings must not navigate away");
     assert.equal(await page.locator('.fx-primary-nav>a.active').getAttribute("data-fx-section"),category,"Current race category not highlighted");
   }
-  await page.goto(origin+"/calendrier.html",{waitUntil:"domcontentloaded"});await page.locator(".events-grid .event-card").first().waitFor({timeout:15000});assert.equal(await page.locator(".events-grid .event-card").count(),3,"General calendar must show WGT + DR + OL");assert.equal(await page.locator('[data-calendar-category="ALL"]').getAttribute("aria-current"),"page","General calendar must default to ALL");assert.equal(await page.locator(".events-grid .fx-calendar-code").count(),3,"All calendar cards must show WGT/DR/OL");assert.equal(await page.locator('.fx-primary-nav>a.active').getAttribute("data-fx-section"),"calendar","General calendar nav must be highlighted");await page.goto(origin+"/calendrier.html?type=DR",{waitUntil:"domcontentloaded"});await page.locator(".events-grid .event-card").first().waitFor({timeout:15000});assert.equal(await page.locator(".events-grid .event-card").count(),1,"DR filter must include only Daily Race");assert.equal(await page.locator(".events-grid .event-card").first().getAttribute("data-event-code"),"DR");await page.goto(origin+"/calendrier.html",{waitUntil:"domcontentloaded"});assert.equal(await page.locator(".fx-times-nav>a").count(),2,"Best laps Circuit/Driver must remain intact");
+  await page.goto(origin+"/calendrier.html",{waitUntil:"domcontentloaded"});await page.locator(".events-grid .event-card").first().waitFor({timeout:15000});assert.equal(await page.locator(".events-grid .event-card").count(),3,"General calendar must show WGT + DR + BA");assert.equal(await page.locator('[data-calendar-category="ALL"]').getAttribute("aria-current"),"page","General calendar must default to ALL");assert.equal(await page.locator(".events-grid .fx-calendar-code").count(),3,"All calendar cards must show WGT/DR/BA");assert.equal(await page.locator('.fx-primary-nav>a.active').getAttribute("data-fx-section"),"calendar","General calendar nav must be highlighted");await page.goto(origin+"/calendrier.html?type=BA",{waitUntil:"domcontentloaded"});await page.locator(".events-grid .event-card").first().waitFor({timeout:15000});assert.equal(await page.locator(".events-grid .event-card").count(),1,"Ballade ATX calendar must isolate BA events");assert.equal(await page.locator(".events-grid .event-card").first().getAttribute("data-event-code"),"BA");await page.goto(origin+"/calendrier.html?type=DR",{waitUntil:"domcontentloaded"});await page.locator(".events-grid .event-card").first().waitFor({timeout:15000});assert.equal(await page.locator(".events-grid .event-card").count(),1,"DR filter must include only Daily Race");assert.equal(await page.locator(".events-grid .event-card").first().getAttribute("data-event-code"),"DR");await page.goto(origin+"/calendrier.html",{waitUntil:"domcontentloaded"});assert.equal(await page.locator(".fx-times-nav>a").count(),2,"Best laps Circuit/Driver must remain intact");
   await page.goto(origin+"/open-lobby.html",{waitUntil:"domcontentloaded"});
   await page.locator(".fx-open-lobby-poster img").waitFor();
-  assert(await page.locator(".fx-open-lobby-poster img").evaluate(img=>img.complete&&img.naturalWidth>=640),"Attached Open Lobby poster is missing or invalid");
-  assert((await page.locator("#concept").innerText()).includes("lundis, mercredis et vendredis"),"Open Lobby opening days missing");
+  assert((await page.locator(".fx-open-lobby-poster img").getAttribute("src")).includes("ballade-atx.webp"),"Ballade ATX poster source missing");
+  assert(await page.locator(".fx-open-lobby-poster img").evaluate(img=>img.complete&&img.naturalWidth>=640),"Attached Ballade ATX poster is missing or invalid");
+  assert((await page.locator("#concept").innerText()).includes("Deux fois par mois"),"Ballade ATX frequency missing");
   await page.goto(origin+"/gtworld.html",{waitUntil:"domcontentloaded"});
-  assert((await page.locator(".atx-scoring-example").innerText()).toLowerCase().includes("dylan"),"WorldGT official scoring example missing");
+  assert.equal(await page.locator(".atx-points-position").count(),10,"WorldGT point scale must show P1 to P10");assert.equal(await page.locator(".atx-scoring-example").count(),0,"WorldGT must not show internal scoring explanation");
   await page.locator("#calendrier .event-body .btn.primary").first().click();
   await page.waitForURL(/course\.html\?event=fixture-wgt/);
   await page.locator("[data-event-results] tr").first().waitFor({timeout:15000});
@@ -190,12 +222,20 @@ try {
   await page.locator("#classement [data-gtw-standings] tr").first().waitFor();
   await page.goto(origin+"/classement.html#circuit",{waitUntil:"domcontentloaded"});
   assert.equal(await page.locator(".fx-times-nav>a.active").getAttribute("data-fx-section"),"circuit","Best laps by circuit navigation must remain");
+  const circuitCard=page.locator(".ranking-circuit-card.circuit-visual-card").first();
+  await circuitCard.waitFor({timeout:15000});
+  assert(await circuitCard.locator(".circuit-card-media img").count(),"Existing circuit thumbnail missing after skin");
+  assert((await circuitCard.locator(".circuit-card-driver").innerText()).includes("ATX Test Pilot"),"Best-lap pilot name missing after skin");
+  assert((await circuitCard.locator(".circuit-card-lap").innerText()).includes("1:49.321"),"Best-lap chrono missing after skin");
+  assert((await circuitCard.locator(".circuit-card-lap").evaluate(el=>getComputedStyle(el).fontFamily)).includes("monospace"),"Lap times must remain monospace");
   await page.goto(origin+"/classement.html#driver",{waitUntil:"domcontentloaded"});
   assert.equal(await page.locator(".fx-times-nav>a.active").getAttribute("data-fx-section"),"driver","Best laps by pilot navigation must remain");
   console.log("BROWSER: three race pages contain own concept, calendar and standings; WorldGT crew results and global circuit/pilot best laps OK");
   await page.goto(origin+"/classement.html",{waitUntil:"domcontentloaded"});
   await page.locator(".atx-alert-bell").waitFor();
   await page.locator('[data-alltime-leaderboard]:not([hidden])').waitFor({timeout:15000});
+  const pointsHeader=page.locator(".points-ranking-table th:nth-child(3)").first();
+  assert.equal(await pointsHeader.evaluate(el=>getComputedStyle(el).textAlign),"right","Points column must be right-aligned");
   await page.locator('[data-race-category="WGT"]').click();
   await page.waitForURL(/type=WGT/);
   assert.equal(await page.locator('[data-race-category="WGT"]').getAttribute("aria-current"),"page");
@@ -213,6 +253,7 @@ try {
   await page.locator(".profile-pb-card").first().waitFor({timeout:15000});
   assert.equal(await page.locator(".profile-pb-card").count(),2,"profile best lap cards missing");
   assert((await page.locator(".profile-pb-card").first().innerText()).includes("1:44.501"),"profile best lap time missing");
+  assert((await page.locator(".profile-pb-lap").first().evaluate(el=>getComputedStyle(el).fontFamily)).includes("monospace"),"Pilot profile time must stay monospace");
   assert(await page.locator('[data-profile-best-laps-section]').isVisible(),"profile best lap section invisible");
   assert(await page.locator(".profile-pb-card").first().evaluate(el=>getComputedStyle(el).display) !== "none","profile CSS missing");
   console.log("BROWSER: public pilot profile and best laps FP/Q, profile CSS OK");

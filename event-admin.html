@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#000000">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; connect-src https://twjpjzalyvbsdpbzhqln.supabase.co; img-src 'self' data: https://twjpjzalyvbsdpbzhqln.supabase.co https://community.fastly.steamstatic.com https://avatars.fastly.steamstatic.com https://avatars.cloudflare.steamstatic.com https://avatars.akamai.steamstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self' https://steamcommunity.com; upgrade-insecure-requests">
   <link rel="preconnect" href="https://twjpjzalyvbsdpbzhqln.supabase.co" crossorigin>
-  <link rel="stylesheet" href="atx-core.min.css?v=20260921-threepages1">
+  <link rel="stylesheet" href="atx-core.min.css?v=20260922-threeaxes1">
   
   <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
   <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
@@ -71,9 +71,9 @@
           <div class="form-field"><label for="title-en">English title</label><input id="title-en" name="titleEn" maxlength="96" required></div>
           <div class="form-field"><label for="circuit" data-fr="Circuit" data-en="Circuit">Circuit</label><input id="circuit" name="circuit" maxlength="64" required></div>
           <div class="form-field"><label for="starts-at" data-fr="Date et heure Belgique" data-en="Belgium date and time">Date et heure Belgique</label><input id="starts-at" name="startsAt" type="datetime-local" required></div>
-          <div class="form-field"><label for="event-type" data-fr="Format" data-en="Format">Format</label><select id="event-type" name="eventType"><option value="daily_race">Daily Race</option><option value="sprint">Sprint</option><option value="endurance">Endurance</option><option value="championship">Championship</option><option value="special_event">Special Event</option></select></div>
+          <div class="form-field"><label for="event-type" data-fr="Format" data-en="Format">Format</label><select id="event-type" name="eventType"><option value="daily_race">Daily Race</option><option value="sprint">Sprint</option><option value="endurance">Endurance</option><option value="championship">Championship</option><option value="special_event">Ballade ATX (BALLADE ATX)</option></select><small>Pour Ballade ATX, choisissez ce format : le nom du serveur sera préfixé « BALLADE ATX » et la course sera classée dans son calendrier dédié.</small></div>
           <div class="form-field"><label for="duration" data-fr="Durée de course (minutes)" data-en="Race duration (minutes)">Durée de course (minutes)</label><input id="duration" name="durationMinutes" type="number" min="1" max="1440" value="60" required></div>
-          <div class="form-field"><label for="max-drivers" data-fr="Pilotes maximum" data-en="Maximum drivers">Pilotes maximum</label><input id="max-drivers" name="maxDrivers" type="number" min="1" max="100" value="22" required></div>
+          <div class="form-field"><label for="max-drivers" data-fr="Pilotes maximum" data-en="Maximum drivers">Pilotes maximum</label><input id="max-drivers" name="maxDrivers" type="number" min="1" max="28" value="28" required></div>
           <div class="form-field"><label for="car-class" data-fr="Voitures" data-en="Cars">Voitures</label><input id="car-class" name="carClass" value="GT3" maxlength="32" required></div>
           <div class="form-field"><label for="timezone-label" data-fr="Fuseau affiché sur Discord" data-en="Timezone shown on Discord">Fuseau affiché sur Discord</label><input id="timezone-label" name="timezoneLabel" value="UTC+2" maxlength="32" required></div>
           <fieldset class="form-field full schedule-editor"><legend data-fr="Programme de la journée" data-en="Event schedule">Programme de la journée</legend>
@@ -87,7 +87,7 @@
           <div class="form-field"><label for="mandatory-fuel" data-fr="Ravitaillement obligatoire" data-en="Mandatory refuelling">Ravitaillement obligatoire</label><select id="mandatory-fuel" name="mandatoryRefuelling"><option value="false">Non / No</option><option value="true">Oui / Yes</option></select></div>
           <div class="form-field"><label for="fixed-refuel" data-fr="Durée fixe du ravitaillement (secondes)" data-en="Fixed refuelling time (seconds)">Durée fixe du ravitaillement (secondes)</label><input id="fixed-refuel" name="fixedRefuellingSeconds" type="number" min="0" placeholder="0"></div>
           <div class="form-field"><label for="time-multiplier" data-fr="Accélération du temps" data-en="Time multiplier">Accélération du temps</label><input id="time-multiplier" name="timeMultiplier" type="number" min="1" max="24" step="0.1" value="1" required></div>
-          <div class="form-field"><label for="server-name" data-fr="Nom du serveur" data-en="Server name">Nom du serveur</label><input id="server-name" name="serverName" maxlength="120" placeholder="ATX Racing | Daily Race Monza"></div>
+          <div class="form-field"><label for="server-name" data-fr="Nom du serveur" data-en="Server name">Nom du serveur</label><input id="server-name" name="serverName" maxlength="120" placeholder="BALLADE ATX | Monza (pour une Ballade ATX)"></div>
           <div class="form-field"><label for="server-password" data-fr="Mot de passe serveur (non enregistré)" data-en="Server password (not saved)">Mot de passe serveur (non enregistré)</label><input id="server-password" name="serverPassword" type="text" maxlength="64" autocomplete="off"><small data-fr="Utilisé uniquement pour générer le rappel Discord dans votre navigateur." data-en="Only used to generate the Discord reminder in your browser.">Utilisé uniquement pour générer le rappel Discord dans votre navigateur.</small></div>
           <div class="form-field"><label for="simgrid">Lien SimGrid</label><input id="simgrid" name="simgridUrl" type="url" maxlength="300" placeholder="https://www.thesimgrid.com/..." required></div>
           <div class="form-field full"><label for="image" data-fr="Affiche de l’événement (JPG, PNG ou WebP, 5 Mo max.)" data-en="Event poster (JPG, PNG or WebP, 5 MB max.)">Affiche de l’événement (JPG, PNG ou WebP, 5 Mo max.)</label><input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp" required></div>
@@ -98,10 +98,10 @@
     </section>
   </main>
   <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="reglement.html" data-fr="Règlement" data-en="Rules">Règlement</a><a href="confidentialite.html" data-fr="Confidentialité" data-en="Privacy">Confidentialité</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
-  <script src="main.min.js?v=20260920-worldgt-nav2" defer></script>
-  <script src="premium-shell.min.js?v=20260921-visualcal1" data-premium-shell defer></script>
+  <script src="main.min.js?v=20260922-threeaxes1" defer></script>
+  <script src="premium-shell.min.js?v=20260922-threeaxes1" data-premium-shell defer></script>
   <script src="atx-experience.min.js?v=20260920-polish1" data-atx-experience defer></script>
-  <script src="admin-events-manager.min.js?v=20260920-polish1" defer></script>
+  <script src="admin-events-manager.min.js?v=20260922-threeaxes1" defer></script>
   <script src="admin-gtworld.min.js?v=20260920-worldgt-nav2" defer></script>
 </body>
 </html>

@@ -52,11 +52,11 @@ assert(allSix.entries[0].driver_ids.every(driver=>allSix.driverPoints.get(event1
 console.log("WORLDGT: crew results, identical driver awards, bonus, unmapped teams, DSQ and six-driver endurance OK");
 
 const pages={
-  "gtworld.html":["data-course-page=\"WGT\"","wgt-points-exemple","ATX Motorsport Team 1","id=\"calendrier\"","id=\"classement\""],
+  "gtworld.html":["data-course-page=\"WGT\"","atx-points-grid","calendrier-complet-wgt.webp","stands ouverts toute la course","id=\"calendrier\"","id=\"classement\""],
   "daily-race.html":["data-course-page=\"DR\"","data-cat-recent"],
-  "open-lobby.html":["data-course-page=\"OL\"","data-cat-recent","lundis, mercredis et vendredis"],
+  "open-lobby.html":["data-course-page=\"BA\"","data-cat-recent","ballade-atx.webp","Deux arrêts aux stands sont obligatoires"],
   "calendrier.html":["data-calendar-journey","data-calendar-category=\"WGT\"","data-recent-category=\"CALENDAR\""],
-  "classement.html":["data-ranking-journey","data-race-category=\"WGT\""],
+  "classement.html":["data-ranking-journey","data-race-category=\"WGT\"","data-race-category=\"BA\""],
   "course.html":["data-event-journey","data-event-results","id=\"resultats\"","data-event-points-note"],
 };
 for(const [path,markers] of Object.entries(pages)){
@@ -76,4 +76,5 @@ for(const marker of ["gtworld.html","daily-race.html","open-lobby.html","classem
 }
 for(const [name,source] of [["detail",detailApi],["standings",standingsApi],["WorldGT",worldApi]])
   assert(source.includes('worldGTPoints'),"Scoring helper not shared by "+name+" endpoint");
+assert(!((await readFile("gtworld.html","utf8")).includes("wgt-points-exemple")),"Internal scoring example must not appear in WorldGT presentation");assert((await readFile("reglement.html","utf8")).includes("stands ouverts toute la course"),"WGT Sprint option A must be retained");assert(standingsApi.includes('requestedCategory === "BA"'),"BA standings must have an independent API category");
 const categoryScript=await readFile("category-sections.min.js","utf8");for(const marker of ["public-event","public-leaderboard?category=","[data-cat-calendar]","[data-cat-drivers]","[data-cat-teams]"]){assert(categoryScript.includes(marker),"Inline category sections missing "+marker)}console.log("ROUTES: three pages with concept / calendar / standings; global circuit and pilot best laps preserved");
