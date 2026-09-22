@@ -68,7 +68,7 @@ assert(homeMarkup.includes('srcset="assets/brand/atx-racing-banner.webp"'), "Ori
 assert(homeMarkup.includes('class="home-brand-mark" src="assets/brand/atx-racing-logo.webp"'), "Explicit hero logo missing");
 for (const path of htmlPaths.filter(p => !p.startsWith("resultats-jour-"))) {
   const html = await readFile(join(root, path), "utf8");
-  assert(/atx-(?:core|home)\.min\.css\?v=20260922-atx-skin1/.test(html), "Skin cache version missing: " + path);
+  assert(/atx-(?:core|home)\.min\.css\?v=20260922-threeaxes1/.test(html), "Skin cache version missing: " + path);
 }
 for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
   const css = await readFile(join(root, file), "utf8");
