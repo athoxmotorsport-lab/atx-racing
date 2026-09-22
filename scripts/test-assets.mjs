@@ -234,7 +234,6 @@ try {
   await page.locator('[data-alltime-leaderboard]:not([hidden])').waitFor({timeout:15000});
   const pointsHeader=page.locator(".points-ranking-table th:nth-child(3)").first();
   assert.equal(await pointsHeader.evaluate(el=>getComputedStyle(el).textAlign),"right","Points column must be right-aligned");
-  assert((await pointsHeader.evaluate(el=>getComputedStyle(el).fontVariantNumeric)).includes("normal") || true);
   await page.locator('[data-race-category="WGT"]').click();
   await page.waitForURL(/type=WGT/);
   assert.equal(await page.locator('[data-race-category="WGT"]').getAttribute("aria-current"),"page");
