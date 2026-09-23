@@ -264,20 +264,23 @@ Deno.serve(async (request) => {
     const sessionResults: Array<Record<string, unknown>> = [];
     for (let from = 0; from < 10000; from += 1000) {
       const { data, error } = await supabase.from("acc_session_results")
-        .select("driver_id, best_lap_ms, car_model_name, created_at, session:acc_sessions!inner(session_type, session_date, published_at, created_at, event:events!inner(circuit_key, circuit_name, starts_at, is_public, is_official, server_name, title_fr, title_en))")
+        .select("driver_id, best_lap_ms, car_model_name, created_at, session:acc_sessions!inner(session_type, session_date, published_at, created_at, event:events!inner(circuit_key, circuit_name, starts_at, is_public, status, is_official, server_name, title_fr, title_en))")
         .order("created_at", { ascending: true }).range(from, from + 999);
       if (error) throw error;
       sessionResults.push(...(data ?? []));
       if (!data || data.length < 1000) break;
     }
 
-    // Any official timing file received from the collector must contribute to
-    // FP/Q/R circuit records. An event can be hidden from the calendar/archive
-    // without making its valid lap data disappear from the timing leaderboard.
+    // Publish FP/Q/R timing only for public, non-draft events and public driver profiles.
+    // Private event laps remain stored in ACC tables but never enter public rankings.
     const rankingSessionResults = sessionResults.filter((result) => {
       const session = Array.isArray(result.session) ? result.session[0] : result.session as Record<string, unknown> | null;
       const event = Array.isArray(session?.event) ? session.event[0] : session?.event as Record<string, unknown> | null;
-      return event?.is_official !== false && (category === "ALL" || raceCategory(event) === category);
+      return event?.is_official !== false
+        && event?.is_public === true
+        && event?.status !== "draft"
+        && profileIsPublic.get(String(result.driver_id ?? "")) === true
+        && (category === "ALL" || raceCategory(event) === category);
     });
 
     const { data: ratings, error: ratingsError } = await supabase.from("driver_ratings")
