@@ -59,10 +59,24 @@ Deno.serve(async (request) => {
       .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
     const archives = publicEvents.filter((event) => Date.parse(event.starts_at) >= archiveStart && Date.parse(event.starts_at) <= now && event.result_count > 0);
     const { data: notifications, error: noticesError } = await supabase.from("notifications")
-      .select("id, type, title_fr, title_en, message_fr, message_en, related_link, circuit_key, driver_id, best_lap_ms, created_at")
-      .order("created_at", { ascending: false }).limit(30);
+      .select("id, event_id, visibility, type, title_fr, title_en, message_fr, message_en, related_link, circuit_key, driver_id, best_lap_ms, created_at")
+      .order("created_at", { ascending: false }).limit(200);
     if (noticesError) return json({ error: "notifications_unavailable" }, 500);
-    return json({ events: calendar, today, archives, notifications: notifications ?? [] });
+    const noticeEventIds = [...new Set((notifications ?? []).map((notice) => notice.event_id).filter((id): id is string => typeof id === "string"))];
+    const publicNoticeEventIds = new Set<string>();
+    if (noticeEventIds.length) {
+      const { data: publicNoticeEvents, error: noticeEventsError } = await supabase.from("events")
+        .select("id").in("id", noticeEventIds).eq("is_public", true).neq("status", "draft");
+      if (noticeEventsError) return json({ error: "notifications_unavailable" }, 500);
+      for (const event of publicNoticeEvents ?? []) publicNoticeEventIds.add(event.id);
+    }
+    const visibleNotifications = (notifications ?? [])
+      .filter((notice) => notice.visibility === "public"
+        && (!notice.event_id || publicNoticeEventIds.has(notice.event_id))
+        && (!notice.driver_id || publicDriverIds.has(notice.driver_id)))
+      .slice(0, 30)
+      .map(({ event_id: _eventId, visibility: _visibility, ...notice }) => notice);
+    return json({ events: calendar, today, archives, notifications: visibleNotifications });
   }
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return json({ error: "invalid_slug" }, 400);
 
