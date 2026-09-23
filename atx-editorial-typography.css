@@ -1,0 +1,5 @@
+/* ATX Racing editorial typography — public pages, typography only. */
+body { font-family: "Inter", Arial, sans-serif; }
+body :is(h1,h2,h3,h4,h5,h6,.brand,.race-category-switch strong,.home-portal-card strong,.trust-item strong) { font-family: "Antonio", "Arial Narrow", "Roboto Condensed", Impact, sans-serif !important; font-weight: 700; }
+body :is(.eyebrow,.section-label,.live-ticker-item,.home-next-event-date,.home-next-event-meta,.profile-rank,.profile-stats,.rank-badges,.home-portal-card small,.trust-item small,.profile-top span,.side-brand small,.side-tools small,th,[class*="lap-time"],[class*="best-lap"],[class*="chrono"],[class*="timer"]) { font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace !important; }
+body :is(table,th,td,time,.home-next-event-date,.home-next-event-meta,.profile-stats,.profile-rank,.rank-badges,.live-ticker-item,[class*="chrono"],[class*="timer"],[class*="count"],[class*="stat"],[class*="score"],[class*="points"],[class*="position"],[class*="lap"]) { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
