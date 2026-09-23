@@ -120,9 +120,15 @@ Deno.serve(async (request) => {
       return jsonResponse(request, { error: "invalid_fields" }, 400);
     }
     if (isEdit && !requestedSlug) return jsonResponse(request, { error: "invalid_slug" }, 400);
+    // Same range as events_fixed_refuelling_seconds_range in the database.
+    // Reject before uploading the poster, so a typo never produces an opaque 500
+    // and never leaves an orphaned poster in Storage.
+    if (fixedRefuellingSeconds !== null &&
+      (!Number.isInteger(fixedRefuellingSeconds) || fixedRefuellingSeconds < 0 || fixedRefuellingSeconds > 600)) {
+      return jsonResponse(request, { error: "invalid_fixed_refuelling_seconds", min: 0, max: 600 }, 400);
+    }
     if (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 1440 ||
       !Number.isInteger(maxDrivers) || maxDrivers < 1 || maxDrivers > 28 || Number.isNaN(startsAt.getTime()) ||
-      (fixedRefuellingSeconds !== null && (!Number.isInteger(fixedRefuellingSeconds) || fixedRefuellingSeconds < 0)) ||
       !Number.isFinite(timeMultiplier) || timeMultiplier < 1 || timeMultiplier > 24) {
       return jsonResponse(request, { error: "invalid_fields" }, 400);
     }
