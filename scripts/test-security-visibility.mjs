@@ -40,3 +40,13 @@ assert(gtworld.includes('worldGTPoints(visibleResults'), "WorldGT points must us
 const publicDriver = await readFile(new URL("../supabase/functions/public-driver/index.ts", import.meta.url), "utf8");
 assert(publicDriver.includes('visibleEventSlugs.has(honour.event_slug)'), "Profile awards must exclude private events");
 console.log("SECURITY: public identities, events, WorldGT and driver profiles apply visibility filters");
+
+const notificationsMigration = await readFile(new URL("../supabase/migrations/20260923233000_notifications_visibility.sql", import.meta.url), "utf8");
+assert(notificationsMigration.includes("atx_notifications_public_read"), "Public notification policy missing");
+assert(notificationsMigration.includes("NEW.visibility = 'public'"), "Discord must ignore private notices");
+assert(notificationsMigration.includes("e.is_public IS TRUE"), "Notifications must filter hidden events");
+const noticeEndpoint = await readFile(new URL("../supabase/functions/public-event/index.ts", import.meta.url), "utf8");
+assert(noticeEndpoint.includes('notice.visibility === "public"'), "Admin API must filter private notifications");
+assert(noticeEndpoint.includes("publicNoticeEventIds.has(notice.event_id)"), "Admin API must filter hidden event notifications");
+assert(noticeEndpoint.includes("publicDriverIds.has(notice.driver_id)"), "Admin API must filter hidden driver notifications");
+console.log("SECURITY: public notices exclude internal, private-event and private-driver notices");
