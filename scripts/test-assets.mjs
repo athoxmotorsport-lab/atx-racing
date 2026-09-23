@@ -84,8 +84,6 @@ for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
 }
 assert(homeMarkup.includes('<nav class="race-category-switch"'),"Home categories must reuse the existing three-card grid");
 assert(!homeMarkup.includes("fx-home-race-nav"),"Old broken homepage class remains");
-const mirrorHome=await readFile(join(root,"preview-fxui/index.html"),"utf8");
-assert(!mirrorHome.includes("fx-home-race-nav"),"Preview mirror still uses the unstyled category navigation");
 const uiFontRule = 'h1,h2,h3,.brand,.nav-links,.side-links a,.eyebrow,.section-label,.event-date,.event-card h3,.btn{font-family:Rajdhani,"Arial Narrow",sans-serif!important}';
 for (const path of ["atx-core.min.css", "atx-home.min.css"]) {
   const css = await readFile(join(root, path), "utf8");
@@ -98,19 +96,18 @@ for (const path of ["atx-core.min.css", "atx-home.min.css"]) {
 const robotRules = await readFile(join(root, "robots.txt"), "utf8");
 assert(robotRules.includes("Disallow: /preview-fxui/"), "Preview mirror must be disallowed in robots.txt");
 assert(robotRules.includes("Disallow: /atx-racing/preview-fxui/"), "Actual GitHub Pages preview path must be included");
-const previewPages = (await readdir(join(root,"preview-fxui"))).filter(file=>file.endsWith(".html"));
-assert.equal(previewPages.length,14,"Preview HTML inventory changed; re-check noindex coverage");
-for(const file of previewPages){
-  const html=await readFile(join(root,"preview-fxui",file),"utf8");
-  assert(/<meta\s+name="robots"\s+content="noindex(?:,follow|,nofollow)?">/i.test(html),"Preview file must have noindex: "+file);
-}
+await assert.rejects(
+  access(join(root, "preview-fxui")),
+  { code: "ENOENT" },
+  "Preview directory must be absent from the published site"
+);
 for(const path of ["index.html","gtworld.html","daily-race.html","open-lobby.html","calendrier.html","classement.html","archives.html","reglement.html"]){
   const html=await readFile(join(root,path),"utf8");
   const canonical=html.match(/<link rel="canonical" href="([^"]+)">/);
   assert(canonical,"Canonical URL missing on "+path);
   for(const lang of ["fr","en"]) assert(html.includes('<link rel="alternate" hreflang="'+lang+'" href="'+canonical[1]+'">'),"Single-URL bilingual hreflang missing on "+path+" "+lang);
 }
-console.log("STATIC: one Rajdhani authority, active-only Ballade border, ticker-only loop, preview noindex and FR/EN markup OK");
+console.log("STATIC: one Rajdhani authority, active-only Ballade border, ticker-only loop, preview directory absent and FR/EN markup OK");
 console.log("STATIC: ATX skin references, existing banner, logo, condensed titles and motion guard OK");
 console.log("STATIC: 16 HTML pages, bundles, local assets, script references and JS syntax OK");
 

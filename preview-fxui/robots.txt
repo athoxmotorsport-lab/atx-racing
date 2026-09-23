@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://athoxmotorsport-lab.github.io/atx-racing/sitemap.xml
