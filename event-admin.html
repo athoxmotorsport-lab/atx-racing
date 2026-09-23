@@ -85,7 +85,7 @@
           <div class="form-field"><label for="mandatory-stop" data-fr="Arrêt au stand obligatoire" data-en="Mandatory pit stop">Arrêt au stand obligatoire</label><select id="mandatory-stop" name="mandatoryPitStop"><option value="true">Oui / Yes</option><option value="false">Non / No</option></select></div>
           <div class="form-field"><label for="mandatory-tyres" data-fr="Changement de pneus obligatoire" data-en="Mandatory tyre change">Changement de pneus obligatoire</label><select id="mandatory-tyres" name="mandatoryTyreChange"><option value="false">Non / No</option><option value="true">Oui / Yes</option></select></div>
           <div class="form-field"><label for="mandatory-fuel" data-fr="Ravitaillement obligatoire" data-en="Mandatory refuelling">Ravitaillement obligatoire</label><select id="mandatory-fuel" name="mandatoryRefuelling"><option value="false">Non / No</option><option value="true">Oui / Yes</option></select></div>
-          <div class="form-field"><label for="fixed-refuel" data-fr="Durée fixe du ravitaillement (secondes)" data-en="Fixed refuelling time (seconds)">Durée fixe du ravitaillement (secondes)</label><input id="fixed-refuel" name="fixedRefuellingSeconds" type="number" min="0" max="600" step="1" placeholder="0"><small>0 ou vide = aucune durée fixe. Maximum 600 secondes (10 minutes) : ne pas saisir la durée de la course ou la fenêtre de stand.</small></div>
+          <div class="form-field"><label for="fixed-refuel" data-fr="Durée fixe du ravitaillement (secondes)" data-en="Fixed refuelling time (seconds)">Durée fixe du ravitaillement (secondes)</label><input id="fixed-refuel" name="fixedRefuellingSeconds" type="number" min="0" step="1" placeholder="0"><small>Valeur libre selon la course, en secondes (ex. 4800). 0 ou vide = aucune durée fixe.</small></div>
           <div class="form-field"><label for="time-multiplier" data-fr="Accélération du temps" data-en="Time multiplier">Accélération du temps</label><input id="time-multiplier" name="timeMultiplier" type="number" min="1" max="24" step="0.1" value="1" required></div>
           <div class="form-field"><label for="server-name" data-fr="Nom du serveur" data-en="Server name">Nom du serveur</label><input id="server-name" name="serverName" maxlength="120" placeholder="BALLADE ATX | Monza (pour une Ballade ATX)"></div>
           <div class="form-field"><label for="server-password" data-fr="Mot de passe serveur (non enregistré)" data-en="Server password (not saved)">Mot de passe serveur (non enregistré)</label><input id="server-password" name="serverPassword" type="text" maxlength="64" autocomplete="off"><small data-fr="Utilisé uniquement pour générer le rappel Discord dans votre navigateur." data-en="Only used to generate the Discord reminder in your browser.">Utilisé uniquement pour générer le rappel Discord dans votre navigateur.</small></div>
@@ -98,10 +98,10 @@
     </section>
   </main>
   <footer class="site-footer"><div class="wrap"><div class="footer-grid"><a class="brand" href="index.html">ATX <span>Racing</span></a><div class="socials"><a href="https://discord.gg/dgyJJYTSsD" target="_blank" rel="noopener">Discord</a><a href="https://www.thesimgrid.com/communities/atxracing" target="_blank" rel="noopener">SimGrid</a><a href="reglement.html" data-fr="Règlement" data-en="Rules">Règlement</a><a href="confidentialite.html" data-fr="Confidentialité" data-en="Privacy">Confidentialité</a></div></div><div class="legal"><span>© 2026 ATX Racing · ATX Motorsport</span><a href="mailto:athoxmotorsport@gmail.com">athoxmotorsport@gmail.com</a></div></div></footer>
-  <script src="main.min.js?v=20260923-event-fix1" defer></script>
+  <script src="main.min.js?v=20260923-unlimited-refuel1" defer></script>
   <script src="premium-shell.min.js?v=20260922-threeaxes1" data-premium-shell defer></script>
   <script src="atx-experience.min.js?v=20260920-polish1" data-atx-experience defer></script>
-  <script src="admin-events-manager.min.js?v=20260923-event-fix1" defer></script>
+  <script src="admin-events-manager.min.js?v=20260923-unlimited-refuel1" defer></script>
   <script src="admin-gtworld.min.js?v=20260920-worldgt-nav2" defer></script>
 </body>
 </html>
