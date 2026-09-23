@@ -33,8 +33,8 @@ Deno.serve(async (request) => {
       .eq("driver_id", driverId).order("calculated_at", { ascending: false });
     if (ratingsError) throw ratingsError;
     const { data: results, error: resultsError } = await supabase.from("results")
-      .select("status, finish_position, points, laps_completed, best_lap_ms, car_model_name, created_at, event:events!inner(slug, title_fr, title_en, circuit_name, circuit_key, starts_at, is_public)")
-      .eq("driver_id", driverId).eq("event.is_public", true).order("created_at", { ascending: false });
+      .select("status, finish_position, points, laps_completed, best_lap_ms, car_model_name, created_at, event:events!inner(slug, title_fr, title_en, circuit_name, circuit_key, starts_at, is_public, status)")
+      .eq("driver_id", driverId).eq("event.is_public", true).neq("event.status", "draft").order("created_at", { ascending: false });
     if (resultsError) throw resultsError;
     const allResults = results ?? [];
     const stats = allResults.reduce((summary, result) => ({
@@ -43,11 +43,14 @@ Deno.serve(async (request) => {
       podiums: summary.podiums + (result.status === "classified" && Number(result.finish_position) <= 3 ? 1 : 0),
       points: summary.points + Number(result.points ?? 0),
     }), { races: 0, wins: 0, podiums: 0, points: 0 });
+    const { data: visibleEvents, error: visibleEventsError } = await supabase.from("events").select("slug").eq("is_public", true).neq("status", "draft");
+    if (visibleEventsError) throw visibleEventsError;
+    const visibleEventSlugs = new Set((visibleEvents ?? []).map((event) => event.slug));
     const { data: honours, error: honoursError } = await supabase.from("event_honours")
       .select("award_type, best_lap_ms, penalty_count, clean_laps, event_slug, circuit_name, starts_at")
       .eq("driver_id", driverId).order("starts_at", { ascending: false });
     if (honoursError) throw honoursError;
-    return json({ driver: { ...driver, ratings: ratings ?? [], results: allResults, awards: honours ?? [], stats } });
+    return json({ driver: { ...driver, ratings: ratings ?? [], results: allResults, awards: (honours ?? []).filter((honour) => visibleEventSlugs.has(honour.event_slug)), stats } });
   } catch (error) {
     console.error("Public driver failed", error instanceof Error ? error.message : "unknown error");
     return json({ error: "server_error" }, 500);

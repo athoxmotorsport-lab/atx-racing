@@ -210,20 +210,22 @@ Deno.serve(async (request) => {
     // Circuit rankings are based on imported ACC timing data, not on whether a
     // driver has made their profile public. Privacy only controls profile links.
     const { data: drivers, error: driversError } = await supabase.from("drivers")
-      .select("id, display_name, custom_display_name, avatar_url, custom_avatar_url, team_name, is_profile_public");
+      .select("id, display_name, custom_display_name, avatar_url, custom_avatar_url, team_name, is_profile_public").eq("is_profile_public", true);
     if (driversError) throw driversError;
 
     const { data: identityRows, error: claimedError } = await supabase.from("driver_identities")
       .select("driver_id, steam_id64, steam_persona_name, steam_profile_url, steam_avatar_url, last_login_at");
     if (claimedError) throw claimedError;
-    await hydrateSteamProfiles(supabase, drivers ?? [], (identityRows ?? []) as SteamIdentity[]);
-    const identityByDriver = new Map((identityRows ?? []).map((identity) => [identity.driver_id, identity]));
+    const publicDriverIds = new Set((drivers ?? []).map((driver) => driver.id));
+    const visibleIdentities = (identityRows ?? []).filter((identity) => publicDriverIds.has(identity.driver_id));
+    await hydrateSteamProfiles(supabase, drivers ?? [], visibleIdentities as SteamIdentity[]);
+    const identityByDriver = new Map(visibleIdentities.map((identity) => [identity.driver_id, identity]));
     for (const driver of drivers ?? []) {
       const identity = identityByDriver.get(driver.id);
       driver.display_name = driver.custom_display_name || identity?.steam_persona_name || driver.display_name;
       driver.avatar_url = driver.custom_avatar_url || identity?.steam_avatar_url || driver.avatar_url;
     }
-    const claimed = new Set((identityRows ?? []).filter((row) => row.last_login_at).map((row) => row.driver_id));
+    const claimed = new Set(visibleIdentities.filter((row) => row.last_login_at).map((row) => row.driver_id));
     const profileIsPublic = new Map((drivers ?? []).map((driver) => [driver.id, driver.is_profile_public === true]));
     const publicProfileId = (driverId: string): string | null =>
       claimed.has(driverId) && profileIsPublic.get(driverId) === true ? driverId : null;
@@ -237,7 +239,9 @@ Deno.serve(async (request) => {
       results.push(...(data ?? []));
       if (!data || data.length < 1000) break;
     }
-    const generalResults = results.filter((result) => category === "ALL" || raceCategory(result.event) === category);
+    const generalResults = results.filter((result) => publicDriverIds.has(String(result.driver_id ?? ""))
+      && eventRow(result.event)?.status !== "draft"
+      && (category === "ALL" || raceCategory(result.event) === category));
     const wgtRawResults = generalResults.filter((result) => raceCategory(result.event) === "WGT");
     const wgtEventIds = [...new Set(wgtRawResults.map((result) => String(eventRow(result.event)?.id ?? "")).filter(Boolean))];
     let wgtRegistrations: Array<{event_id:string; driver_id:string; team_name:string|null}> = [];
@@ -245,7 +249,7 @@ Deno.serve(async (request) => {
       const { data, error } = await supabase.from("registrations")
         .select("event_id, driver_id, team_name").in("event_id", wgtEventIds);
       if (error) throw error;
-      wgtRegistrations = data ?? [];
+      wgtRegistrations = (data ?? []).filter((registration) => publicDriverIds.has(registration.driver_id));
     }
     const wgtScore = worldGTPoints(wgtRawResults.map((result) => ({
       event_id: String(eventRow(result.event)?.id ?? ""),

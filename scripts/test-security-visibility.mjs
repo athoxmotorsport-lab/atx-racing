@@ -23,3 +23,20 @@ assert(!allowed({ eventPublic: true, draft: true, driverPublic: true, official: 
 assert(!allowed({ eventPublic: true, draft: false, driverPublic: false, official: true }));
 assert(!allowed({ eventPublic: true, draft: false, driverPublic: true, official: false }));
 console.log("SECURITY: private events, draft events and private drivers excluded from public timing");
+
+for (const name of ["public-driver-identities", "public-event", "public-gtworld", "public-leaderboard", "public-driver"]) {
+  const code = await readFile(new URL("../supabase/functions/" + name + "/index.ts", import.meta.url), "utf8");
+  assert(code.includes("is_profile_public"), name + ": driver profile visibility missing");
+  assert(code.includes("is_public"), name + ": event visibility missing");
+}
+const identities = await readFile(new URL("../supabase/functions/public-driver-identities/index.ts", import.meta.url), "utf8");
+assert(identities.includes('eq("is_profile_public",true)'), "Identity endpoint must filter public profiles");
+assert(identities.includes('publicEventIds.has(h.event_id)'), "Awards must exclude private events");
+const events = await readFile(new URL("../supabase/functions/public-event/index.ts", import.meta.url), "utf8");
+assert(events.includes('publicDriverIds.has(result.driver_id)'), "Event results must exclude private drivers");
+assert(events.includes('visibleHonours'), "Event awards must filter private drivers");
+const gtworld = await readFile(new URL("../supabase/functions/public-gtworld/index.ts", import.meta.url), "utf8");
+assert(gtworld.includes('worldGTPoints(visibleResults'), "WorldGT points must use visible drivers");
+const publicDriver = await readFile(new URL("../supabase/functions/public-driver/index.ts", import.meta.url), "utf8");
+assert(publicDriver.includes('visibleEventSlugs.has(honour.event_slug)'), "Profile awards must exclude private events");
+console.log("SECURITY: public identities, events, WorldGT and driver profiles apply visibility filters");

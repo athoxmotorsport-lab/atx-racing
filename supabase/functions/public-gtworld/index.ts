@@ -27,7 +27,7 @@ Deno.serve(async (request) => {
     const supabase = adminClient();
     const { data: events, error: eventsError } = await supabase.from("events")
       .select("id, slug, title_fr, title_en, circuit_name, starts_at, status, is_public, server_name, event_type")
-      .eq("is_public", true).order("starts_at", { ascending: true });
+      .eq("is_public", true).neq("status", "draft").order("starts_at", { ascending: true });
     if (eventsError) throw eventsError;
 
     const gtEvents = (events ?? []).flatMap((event) => {
@@ -43,11 +43,15 @@ Deno.serve(async (request) => {
       .select("event_id, driver_id, status, finish_position, best_lap_ms, driver:drivers!inner(display_name)")
       .in("event_id", ids);
     if (resultsError) throw resultsError;
+    const { data: publicDrivers, error: driversError } = await supabase.from("drivers").select("id").eq("is_profile_public", true);
+    if (driversError) throw driversError;
+    const publicDriverIds = new Set((publicDrivers ?? []).map((driver) => driver.id));
+    const visibleResults = (results ?? []).filter((result) => publicDriverIds.has(result.driver_id));
 
     const { data: registrations, error: registrationsError } = await supabase.from("registrations")
       .select("event_id, driver_id, team_name").in("event_id", ids);
     if (registrationsError) throw registrationsError;
-    const { entries } = worldGTPoints(results ?? [], registrations ?? []);
+    const { entries } = worldGTPoints(visibleResults, (registrations ?? []).filter((r) => publicDriverIds.has(r.driver_id)));
     const championship = new Map<string, { team_name:string; points:number; events:number; wins:number; podiums:number; sprint:number; endurance:number; fastest_laps:number }>();
     const eventPayload = gtEvents.map((event) => {
       const classified = entries.filter((entry) => entry.event_id === event.id).map((entry) => {
@@ -64,7 +68,7 @@ Deno.serve(async (request) => {
         if (entry.fastest_lap_bonus) total.fastest_laps += 1;
         championship.set(key, total);
         const members = entry.driver_ids.flatMap((driverId) => {
-          const record = (results ?? []).find((row) => row.event_id === event.id && row.driver_id === driverId);
+          const record = visibleResults.find((row) => row.event_id === event.id && row.driver_id === driverId);
           const driver = Array.isArray(record?.driver) ? record.driver[0] : record?.driver;
           return driver?.display_name ? [String(driver.display_name)] : [];
         }).sort();
