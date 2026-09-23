@@ -1,0 +1,35 @@
+/* ATX Racing — homepage editorial layout preview; existing navigation and actions remain in the DOM. */
+body.home-page { padding-left: 0; display: block; }
+body.home-page::before, body.home-page::after { inset: 0; }
+.home-page .side-nav { position: relative; inset: auto; top: auto; z-index: 100; width: 100%; height: auto; min-height: 76px; padding: 12px clamp(16px,3vw,44px); display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px 28px; border-right: 0; border-bottom: 1px solid var(--line); box-shadow: none; background: var(--brand-surface-raised); }
+.home-page .side-brand { padding: 0; border: 0; flex: 0 0 auto; }
+.home-page .side-links { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0; min-width: 0; }
+.home-page .side-links a { min-height: 44px; padding: 8px 12px; white-space: nowrap; }
+.home-page .side-actions { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; margin-left: auto; }
+.home-page .side-tools { display: flex; align-items: center; gap: 8px; }
+.home-page .side-tools small { display: none; }
+.home-page .utility-bar { position: relative; inset: auto; top: auto; z-index: 90; grid-column: auto; grid-row: auto; min-height: 56px; padding: 8px clamp(16px,3vw,44px); }
+.home-page .utility-bar .side-actions { margin: 0; }
+.home-page main, .home-page .site-footer { grid-column: auto; grid-row: auto; min-width: 0; }
+.home-page .live-ticker { position: relative; top: auto; }
+.home-page main > section:not(.hero) { padding-block: clamp(76px,8vw,118px); }
+.home-page main > section:not(.hero) .wrap { max-width: 1180px; }
+.home-page .hero-grid { padding-block: clamp(64px,8vw,108px); }
+.home-page :is(.hero,.mission-section,.profile-section,.leaderboard-callout) { scroll-margin-top: 24px; }
+@media (max-width: 900px) {
+  .home-page .side-nav { gap: 12px; }
+  .home-page .side-brand { flex: 1 1 auto; }
+  .home-page .side-links { order: 3; flex: 1 1 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+  .home-page .side-actions { margin-left: 0; }
+  .home-page .side-links a { flex: 0 0 auto; }
+  .home-page .utility-bar { flex-wrap: wrap; gap: 8px; }
+  .home-page main > section:not(.hero) { padding-block: 72px; }
+}
+@media (max-width: 480px) {
+  .home-page .side-nav { padding: 12px 16px; }
+  .home-page .side-brand .brand { font-size: 24px; }
+  .home-page .side-actions { flex: 1 1 100%; justify-content: flex-start; }
+  .home-page .side-links { scrollbar-width: thin; }
+  .home-page .utility-bar { padding-inline: 16px; }
+  .home-page main > section:not(.hero) { padding-block: 60px; }
+}
