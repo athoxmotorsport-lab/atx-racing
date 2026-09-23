@@ -1,0 +1,28 @@
+/* ATX Racing — editorial red accents. Homepage preview only. */
+.home-page .mission-section .section-label::before,
+.home-page .profile-section .section-label::before,
+.home-page .leaderboard-callout .section-label::before,
+.home-page .fx-home-race-section .section-label::before {
+  content: "";
+  display: inline-block;
+  width: 1.25em;
+  height: 3px;
+  margin-inline-end: .65em;
+  vertical-align: middle;
+  background: var(--brand-red, #ff0000);
+}
+.home-page .mission-section h2::after,
+.home-page .profile-section h2::after,
+.home-page .leaderboard-callout h2::after {
+  content: "";
+  display: block;
+  width: clamp(40px, 8vw, 92px);
+  height: 3px;
+  margin-block-start: .3em;
+  background: var(--brand-red, #ff0000);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-page .mission-section h2::after,
+  .home-page .profile-section h2::after,
+  .home-page .leaderboard-callout h2::after { transition: width .2s ease; }
+}
