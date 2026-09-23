@@ -33,7 +33,7 @@ Deno.serve(async (request) => {
     const rows: Array<Record<string, unknown>> = [];
     for (let from = 0; from < 50000; from += 1000) {
       const { data, error } = await supabase.from("acc_laps")
-        .select("driver_id,lap_time_ms,is_valid,split_1_ms,split_2_ms,split_3_ms,created_at,session:acc_sessions!inner(session_type,published_at,created_at,event:events!inner(circuit_key,circuit_name,is_official))")
+        .select("driver_id,lap_time_ms,is_valid,split_1_ms,split_2_ms,split_3_ms,created_at,driver:drivers!inner(is_profile_public),session:acc_sessions!inner(session_type,published_at,created_at,event:events!inner(circuit_key,circuit_name,is_official,is_public,status))")
         .eq("is_valid", true).range(from, from + 999);
       if (error) throw error;
       rows.push(...(data ?? []));
@@ -47,9 +47,11 @@ Deno.serve(async (request) => {
     };
     const best = new Map<string, Timing>();
     for (const row of rows) {
+      const driver = Array.isArray(row.driver) ? row.driver[0] : row.driver as Record<string, unknown> | null;
+      if (driver?.is_profile_public !== true) continue;
       const session = Array.isArray(row.session) ? row.session[0] : row.session as Record<string, unknown> | null;
       const event = Array.isArray(session?.event) ? session?.event[0] : session?.event as Record<string, unknown> | null;
-      if (event?.is_official === false) continue;
+      if (event?.is_official === false || event?.is_public !== true || event?.status === "draft") continue;
       const driverId = String(row.driver_id ?? "");
       const circuitKey = canonical(event?.circuit_key ?? event?.circuit_name);
       if (!driverId || !circuitKey) continue;

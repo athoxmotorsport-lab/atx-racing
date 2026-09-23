@@ -28,5 +28,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Verify WorldGT scoring and menu journeys
         run: node --experimental-strip-types scripts/test-worldgt.mjs
+      - name: Verify public API timing visibility
+        run: node scripts/test-security-visibility.mjs
       - name: Verify minified assets, ranking, profile, navigation and notifications
         run: node scripts/test-assets.mjs
