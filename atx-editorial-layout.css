@@ -66,3 +66,21 @@ body.home-page::before, body.home-page::after { inset: 0; }
 .premium-site main .ranking-panel-head { flex-wrap:wrap; }
 @media(max-width:900px) { .premium-site .side-nav { gap:8px 16px; } .premium-site .fx-primary-nav { flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:thin; width:100%; padding-bottom:5px; } .premium-site .fx-primary-nav > a { flex:0 0 auto; } .premium-site .fx-primary-nav .fx-times-nav { flex:0 0 auto; } .premium-site .utility-bar { flex-wrap:wrap; gap:8px; } }
 @media(max-width:480px) { .premium-site main h1 { overflow-wrap:break-word; } .premium-site main .ranking-panel-head label { min-width:0; width:100%; } }
+
+/* Mobile header: compact logo, explicit menu button, vertical navigation. */
+.atx-mobile-nav-toggle { display:none; }
+@media(max-width:900px) {
+  .premium-site .side-nav { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px 12px; padding:10px 16px; min-height:64px; }
+  .premium-site .side-brand { display:flex; align-items:center; gap:8px; flex:initial; min-width:0; padding:0; margin:0; border:0; }
+  .premium-site .side-brand img { display:block; width:56px; height:56px; max-width:56px; max-height:56px; object-fit:contain; }
+  .premium-site .side-brand small { display:none; }
+  .premium-site .atx-mobile-nav-toggle { display:block; grid-column:2; grid-row:1; min-height:44px; padding:8px 18px; border:1px solid var(--brand-red); background:#181818; color:#fff; font:700 13px "JetBrains Mono",Consolas,monospace; text-transform:uppercase; cursor:pointer; }
+  .premium-site .atx-mobile-nav-toggle[aria-expanded="true"] { background:var(--brand-red); }
+  .premium-site .fx-primary-nav { display:none; grid-column:1/-1; grid-row:2; flex-direction:column; align-items:stretch; flex-wrap:nowrap; overflow:visible; width:100%; max-width:100%; margin:0; padding:8px 0; border-top:1px solid var(--line); }
+  .premium-site .fx-primary-nav.atx-mobile-nav-open { display:flex; }
+  .premium-site .fx-primary-nav > a { width:100%; min-height:44px; padding:12px 14px; }
+  .premium-site .fx-primary-nav .fx-times-nav { align-self:stretch; width:100%; margin:0; }
+  .premium-site .fx-primary-nav .fx-times-nav > summary { width:100%; min-height:44px; padding:12px 14px; justify-content:space-between; }
+  .premium-site .fx-primary-nav .fx-times-nav[open] > a { position:static; display:block; width:100%; min-width:0; box-shadow:none; padding-left:26px; }
+  .premium-site .utility-bar { min-height:0; padding:8px 16px; }
+}
