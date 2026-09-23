@@ -17,17 +17,20 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);
   const slug = new URL(request.url).searchParams.get("slug") ?? "";
+  const supabase = adminClient();
+  const { data: publicDrivers, error: publicDriversError } = await supabase.from("drivers").select("id").eq("is_profile_public", true);
+  if (publicDriversError) return json({ error: "server_error" }, 500);
+  const publicDriverIds = new Set((publicDrivers ?? []).map((driver) => driver.id));
   if (!slug) {
-    const supabase = adminClient();
     const { data: events, error } = await supabase.from("events")
       .select("id, slug, event_type, status, title_fr, title_en, circuit_name, starts_at, duration_minutes, max_drivers, simgrid_url, image_url, car_class, schedule_timezone_label, event_schedule, mandatory_pit_stop, mandatory_tyre_change, mandatory_refuelling, fixed_refuelling_seconds, time_multiplier, server_name")
-      .eq("is_public", true).order("starts_at", { ascending: false }).limit(100);
+      .eq("is_public", true).neq("status", "draft").order("starts_at", { ascending: false }).limit(100);
     if (error) return json({ error: "server_error" }, 500);
     const ids = (events ?? []).map((event) => event.id);
-    const resultRows: Array<{ event_id: string }> = [];
+    const resultRows: Array<{ event_id: string; driver_id: string }> = [];
     if (ids.length) {
       for (let from = 0; from < 5000; from += 1000) {
-        const { data, error: resultError } = await supabase.from("results").select("event_id")
+        const { data, error: resultError } = await supabase.from("results").select("event_id, driver_id")
           .in("event_id", ids).range(from, from + 999);
         if (resultError) return json({ error: "server_error" }, 500);
         resultRows.push(...(data ?? []));
@@ -35,7 +38,7 @@ Deno.serve(async (request) => {
       }
     }
     const resultCounts = new Map<string, number>();
-    for (const row of resultRows ?? []) resultCounts.set(row.event_id, (resultCounts.get(row.event_id) ?? 0) + 1);
+    for (const row of resultRows) if (publicDriverIds.has(row.driver_id)) resultCounts.set(row.event_id, (resultCounts.get(row.event_id) ?? 0) + 1);
     const archiveStart = Date.parse("2026-09-08T22:00:00Z");
     const now = Date.now();
     const publicEvents = (events ?? []).map(({ id, ...event }) => ({ ...event, result_count: resultCounts.get(id) ?? 0 }));
@@ -63,10 +66,9 @@ Deno.serve(async (request) => {
   }
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return json({ error: "invalid_slug" }, 400);
 
-  const supabase = adminClient();
   const { data: event, error } = await supabase.from("events")
     .select("id, slug, title_fr, title_en, event_type, status, circuit_name, starts_at, duration_minutes, max_drivers, simgrid_url, image_url, server_name, is_official, car_class, schedule_timezone_label, event_schedule, mandatory_pit_stop, mandatory_tyre_change, mandatory_refuelling, fixed_refuelling_seconds, time_multiplier")
-    .eq("slug", slug).eq("is_public", true).maybeSingle();
+    .eq("slug", slug).eq("is_public", true).neq("status", "draft").maybeSingle();
   if (error) return json({ error: "server_error" }, 500);
   if (!event) return json({ error: "event_not_found" }, 404);
 
@@ -75,10 +77,12 @@ Deno.serve(async (request) => {
     .eq("event_id", event.id)
     .order("finish_position", { ascending: true, nullsFirst: false });
   if (resultsError) return json({ error: "server_error" }, 500);
+  const visibleResults = (results ?? []).filter((result) => publicDriverIds.has(result.driver_id));
   const { data: honours, error: honoursError } = await supabase.from("event_honours")
     .select("driver_id, award_type, best_lap_ms, penalty_count, clean_laps").eq("event_id", event.id);
   if (honoursError) return json({ error: "server_error" }, 500);
-  const driverById = new Map((results ?? []).map((result) => {
+  const visibleHonours = (honours ?? []).filter((honour) => publicDriverIds.has(honour.driver_id));
+  const driverById = new Map(visibleResults.map((result) => {
     const driver = Array.isArray(result.driver) ? result.driver[0] : result.driver;
     return [result.driver_id, driver];
   }));
@@ -90,22 +94,22 @@ Deno.serve(async (request) => {
     points: number; fastest_lap_bonus: number; members: string[]; car_model_name: string | null; laps_completed: number;
   }> = [];
   let teamAssignmentsComplete = true;
-  if (isWorldGT && (results ?? []).length) {
+  if (isWorldGT && visibleResults.length) {
     const { data: registrations, error: regError } = await supabase.from("registrations")
       .select("event_id, driver_id, team_name").eq("event_id", event.id);
     if (regError) return json({ error: "server_error" }, 500);
     const { entries, driverPoints } = worldGTPoints(
-      (results ?? []).map((result) => ({
+      visibleResults.map((result) => ({
         event_id: event.id, driver_id: result.driver_id, status: result.status,
         finish_position: result.finish_position, best_lap_ms: result.best_lap_ms,
       })),
-      registrations ?? [],
+      (registrations ?? []).filter((registration) => publicDriverIds.has(registration.driver_id)),
     );
-    teamAssignmentsComplete = (results ?? []).filter((row) =>
+    teamAssignmentsComplete = visibleResults.filter((row) =>
       row.status !== "dns" && row.status !== "dsq"
     ).every((row) => driverPoints.has(event.id + "|" + row.driver_id));
     teamResults = entries.map((entry) => {
-      const memberRows = (results ?? []).filter((result) => entry.driver_ids.includes(result.driver_id));
+      const memberRows = visibleResults.filter((result) => entry.driver_ids.includes(result.driver_id));
       return {
         team_name: entry.team_name, finish_position: entry.finish_position,
         best_lap_ms: entry.best_lap_ms, points: entry.points,
@@ -121,8 +125,8 @@ Deno.serve(async (request) => {
       || first.team_name.localeCompare(second.team_name));
   }
   return json({
-    event, results: results ?? [], team_results: teamResults,
+    event, results: visibleResults, team_results: teamResults,
     is_worldgt: isWorldGT, team_assignments_complete: teamAssignmentsComplete,
-    honours: (honours ?? []).map((honour) => ({ ...honour, driver: driverById.get(honour.driver_id) ?? null })),
+    honours: visibleHonours.map((honour) => ({ ...honour, driver: driverById.get(honour.driver_id) ?? null })),
   });
 });
