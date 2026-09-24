@@ -200,7 +200,7 @@ body.home-page .home-brand-banner::before,body.home-page .home-brand-banner::aft
 }
 body.home-page .home-brand-banner img{
   display:block!important;width:100%!important;height:auto!important;min-height:0!important;
-  max-height:clamp(190px,27vw,330px)!important;object-fit:cover!important;
+  max-height:none!important;object-fit:contain!important;
   object-position:center!important;
 }
 body.home-page .hero-grid>div{grid-column:1!important;min-width:0!important}
