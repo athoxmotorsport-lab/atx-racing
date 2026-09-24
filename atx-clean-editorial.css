@@ -373,3 +373,46 @@ body.home-page .site-footer,body.atx-editorial-layout .site-footer{
 @media(prefers-reduced-motion:reduce){
  body.home-page *,body.atx-editorial-layout *{scroll-behavior:auto!important;animation-duration:.01ms!important}
 }
+
+/* Repair: the original .side-links sets flex-direction:column. Override it explicitly
+   rather than letting the desktop navigation inherit the old sidebar direction. */
+@media(min-width:901px){
+ body.home-page .side-nav .side-links.fx-primary-nav,
+ body.atx-editorial-layout .side-nav .side-links.fx-primary-nav{
+  display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+  align-items:center!important;justify-content:center!important;
+  flex:1 1 auto!important;width:auto!important;min-width:0!important;
+  height:auto!important;min-height:42px!important;
+  margin:0!important;padding:0!important;overflow:visible!important;
+  gap:clamp(3px,.48vw,9px)!important;
+ }
+ body.home-page .side-nav,body.atx-editorial-layout .side-nav{
+  flex-direction:row!important;align-items:center!important;min-height:68px!important;height:auto!important;
+ }
+ body.home-page .side-nav>.utility-bar,body.atx-editorial-layout .side-nav>.utility-bar{
+  flex:0 0 auto!important;min-width:0!important;margin:0!important;
+ }
+ body.home-page .side-nav .fx-primary-nav>a,body.atx-editorial-layout .side-nav .fx-primary-nav>a,
+ body.home-page .side-nav .fx-primary-nav .fx-times-nav>summary,
+ body.atx-editorial-layout .side-nav .fx-primary-nav .fx-times-nav>summary{
+  flex:0 0 auto!important;white-space:nowrap!important;min-height:40px!important;
+  padding:7px 2px!important;font-size:10px!important;
+ }
+}
+@media(min-width:901px) and (max-width:1380px){
+ body.home-page .side-nav,body.atx-editorial-layout .side-nav{display:flex!important;flex-wrap:wrap!important;gap:4px 10px!important;}
+ body.home-page .side-nav .side-links.fx-primary-nav,
+ body.atx-editorial-layout .side-nav .side-links.fx-primary-nav{
+  flex:1 1 auto!important;flex-direction:row!important;flex-wrap:wrap!important;justify-content:flex-end!important;
+ }
+ body.home-page .side-nav>.utility-bar,body.atx-editorial-layout .side-nav>.utility-bar{
+  flex:1 1 100%!important;justify-content:flex-end!important;border-top:1px solid var(--atx-hair)!important;
+  padding:4px 0!important;
+ }
+}
+@media(max-width:900px){
+ body.home-page .side-nav .side-links.fx-primary-nav,
+ body.atx-editorial-layout .side-nav .side-links.fx-primary-nav{flex-direction:column!important;flex-wrap:nowrap!important;}
+}
+/* Old sidebar spacing must never make the desktop header 400px tall. */
+body.home-page .side-nav .side-links,body.atx-editorial-layout .side-nav .side-links{margin-top:0!important;}
