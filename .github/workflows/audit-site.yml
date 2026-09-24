@@ -1,0 +1,30 @@
+name: ATX full-site visual audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/audit-live-site.mjs
+      - .github/workflows/audit-site.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - name: Audit production desktop and mobile
+        run: node scripts/audit-live-site.mjs
+      - name: Upload screenshots and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atx-audit-screenshots
+          path: audit-screenshots/
+          retention-days: 7
