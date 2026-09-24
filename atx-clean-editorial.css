@@ -416,3 +416,23 @@ body.home-page .site-footer,body.atx-editorial-layout .site-footer{
 }
 /* Old sidebar spacing must never make the desktop header 400px tall. */
 body.home-page .side-nav .side-links,body.atx-editorial-layout .side-nav .side-links{margin-top:0!important;}
+
+/* Course detail: keep the genuine, data-driven event journey visible and styled.
+   The old bundle hid it while a second unstyled nav was injected by JS. */
+body.atx-editorial-layout.premium-page-course .atx-journey[hidden]{display:none!important}
+body.atx-editorial-layout.premium-page-course .atx-journey:not([hidden]){
+ display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;
+ align-items:center!important;gap:6px!important;margin:14px 0 22px!important;
+ padding:0!important;background:transparent!important;border:0!important;
+}
+body.atx-editorial-layout.premium-page-course .atx-journey a{
+ display:inline-flex!important;align-items:center!important;min-height:36px!important;
+ padding:7px 9px!important;border:1px solid var(--atx-hair)!important;
+ border-radius:0!important;background:var(--atx-panel)!important;
+ color:var(--atx-muted)!important;text-decoration:none!important;
+ font:500 11px/1.3 "IBM Plex Mono",Consolas,monospace!important;
+}
+body.atx-editorial-layout.premium-page-course .atx-journey a:is(:hover,:focus-visible,[aria-current="page"]){
+ color:var(--atx-white)!important;border-color:var(--atx-red)!important;
+}
+body.atx-editorial-layout.premium-page-course .atx-journey .atx-journey-separator{color:var(--atx-muted)!important}
