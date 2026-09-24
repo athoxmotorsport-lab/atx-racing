@@ -7,7 +7,7 @@ import { chromium } from "playwright";
 
 const root = process.cwd();
 const htmlPaths = [
-  ...(await readdir(root)).filter(p => p.endsWith(".html")),
+  ...(await readdir(root)).filter(p => p.endsWith(".html") && !/^google[a-zA-Z0-9_-]+\.html$/.test(p)),
   ...(await readdir(join(root, "events"))).filter(p => p.endsWith(".html")).map(p => "events/" + p)
 ].sort();
 assert.equal(htmlPaths.length, 14, "ATX keeps the 14 maintained HTML pages; legacy OL result pages are removed");
