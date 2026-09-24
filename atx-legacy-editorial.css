@@ -1,0 +1,13 @@
+/* Standalone historical result pages: match ATX's restrained editorial direction.
+   Keep their original tables, tabs, charts, images and return navigation intact. */
+:root{--red:#e5262e;--red-dark:#a81c22;--bg:#0a0a0b;--panel:#141416;--panel-strong:#1c1c1f;--line:rgba(242,242,240,.12);--line-red:rgba(242,242,240,.22);--text:#f2f2f0;--muted:#9b9ca0}
+body{font-family:"IBM Plex Mono",Consolas,monospace;background-color:#0a0a0b}
+:is(h1,h2,h3,h4,.brand,.metric strong,.pos,.next strong){font-family:"Rajdhani","Arial Narrow",sans-serif;letter-spacing:.01em;font-style:normal}
+:is(.eyebrow,.btn,.tab,.tag,.back,.topbar){font-family:"IBM Plex Mono",Consolas,monospace}
+.topbar{background:#0a0a0b;border-color:rgba(242,242,240,.12);backdrop-filter:none}
+.topbar-inner{height:68px}
+.hero{padding-block:clamp(40px,5vw,64px);border-color:rgba(242,242,240,.12)}
+.hero::before{content:none}
+h1{font-size:clamp(42px,7vw,88px);line-height:1;letter-spacing:0}
+:is(.winner,.metric,.tab,.panel){border-color:rgba(242,242,240,.16)}
+@media(max-width:820px){.topbar-inner{height:62px}.wrap{width:min(100% - 32px,1180px)}}
