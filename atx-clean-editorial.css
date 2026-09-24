@@ -436,3 +436,44 @@ body.atx-editorial-layout.premium-page-course .atx-journey a:is(:hover,:focus-vi
  color:var(--atx-white)!important;border-color:var(--atx-red)!important;
 }
 body.atx-editorial-layout.premium-page-course .atx-journey .atx-journey-separator{color:var(--atx-muted)!important}
+
+/* Navigation active/hover: text underline, never an outline or clipped red frame. */
+body.home-page .side-nav .fx-primary-nav>a,
+body.atx-editorial-layout .side-nav .fx-primary-nav>a,
+body.home-page .side-nav .fx-primary-nav .fx-times-nav>summary,
+body.atx-editorial-layout .side-nav .fx-primary-nav .fx-times-nav>summary {
+ position:relative!important;overflow:visible!important;
+ border:0!important;outline:0!important;box-shadow:none!important;
+ text-decoration:none!important;text-underline-offset:5px!important;
+ background:transparent!important;transform:none!important;
+}
+body.home-page .side-nav .fx-primary-nav>a::before,
+body.home-page .side-nav .fx-primary-nav>a::after,
+body.atx-editorial-layout .side-nav .fx-primary-nav>a::before,
+body.atx-editorial-layout .side-nav .fx-primary-nav>a::after{content:none!important;display:none!important}
+body.home-page .side-nav .fx-primary-nav>a:is(:hover,:focus-visible,.active,[aria-current="page"]),
+body.atx-editorial-layout .side-nav .fx-primary-nav>a:is(:hover,:focus-visible,.active,[aria-current="page"]),
+body.home-page .side-nav .fx-primary-nav .fx-times-nav:is(.active,[open])>summary,
+body.atx-editorial-layout .side-nav .fx-primary-nav .fx-times-nav:is(.active,[open])>summary,
+body.home-page .side-nav .fx-primary-nav .fx-times-nav>summary:is(:hover,:focus-visible),
+body.atx-editorial-layout .side-nav .fx-primary-nav .fx-times-nav>summary:is(:hover,:focus-visible){
+ color:var(--atx-white)!important;border:0!important;outline:0!important;
+ box-shadow:none!important;background:transparent!important;
+ text-decoration:underline!important;text-decoration-color:var(--atx-red)!important;
+ text-decoration-thickness:2px!important;text-underline-offset:5px!important;
+}
+body.home-page .side-nav .fx-primary-nav>a:focus-visible,
+body.atx-editorial-layout .side-nav .fx-primary-nav>a:focus-visible,
+body.home-page .side-nav .fx-primary-nav summary:focus-visible,
+body.atx-editorial-layout .side-nav .fx-primary-nav summary:focus-visible{
+ text-decoration-thickness:3px!important;
+}
+/* Same interaction for course breadcrumbs: no red rectangle touching text. */
+body.atx-editorial-layout.premium-page-course .atx-journey a{
+ border:0!important;background:transparent!important;box-shadow:none!important;
+ padding:8px 6px!important;text-decoration:none!important;}
+body.atx-editorial-layout.premium-page-course .atx-journey a:is(:hover,:focus-visible,[aria-current="page"]){
+ border:0!important;background:transparent!important;color:var(--atx-white)!important;
+ text-decoration:underline!important;text-decoration-color:var(--atx-red)!important;
+ text-decoration-thickness:2px!important;text-underline-offset:5px!important;
+}
