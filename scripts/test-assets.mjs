@@ -10,7 +10,7 @@ const htmlPaths = [
   ...(await readdir(root)).filter(p => p.endsWith(".html")),
   ...(await readdir(join(root, "events"))).filter(p => p.endsWith(".html")).map(p => "events/" + p)
 ].sort();
-assert.equal(htmlPaths.length, 16, "ATX expected the 16 existing HTML pages, without redundant category hubs");
+assert.equal(htmlPaths.length, 14, "ATX keeps the 14 maintained HTML pages; legacy OL result pages are removed");
 const requestedCSS = ["ranking-session-labels", "driver-ranking-premium", "team-ranking-premium", "profile-best-laps"];
 for (const file of requestedCSS) {
   const minimized = await readFile(join(root, file + ".min.css"), "utf8");
@@ -68,7 +68,7 @@ assert(homeMarkup.includes('srcset="assets/brand/atx-racing-banner.webp"'), "Ori
 assert(homeMarkup.includes('class="home-brand-mark" src="assets/brand/atx-racing-logo.webp"'), "Explicit hero logo missing");
 for (const path of htmlPaths.filter(p => !p.startsWith("resultats-jour-"))) {
   const html = await readFile(join(root, path), "utf8");
-  assert(path === "index.html" ? /atx-home\.min\.css\?v=20260922-homecards1/.test(html) : /atx-core\.min\.css\?v=20260922-navfont1/.test(html), "Skin cache version missing: " + path);
+  assert(html.includes("atx-clean-editorial.css?"), "Unified editorial CSS missing: " + path);
 }
 for (const file of ["atx-core.min.css", "atx-home.min.css"]) {
   const css = await readFile(join(root, file), "utf8");
@@ -105,11 +105,11 @@ for(const path of ["index.html","gtworld.html","daily-race.html","open-lobby.htm
   const html=await readFile(join(root,path),"utf8");
   const canonical=html.match(/<link rel="canonical" href="([^"]+)">/);
   assert(canonical,"Canonical URL missing on "+path);
-  for(const lang of ["fr","en"]) assert(html.includes('<link rel="alternate" hreflang="'+lang+'" href="'+canonical[1]+'">'),"Single-URL bilingual hreflang missing on "+path+" "+lang);
+  for(const lang of ["fr","en"]) assert(html.includes('<link rel="alternate" hreflang="'+lang+'" href="'+canonical[1]+'?lang='+lang+'">'),"Distinct bilingual hreflang missing on "+path+" "+lang);
 }
 console.log("STATIC: one Rajdhani authority, active-only Ballade border, ticker-only loop, preview directory absent and FR/EN markup OK");
 console.log("STATIC: ATX skin references, existing banner, logo, condensed titles and motion guard OK");
-console.log("STATIC: 16 HTML pages, bundles, local assets, script references and JS syntax OK");
+console.log("STATIC: 14 HTML pages, bundles, local assets, script references and JS syntax OK");
 
 // Real Chromium against the built HTML, with API fixture, no changes to Supabase.
 const mime = {".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".svg":"image/svg+xml",".webp":"image/webp",".jpg":"image/jpeg",".png":"image/png",".ico":"image/x-icon",".json":"application/json"};
@@ -193,7 +193,7 @@ try {
     return {display:computed.display,columns:computed.gridTemplateColumns,cards};
   });
   assert.equal(cardGeometry.display,"grid","Home category switch must use a CSS grid");
-  assert(cardGeometry.cards.every(card=>card.width>80&&card.height>40&&card.border!=="0px"&&card.font.includes("Rajdhani")),"Home cards must be visible, bordered and use Rajdhani");
+  assert(cardGeometry.cards.every(card=>card.width>80&&card.height>40&&card.font.includes("Rajdhani")),"Home cards must be visible and use Rajdhani");
   assert(cardGeometry.cards[0].x<cardGeometry.cards[1].x&&cardGeometry.cards[1].x<cardGeometry.cards[2].x,"Desktop categories must appear in three separate columns");
   const banner = page.locator(".home-brand-banner picture img");
   const emblem = page.locator(".home-brand-mark");
@@ -203,14 +203,14 @@ try {
   assert(await emblem.evaluate(img=>img.decode().then(()=>img.naturalWidth>0).catch(()=>false)), "Hero logo image failed to load");
   assert((await banner.evaluate(img=>img.currentSrc)).includes("atx-racing-banner.webp"), "The WebP banner is not used");
   assert((await page.locator(".hero h1").evaluate(el=>getComputedStyle(el).fontFamily)).includes("Rajdhani"), "Homepage title must use condensed lettering");
-  for(const selector of [".hero h1",".side-links a[data-fx-section=home]",".home-next-event .event-date",".hero .btn"]){
+  for(const [selector,font] of [[".hero h1","Rajdhani"],[".side-links a[data-fx-section=home]","IBM Plex Mono"],[".home-next-event .event-date","IBM Plex Mono"],[".hero .btn","IBM Plex Mono"]]){
     const element=page.locator(selector).first();
-    if(await element.count()) assert((await element.evaluate(el=>getComputedStyle(el).fontFamily)).includes("Rajdhani"),"Global Rajdhani not applied to "+selector);
+    if(await element.count()) assert((await element.evaluate(el=>getComputedStyle(el).fontFamily)).includes(font),"Editorial typography not applied to "+selector);
   }
   const inactiveBallade=page.locator('.fx-primary-nav>a[data-fx-section="BA"]');
   await inactiveBallade.waitFor({timeout:10000});
   assert(!await inactiveBallade.evaluate(el=>el.classList.contains("active")),"Ballade ATX must not be marked active on the homepage");
-  assert((await inactiveBallade.evaluate(el=>getComputedStyle(el).borderTopColor)).includes(", 0)"),"Ballade ATX has a red border when another page is selected");
+  assert.equal(await inactiveBallade.evaluate(el=>getComputedStyle(el).borderTopWidth),"0px","Inactive Ballade must not have a nav frame");
 
   assert.equal(await page.locator(".hero h1").evaluate(el=>getComputedStyle(el).animationIterationCount),"1","Hero entrance must not loop");
   const reducedPage=await browser.newPage({reducedMotion:"reduce"});
@@ -227,13 +227,13 @@ try {
   await page.locator(".atx-alert-bell").click();
   await page.locator(".atx-alert-panel .atx-alert-item").first().waitFor();
   assert((await page.locator(".atx-alert-panel").innerText()).includes("Record"),"bell fails to display notification");
-  const links=page.locator(".fx-primary-nav>a");assert.equal(await links.count(),7,"Navigation must include home, three race pages, the full calendar, archives and rules");assert.equal(await page.locator('.fx-primary-nav>a[data-fx-section="calendar"]').getAttribute("href"),"calendrier.html","General calendar must be directly accessible");assert.equal(await page.locator(".fx-times-nav>a").count(),2,"Best laps must retain circuit and driver navigation");assert.equal(await page.locator(".side-nav-group-toggle").count(),0,"No old dropdown arrows");
+  const links=page.locator(".fx-primary-nav>a");assert.equal(await links.count(),8,"Navigation must include home, three race pages, full calendar, rankings, archives and rules");assert.equal(await page.locator('.fx-primary-nav>a[data-fx-section="calendar"]').getAttribute("href"),"calendrier.html","General calendar must be directly accessible");assert.equal(await page.locator(".fx-times-nav>a").count(),2,"Best laps must retain circuit and driver navigation");assert.equal(await page.locator(".side-nav-group-toggle").count(),0,"No old dropdown arrows");
   for(const [category,file] of [["WGT","gtworld.html"],["DR","daily-race.html"],["BA","open-lobby.html"]]){
     await page.goto(origin+"/"+file,{waitUntil:"domcontentloaded"});
     const navBA=page.locator('.fx-primary-nav>a[data-fx-section="BA"]');
     await navBA.waitFor({timeout:10000});
     assert.equal(await navBA.evaluate(el=>el.classList.contains("active")),category==="BA","Ballade ATX active state is incorrect on "+file);
-    if(category!=="BA")assert((await navBA.evaluate(el=>getComputedStyle(el).borderTopColor)).includes(", 0)"),"Unselected Ballade ATX must not display its highlighted border on "+file);
+    if(category!=="BA")assert.equal(await navBA.evaluate(el=>getComputedStyle(el).borderTopWidth),"0px","Unselected Ballade ATX must not have a nav frame on "+file);
     const root=page.locator('[data-course-page="'+category+'"]');
     await root.waitFor();
     assert.equal(await root.locator(".fx-course-tabs>a").count(),3,"Each course needs three inline tabs");
@@ -272,10 +272,11 @@ try {
   assert.equal(await page.locator("[data-event-results] tr").count(),1,"WorldGT must display one row per crew");
   const rowText=(await page.locator("[data-event-results] tr").first().innerText()).toLowerCase();
   assert(rowText.includes("dylan")&&rowText.includes("tim")&&rowText.includes("52")&&!rowText.includes("25"),"The two drivers must share the crew's official points");
-  await page.locator(".fx-event-backlinks a").first().waitFor();
-  assert.equal(await page.locator(".fx-event-backlinks a").nth(1).getAttribute("href"),"gtworld.html#calendrier");
-  await page.locator(".fx-event-backlinks a").nth(2).click();
-  await page.waitForURL(/gtworld\.html#classement$/);
+  await page.locator("[data-event-journey]:not([hidden]) [data-event-calendar]").waitFor();
+  assert.equal(await page.locator("[data-event-calendar]").getAttribute("href"),"calendrier.html?type=WGT");
+  assert.equal(await page.locator(".fx-event-backlinks").count(),0,"Redundant legacy event backlinks must not be injected");
+  await page.locator("[data-event-ranking]").click();
+  await page.waitForURL(/gtworld\.html#classement-equipes$/);
   await page.locator("#classement [data-gtw-standings] tr").first().waitFor();
   await page.goto(origin+"/classement.html#circuit",{waitUntil:"domcontentloaded"});
   assert.equal(await page.locator(".fx-times-nav>a.active").getAttribute("data-fx-section"),"circuit","Best laps by circuit navigation must remain");
@@ -319,8 +320,30 @@ try {
     await page.goto(origin+"/"+path,{waitUntil:"domcontentloaded"});
     if (!path.startsWith("resultats-jour-")) await page.locator(".atx-alert-bell").waitFor({timeout:10000});
   }
+  // The two public language URLs must actually select different languages, not just advertise hreflang.
+  await page.goto(origin+"/index.html?lang=en",{waitUntil:"domcontentloaded"});
+  await page.waitForFunction(()=>document.documentElement.lang==="en");
+  assert(new URL(page.url()).searchParams.get("lang")==="en","English URL must retain its language parameter");
+  assert(new URL(await page.locator('link[rel="canonical"]').getAttribute("href")).searchParams.get("lang")==="en","English canonical must be language-specific");
+  await page.locator('button[data-language="fr"]').first().click();
+  await page.waitForFunction(()=>document.documentElement.lang==="fr");
+  assert.equal(new URL(page.url()).searchParams.get("lang"),"fr","FR button must point to the French URL");
+  console.log("BROWSER: distinct language URLs, canonical and FR/EN controls OK");
+  const mobile=await browser.newPage({viewport:{width:390,height:844},reducedMotion:"reduce"});
+  try{
+    await mobile.goto(origin+"/gtworld.html",{waitUntil:"domcontentloaded"});
+    await mobile.locator('[data-cat-drivers] tr').first().waitFor({timeout:15000});
+    const mobileLayout=await mobile.evaluate(()=>({viewport:document.documentElement.clientWidth,page:document.documentElement.scrollWidth,navOpen:document.querySelector('.fx-primary-nav')?.getBoundingClientRect().height,menuVisible:document.querySelector('.atx-mobile-nav-toggle')?.getBoundingClientRect().height}));
+    assert(mobileLayout.menuVisible>=40,"Mobile menu button must be visible");
+    assert(mobileLayout.navOpen===0,"Mobile menu must be collapsed initially");
+    assert(mobileLayout.page<=mobileLayout.viewport+4,"WorldGT mobile has horizontal page overflow: "+JSON.stringify(mobileLayout));
+    assert(await mobile.locator(".fx-table-scroll").evaluate(el=>getComputedStyle(el).overflowX==="auto"),"WorldGT rankings must scroll inside their own container");
+    await mobile.locator(".atx-mobile-nav-toggle").click();
+    assert(await mobile.locator(".fx-primary-nav").isVisible(),"Mobile menu must open when requested");
+    console.log("BROWSER: 390px WorldGT rankings, collapsed/open mobile menu and contained table OK");
+  }finally{await mobile.close()}
   assert.equal(errors.length,0,"Browser errors: "+errors.join("; "));
-  console.log("BROWSER: all 16 HTML pages opened, no uncaught errors or missing local assets");
+  console.log("BROWSER: all 14 HTML pages opened, no uncaught errors or missing local assets");
 } finally {
   await browser.close();
   await new Promise(resolve=>server.close(resolve));
