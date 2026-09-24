@@ -477,3 +477,26 @@ body.atx-editorial-layout.premium-page-course .atx-journey a:is(:hover,:focus-vi
  text-decoration:underline!important;text-decoration-color:var(--atx-red)!important;
  text-decoration-thickness:2px!important;text-underline-offset:5px!important;
 }
+
+/* Responsive ranking: keep FP/Q/R and all race metrics readable without page-level overflow. */
+body.home-page :is(.fx-ranking-block,.fx-premium-block,.fx-table-scroll,.leaderboard-wrap),
+body.atx-editorial-layout :is(.fx-ranking-block,.fx-premium-block,.fx-table-scroll,.leaderboard-wrap){
+  min-width:0!important;max-width:100%!important;box-sizing:border-box!important;
+}
+body.home-page :is(.fx-table-scroll,.leaderboard-wrap),
+body.atx-editorial-layout :is(.fx-table-scroll,.leaderboard-wrap){
+  overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin;
+}
+@media(max-width:900px){
+ body.atx-editorial-layout :is(.fx-premium-drivers,.fx-premium-wgt-team,.leaderboard-table){
+   width:max-content!important;min-width:100%!important;max-width:none!important;
+ }
+ body.atx-editorial-layout :is(.fx-table-scroll,.leaderboard-wrap){
+   width:100%!important;max-width:calc(100vw - 32px)!important;
+ }
+ body.atx-editorial-layout :is(.fx-ranking-block,.fx-premium-block){width:100%!important;overflow:visible!important;}
+ body.atx-editorial-layout :is(.fx-table-scroll,.leaderboard-wrap):focus-visible{
+   outline:2px solid var(--atx-red)!important;outline-offset:2px!important;
+ }
+}
