@@ -75,3 +75,7 @@
  body.home-page .side-nav>.utility-bar .utility-actions,body.atx-editorial-layout .side-nav>.utility-bar .utility-actions {justify-content:flex-start!important;gap:6px!important;}
  body.home-page .side-nav>.utility-bar .utility-context,body.atx-editorial-layout .side-nav>.utility-bar .utility-context {display:none!important;}
 }
+
+/* Match the visual language of the other uppercase navigation links. */
+.premium-site .fx-primary-nav .fx-times-nav > summary { text-transform:uppercase!important; font-family:"JetBrains Mono",Consolas,monospace!important; font-size:11px!important; font-weight:700!important; letter-spacing:0!important; }
+.premium-site .fx-primary-nav .fx-times-nav > a { text-transform:uppercase!important; }
