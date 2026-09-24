@@ -320,6 +320,28 @@ try {
     await page.goto(origin+"/"+path,{waitUntil:"domcontentloaded"});
     if (!path.startsWith("resultats-jour-")) await page.locator(".atx-alert-bell").waitFor({timeout:10000});
   }
+  // The two public language URLs must actually select different languages, not just advertise hreflang.
+  await page.goto(origin+"/index.html?lang=en",{waitUntil:"domcontentloaded"});
+  await page.waitForFunction(()=>document.documentElement.lang==="en");
+  assert(new URL(page.url()).searchParams.get("lang")==="en","English URL must retain its language parameter");
+  assert(new URL(await page.locator('link[rel="canonical"]').getAttribute("href")).searchParams.get("lang")==="en","English canonical must be language-specific");
+  await page.locator('button[data-language="fr"]').first().click();
+  await page.waitForFunction(()=>document.documentElement.lang==="fr");
+  assert.equal(new URL(page.url()).searchParams.get("lang"),"fr","FR button must point to the French URL");
+  console.log("BROWSER: distinct language URLs, canonical and FR/EN controls OK");
+  const mobile=await browser.newPage({viewport:{width:390,height:844},reducedMotion:"reduce"});
+  try{
+    await mobile.goto(origin+"/gtworld.html",{waitUntil:"domcontentloaded"});
+    await mobile.locator('[data-cat-drivers] tr').first().waitFor({timeout:15000});
+    const mobileLayout=await mobile.evaluate(()=>({viewport:document.documentElement.clientWidth,page:document.documentElement.scrollWidth,navOpen:document.querySelector('.fx-primary-nav')?.getBoundingClientRect().height,menuVisible:document.querySelector('.atx-mobile-nav-toggle')?.getBoundingClientRect().height}));
+    assert(mobileLayout.menuVisible>=40,"Mobile menu button must be visible");
+    assert(mobileLayout.navOpen===0,"Mobile menu must be collapsed initially");
+    assert(mobileLayout.page<=mobileLayout.viewport+4,"WorldGT mobile has horizontal page overflow: "+JSON.stringify(mobileLayout));
+    assert(await mobile.locator(".fx-table-scroll").evaluate(el=>getComputedStyle(el).overflowX==="auto"),"WorldGT rankings must scroll inside their own container");
+    await mobile.locator(".atx-mobile-nav-toggle").click();
+    assert(await mobile.locator(".fx-primary-nav").isVisible(),"Mobile menu must open when requested");
+    console.log("BROWSER: 390px WorldGT rankings, collapsed/open mobile menu and contained table OK");
+  }finally{await mobile.close()}
   assert.equal(errors.length,0,"Browser errors: "+errors.join("; "));
   console.log("BROWSER: all 14 HTML pages opened, no uncaught errors or missing local assets");
 } finally {
