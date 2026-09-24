@@ -1,0 +1,43 @@
+/* ATX Racing — faithful typography and restraint from the supplied visual-direction HTML.
+   Headings: Rajdhani 700. Copy, navigation, metadata and tables: IBM Plex Mono.
+   Preserve all existing content, logos, hero banner and live data. */
+body.home-page,body.atx-editorial-layout {
+  font-family:"IBM Plex Mono",Consolas,monospace!important;
+  color:#F2F2F0;
+}
+body.home-page :is(h1,h2,h3,h4,h5,h6),body.atx-editorial-layout :is(h1,h2,h3,h4,h5,h6),
+body.home-page :is(.brand,.race-category-switch strong,.home-portal-card strong,.trust-item strong),
+body.atx-editorial-layout :is(.brand,.race-category-switch strong,.home-portal-card strong,.trust-item strong){
+  font-family:"Rajdhani","Arial Narrow",sans-serif!important;
+  font-weight:700!important;
+  letter-spacing:.01em;
+}
+body.home-page :is(p,a,span,small,label,button,select,input,textarea,th,td,time,summary),
+body.atx-editorial-layout :is(p,a,span,small,label,button,select,input,textarea,th,td,time,summary){
+  font-family:"IBM Plex Mono",Consolas,monospace!important;
+}
+body.home-page .fx-primary-nav :is(a,summary),
+body.atx-editorial-layout .fx-primary-nav :is(a,summary) {
+  font-family:"IBM Plex Mono",Consolas,monospace!important;
+  font-size:12px!important;
+  font-weight:500!important;
+  line-height:1.4!important;
+  letter-spacing:.04em!important;
+  text-transform:uppercase!important;
+}
+body.home-page main :is(h1,h2,h3),body.atx-editorial-layout main :is(h1,h2,h3){
+  line-height:1.04;
+}
+body.home-page main :is(.eyebrow,.section-label,.hero-copy,.live-ticker-item),
+body.atx-editorial-layout main :is(.eyebrow,.section-label,.hero-copy,.live-ticker-item){
+  font-family:"IBM Plex Mono",Consolas,monospace!important;
+}
+body.home-page main :is(.section-label,.eyebrow),
+body.atx-editorial-layout main :is(.section-label,.eyebrow) {font-size:12px;letter-spacing:.08em;}
+body.home-page :is(.leaderboard-table,.ranking-panel-head),
+body.atx-editorial-layout :is(.leaderboard-table,.ranking-panel-head){font-family:"IBM Plex Mono",Consolas,monospace!important;}
+@media(max-width:900px){
+ body.home-page .atx-mobile-nav-toggle,body.atx-editorial-layout .atx-mobile-nav-toggle {
+  font-family:"IBM Plex Mono",Consolas,monospace!important;
+ }
+}
