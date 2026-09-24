@@ -276,7 +276,7 @@ try {
   assert.equal(await page.locator("[data-event-calendar]").getAttribute("href"),"calendrier.html?type=WGT");
   assert.equal(await page.locator(".fx-event-backlinks").count(),0,"Redundant legacy event backlinks must not be injected");
   await page.locator("[data-event-ranking]").click();
-  await page.waitForURL(/gtworld\.html#classement$/);
+  await page.waitForURL(/gtworld\.html#classement-equipes$/);
   await page.locator("#classement [data-gtw-standings] tr").first().waitFor();
   await page.goto(origin+"/classement.html#circuit",{waitUntil:"domcontentloaded"});
   assert.equal(await page.locator(".fx-times-nav>a.active").getAttribute("data-fx-section"),"circuit","Best laps by circuit navigation must remain");
