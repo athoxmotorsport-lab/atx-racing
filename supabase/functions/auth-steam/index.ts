@@ -4,6 +4,19 @@ const OPENID_ENDPOINT = "https://steamcommunity.com/openid/login";
 const OPENID_NS = "http://specs.openid.net/auth/2.0";
 const IDENTIFIER_SELECT = `${OPENID_NS}/identifier_select`;
 const STEAM_ID_PATTERN = /^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/;
+const OLD_PROFILE = "/atx-racing/profil-pilote.html";
+// A fixed path allowlist prevents OpenID from becoming an open redirect.
+const allowedReturnPath = (path: string | null): string =>
+  path && /^\/atxracing\/(fr|en|de|it|es)\/(acc|ace)\/profile\.html$/.test(path) ? path : OLD_PROFILE;
+
+const destinationFor = (path: string): URL => new URL(path, siteUrl().origin);
+
+const storedReturnPath = async (state: string | null): Promise<string> => {
+  if (!state || state.length > 128) return OLD_PROFILE;
+  const { data } = await adminClient().from("auth_login_attempts")
+    .select("return_path").eq("state_hash", await hmacHex(state)).maybeSingle();
+  return allowedReturnPath(data?.return_path ?? null);
+};
 
 const redirect = (location: string): Response => new Response(null, {
   status: 302,
@@ -15,19 +28,20 @@ const redirect = (location: string): Response => new Response(null, {
   },
 });
 
-const failureRedirect = (reason = "auth_failed"): Response => {
-  const destination = new URL("profil-pilote.html", siteUrl());
+const failureRedirect = (reason = "auth_failed", returnPath = OLD_PROFILE): Response => {
+  const destination = destinationFor(returnPath);
   destination.searchParams.set("steam", "error");
   destination.searchParams.set("reason", reason);
   return redirect(destination.toString());
 };
 
-const startLogin = async (): Promise<Response> => {
+const startLogin = async (url: URL): Promise<Response> => {
   const state = randomToken();
+  const returnPath = allowedReturnPath(url.searchParams.get("return_path"));
   const supabase = adminClient();
   const { error } = await supabase.from("auth_login_attempts").insert({
     state_hash: await hmacHex(state),
-    return_path: "/profil-pilote.html",
+    return_path: returnPath,
     expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
   });
   if (error) throw error;
@@ -184,16 +198,17 @@ const fetchSteamPlayer = async (steamId: string): Promise<SteamPlayer> => {
 const finishLogin = async (url: URL): Promise<Response> => {
   const state = url.searchParams.get("state");
   if (!state || state.length > 128) return failureRedirect("invalid_state");
+  const returnPath = await storedReturnPath(state);
 
   const supabase = adminClient();
   const { data: consumed, error: consumeError } = await supabase.rpc(
     "consume_auth_login_attempt",
     { p_state_hash: await hmacHex(state) },
   );
-  if (consumeError || consumed !== true) return failureRedirect("invalid_state");
+  if (consumeError || consumed !== true) return failureRedirect("invalid_state", returnPath);
 
   const steamId = await verifySteamAssertion(url);
-  if (!steamId) return failureRedirect("steam_verification_failed");
+  if (!steamId) return failureRedirect("steam_verification_failed", returnPath);
 
   const player = await fetchSteamPlayer(steamId);
   let personaName = cleanPersonaName(player.personaname);
@@ -224,7 +239,7 @@ const finishLogin = async (url: URL): Promise<Response> => {
   });
   if (exchangeError) throw exchangeError;
 
-  const destination = new URL("profil-pilote.html", siteUrl());
+  const destination = destinationFor(returnPath);
   destination.hash = new URLSearchParams({
     steam: "success",
     steam_code: exchangeCode,
@@ -236,8 +251,8 @@ Deno.serve(async (request) => {
   try {
     if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
     const url = new URL(request.url);
-    if (url.searchParams.get("openid.mode") === "cancel") return failureRedirect("user_cancelled");
-    return url.searchParams.has("openid.mode") ? await finishLogin(url) : await startLogin();
+    if (url.searchParams.get("openid.mode") === "cancel") return failureRedirect("user_cancelled", await storedReturnPath(url.searchParams.get("state")));
+    return url.searchParams.has("openid.mode") ? await finishLogin(url) : await startLogin(url);
   } catch (error) {
     console.error("Steam authentication failed", error instanceof Error ? error.message : "unknown error");
     return failureRedirect();
